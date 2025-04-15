@@ -7,9 +7,7 @@ This repo consists of example source and destination connectors along with a loc
 * [Local Testing Tools](tools/)
 
 ## Development
-You can follow the [SDK Development Guide](development-guide.md) for guidance on how to develop your code. 
-
-> NOTE: If you're a new partner that just started working with the Connector SDK, use [V2 release](https://github.com/fivetran/fivetran_sdk/releases/tag/v2). We will continue to support [V1 release](https://github.com/fivetran/fivetran_sdk/releases/tag/v1) for partners that have used them to build their SDK connectors, and these will be removed once the migration to V2 is complete.
+Follow the [SDK Development Guide](development-guide.md) for guidance on how to develop your code. 
 
 Once you have your code ready to run:
 1. Start up your connector running on port 50051 (for destination code, use port 50052).
