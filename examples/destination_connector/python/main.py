@@ -209,7 +209,64 @@ class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
         for update_file in request.update_files:
             print("replace files: " + str(update_file))
         for delete_file in request.delete_files:
-            print("replace files: " + str(delete_file))
+            print("delete files: " + str(delete_file))
+
+        log_message(WARNING, "Data loading started for table " + request.table.name)
+        for key, value in request.keys.items():
+            print("----------------------------------------------------------------------------")
+            print("Decrypting and printing file :" + str(key))
+            print("----------------------------------------------------------------------------")
+            read_csv.decrypt_file(key, value)
+        log_message(INFO, "\nData loading completed for table " + request.table.name + "\n")
+
+        res: destination_sdk_pb2.WriteBatchResponse = destination_sdk_pb2.WriteBatchResponse(success=True)
+        return res
+
+    def WriteHistoryBatch(self, request, context):
+        '''
+        Reference: https://github.com/fivetran/fivetran_sdk/blob/main/how-to-handle-history-mode-batch-files.md
+
+        The `WriteHistoryBatch` method is used to write history mode-specific batch files to the destination.
+        The incoming batch files are processed in the exact following order:
+        1. `earliest_start_files`
+        2. `replace_files`
+        3. `update_files`
+        4. `delete_files`
+
+        1. **`earliest_start_files`**
+           - Contains a single record per primary key with the earliest `_fivetran_start`.
+           - Operations:
+             - Delete overlapping records where `_fivetran_start` is greater than `earliest_fivetran_start`.
+             - Update history mode-specific system columns (`fivetran_active` and `_fivetran_end`).
+
+        2. **`update_files`**
+           - Contains records with modified column values.
+           - Process:
+             - Modified columns are updated with new values.
+             - Unmodified columns are populated with values from the last active record in the destination.
+             - New records are inserted while maintaining history tracking.
+
+        3. **`upsert_files`**
+           - Contains records where all column values are modified.
+           - Process:
+             - Insert new records directly into the destination table.
+
+        4. **`delete_files`**
+           - Deactivates records in the destination table.
+           - Process:
+             - Set `_fivetran_active` to `FALSE`.
+             - Update `_fivetran_end` to match the corresponding record’s end timestamp from the batch file.
+
+        This structured processing ensures data consistency and historical tracking in the destination table.
+        '''
+        for earliest_start_file in request.earliest_start_files:
+            print("earliest_start files: " + str(earliest_start_file))
+        for replace_file in request.replace_files:
+            print("replace files: " + str(replace_file))
+        for update_file in request.update_files:
+            print("replace files: " + str(update_file))
+        for delete_file in request.delete_files:
+            print("delete files: " + str(delete_file))
 
         log_message(WARNING, "Data loading started for table " + request.table.name)
         for key, value in request.keys.items():
