@@ -7,7 +7,7 @@ description: {Meta Description - Example: Read step-by-step instructions on how 
 hidden: {true or false. Set to true if the article should only be accessible via a direct link and not indexed by crawlers.}
 ---
 
-# {Connector} Setup Guide {% typeBadge connector="connector_name" /%} {% availabilityBadge connector="connector_name" /%}
+# {Connector} Setup Guide {% badge text="Partner-Built" /%} {% availabilityBadge connector="connector_name_source" /%}
 
 Follow our setup guide to connect {Connector} to Fivetran.
 

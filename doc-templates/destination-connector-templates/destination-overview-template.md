@@ -7,7 +7,7 @@ description: {Meta Description}
 hidden: {true or false. Set to true if the article should only be accessible via a direct link and not indexed by crawlers.}
 ---
 
-# {Destination Name}
+# {Destination Name} {% badge text="Partner-Built" /%} {% availabilityBadge connector="destination_name_destination" /%}
 
 {Description - Required - What is the service? Overview of what the service is (for example, Snowflake/Redshift). You can refer to publicly available documentation, however, remember to tailor it to Fivetran's context. Also, add a link to the related public website for the user’s reference.}
 
