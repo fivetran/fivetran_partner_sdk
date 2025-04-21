@@ -69,7 +69,7 @@ We’ll review these docs and our Tech Writing team will edit for grammar and st
 ### How do we go-to-market?
 When you are confident your connector is working, we will deploy it into production marked as `in dev`. During this phase, it is hidden from mutual customers; however, you will be able to set up and run final end-to-end tests. This is also the time to submit and finalise your documentation.
 Once you are comfortable that all functionality is working correctly, you can request to promote your connector to Private Preview.
-Our partner build connectors follow Fivetran's standard [Release phases](https://fivetran.com/docs/core-concepts#releasephases)
+Our partner-built connectors follow Fivetran's standard [Release phases](https://fivetran.com/docs/core-concepts#releasephases)
 When you are confident your connector is ready please request us to promote it. Source connectors are must be promoted to Beta within 6 months of entering Private Preview. 
 Fivetran will market through multiple methods:
 * Connector release blogs
