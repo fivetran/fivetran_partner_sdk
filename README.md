@@ -67,6 +67,10 @@ To help you produce the documentation, we provide helpful resources:
 We’ll review these docs and our Tech Writing team will edit for grammar and style, sending back to your team (TBD on automation) to keep in sync. The documentation is to be hosted in [Fivetran's documentation site](https://fivetran.com/docs/getting-started).
 
 ### How do we go-to-market?
+When you are confident your connector is working, we will deploy it into production marked as `in dev`. During this phase, it is hidden from mutual customers; however, you will be able to set up and run final end-to-end tests. This is also the time to submit and finalise your documentation.
+Once you are comfortable that all functionality is working correctly, you can request to promote your connector to Private Preview.
+Our partner-built connectors follow Fivetran's standard [Release phases](https://fivetran.com/docs/core-concepts#releasephases)
+When you are confident your connector is ready, please request us to promote it. Source connectors must be promoted to Beta within six months of entering Private Preview.
 Fivetran will market through multiple methods:
 * Connector release blogs
 * Monthly email updates
