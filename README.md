@@ -39,6 +39,8 @@ Right now, we are employing manual processes before getting into automation:
 1. You put your code in a public GitHub repo or provide a couple of our team members access to your private repo. 
 2. We pull the code, inspect it, and build the executable binary to deploy to our platform. Allow up to a week for us to complete our review and deploy process.
 
+> NOTE: Please share your logo file (preferably in .svg format) in your repository so we can display the connector properly on the Fivetran platform.
+
 ### How do we test?
 We expect testing to ensure your source or destination connector is working as expected, either with test data or with a customer who is eager to adopt. We provide [testers](tools/) in this repo you can use locally without connecting to Fivetran platform. We also recommend you think through typical scenarios for testing:
 
@@ -71,6 +73,7 @@ When you are confident your connector is working, we will deploy it into product
 Once you are comfortable that all functionality is working correctly, you can request to promote your connector to Private Preview.
 Our partner-built connectors follow Fivetran's standard [Release phases](https://fivetran.com/docs/core-concepts#releasephases)
 When you are confident your connector is ready, please request us to promote it. Source connectors must be promoted to Beta within six months of entering Private Preview.
+
 Fivetran will market through multiple methods:
 * Connector release blogs
 * Monthly email updates

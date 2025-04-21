@@ -7,7 +7,7 @@ Description: Connect your {source system} data to your destination using Fivetra
 hidden: {true or false. Set to true if the article should only be accessible via a direct link and not indexed by crawlers.}
 ---
 
-# {Source Connector Name} {% typeBadge connector="connector_name" /%} {% availabilityBadge connector="connector_name" /%}
+# {Source Connector Name} {% badge text="Partner-Built" /%} {% availabilityBadge connector="connector_name_source" /%}
 
 {Description - Required - What is the service? Overview of what the service is (Marketo = Email marketing tool). You can refer to publicly available documentation, however, remember to tailor it to Fivetran's context.
 Also, add a link to a related public website for users’ reference.}
