@@ -7,7 +7,7 @@ description: {Meta Description}
 hidden: {true or false. Set to true if the article should only be accessible via a direct link and not indexed by crawlers.}
 ---
 
-# {Destination Name} Setup Guide
+# {Destination Name} Setup Guide {% badge text="Partner-Built" /%} {% availabilityBadge connector="destination_name_destination" /%}
 
 Follow our setup guide to connect {Destination} to Fivetran.
 
