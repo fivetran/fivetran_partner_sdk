@@ -236,7 +236,7 @@ In addition to the suggestions above, consider the following as well:
 - Test tables with and without primary-key
 
 ## How We Use Your Service
-This document outlines how we integrate partner services into our infrastructure. We build and run your service as a **standalone binary gRPC server**, fully hosted in our environment.
+This document outlines how we integrate partner services into our infrastructure. We build and run your service as a `standalone binary` that implements a gRPC server.
 To ensure a smooth and repeatable integration, we require your service code to follow a defined structure and include clear instructions for how to build the binary.
 
 ### What We Do
@@ -274,11 +274,19 @@ This should result in:
 ### Testing the Binary
 Before submitting the binary or code for service, you should test that the binary runs correctly on the target platform `linux/amd64` using Docker. This helps ensure that it behaves as expected in our environment.
 
-**Example Docker Test Command**
+**Example Docker Test Command:**
 ```bash
-docker run --rm -v $(pwd):/app -w /app golang:1.20-alpine sh -c "apk add --no-cache bash && ./build.sh && ./build/your-service --port=50051"
+docker run --rm \
+  --platform linux/amd64 \
+  -v <local_path_to_binary>:/usr/local/myapp:ro \
+  -v /tmp:/tmp \
+  -p <port>:<port> \
+  us-docker.pkg.dev/build-286712/public-docker-us/azul/zulu-openjdk-debian:17-jre-headless-latest-2024-08-05 \
+  /usr/local/myapp/<binary_name> --port <port>
 ```
 Make sure the binary executes without errors and the gRPC server starts as expected.
+
+---
 
 ## FAQ
 
