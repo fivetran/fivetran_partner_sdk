@@ -237,9 +237,9 @@ In addition to the suggestions above, consider the following as well:
 
 ## How We Use Your Service
 This document outlines how we integrate partner services into our infrastructure. We build and run your service as a **standalone binary gRPC server**, fully hosted in our environment.
-To ensure a smooth and repeatable integration, we require your service code to follow a defined structure and include clear instructions for how to build the binary. If these expectations are not met, we will not proceed with the build and will request changes.
+To ensure a smooth and repeatable integration, we require your service code to follow a defined structure and include clear instructions for how to build the binary.
 
-## What We Do
+### What We Do
 
 - We **build a standalone binary** from the code you provide.
 - We run this binary in a **Linux/amd64** environment, inside a **Docker container**.
@@ -247,16 +247,16 @@ To ensure a smooth and repeatable integration, we require your service code to f
 
 ---
 
-## Code Requirements
+### Code Requirements
 
 To be accepted, your codebase **must**:
 
-- Contain a clear and runnable `main` entry point (e.g., `main.go`, `main.py`, etc.) that starts a gRPC server.
-- Conform to the agreed-upon gRPC interface. **All gRPC service methods are mandatory** and must be implemented.
+- Contain a clear and runnable `main` entry point (e.g., `main.go`, `main.py`, `main.java`, etc.) that starts a gRPC server.
+- Conform to the agreed-upon gRPC interface. **All required gRPC service methods** must be implemented.
 - Be structured in a way that allows for a clean, repeatable build process.
 - Avoid dependencies that require manual input or undocumented setup steps.
 
-> ❗ **Note:** If your code does not conform to these requirements, we will request changes and pause the integration process until resolved.
+> ❗ **Note:** If your code does not conform to these requirements, we will request changes and pause the process until resolved.
 
 ---
 
@@ -272,14 +272,13 @@ This should result in:
 - Include all necessary steps such as dependency installation, compilation flags, or environment setup
 
 ### Testing the Binary
-Before submitting the binary or code for integration, you should test that the binary runs correctly on the target platform using Docker. This helps ensure that it behaves as expected in our environment.
+Before submitting the binary or code for service, you should test that the binary runs correctly on the target platform `linux/amd64` using Docker. This helps ensure that it behaves as expected in our environment.
 
 **Example Docker Test Command**
 ```bash
 docker run --rm -v $(pwd):/app -w /app golang:1.20-alpine sh -c "apk add --no-cache bash && ./build.sh && ./build/your-service --port=50051"
 ```
 Make sure the binary executes without errors and the gRPC server starts as expected.
-
 
 ## FAQ
 
