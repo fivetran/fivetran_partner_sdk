@@ -12,7 +12,7 @@ Fivetran SDK uses [gRPC](https://grpc.io/) to talk to partner code. The partner 
 
 At the moment, partner code should be developed in a language that can generate a statically linked binary executable.
 
-### Command line Arguments
+### Command line arguments
 The executable needs to do the following:
 * Accept a `--port` argument that takes an integer as a port number to listen to.
 * Listen on both IPV4 (i.e. 0.0.0.0) and IPV6 (i.e ::0), but if only one is possible, it should listen on IPV4.
@@ -106,18 +106,18 @@ The [`ConfigurationForm` RPC call](#configurationform) retrieves the tests that 
 - Don't forget to handle new schemas/tables/columns per the information and user choices in `UpdateRequest#selection`.
 - Make sure you checkpoint at least once an hour. In general, the more frequently you do it, the better.
 
-### RPC Calls
+### RPC calls
 #### Schema
 The `Schema` RPC call retrieves the user's schemas, tables, and columns. It also includes an optional `selection_not_supported` field that indicates whether the user can select or deselect tables and columns within the Fivetran dashboard.
 
 #### Update
 The `Update` RPC call should retrieve data from the source. We send a request using the `UpdateRequest` message, which includes the user's connection state, credentials, and schema information. The response, streaming through the `UpdateResponse` message, can contain data records and other supported operations.
 
-## Destination Connector guidelines
+## Destination connector guidelines
 
 - The destination connector should implement the listed rpc calls to load the data sent by Fivetran.
 
-### System Columns
+### System columns
 - In addition to source columns, Fivetran sends the following additional system columns if and when required:
     - `_fivetran_synced`: This is a `UTC_DATETIME` column that represents the start of sync. Every table has this system column.
     - `_fivetran_deleted`: This column is used to indicate whether a given row is deleted at the source or not. If the source soft-deletes a row or a table, this system column is added to the table.
@@ -132,7 +132,7 @@ Batch files are compressed using [ZSTD](https://en.wikipedia.org/wiki/Zstd).
 - You can find the encryption key for each batch file in the `WriteBatchRequest#keys` field.
 - First 16 bytes of each batch file hold the IV vector.
 
-### Batch Files
+### Batch files
 - Each batch file is limited in size to 100MB.
 - Number of records in each batch file can vary depending on row size.
 - We support CSV and PARQUET file format.
@@ -194,7 +194,7 @@ The `WriteHistoryBatchRequest` RPC call provides details about the batch files c
 
 > NOTE: To learn how to handle `earliest_start_files`, `replace_files`, `update_files` and `delete_files` in history mode, follow the [How to Handle History Mode Batch Files](how-to-handle-history-mode-batch-files.md) guide.
 
-### Examples of Data Types
+### Examples of data types
 Examples of each [DataType](https://github.com/fivetran/fivetran_sdk/blob/main/common.proto#L73C6-L73C14) as they would appear in CSV batch files are as follows:
 - UNSPECIFIED: This data type never appears in batch files
 - BOOLEAN: "true", "false"
@@ -235,46 +235,46 @@ In addition to the suggestions above, consider the following as well:
     - Changing data type of primary key columns
 - Test tables with and without primary-key
 
-## How We Use Your Service
-This document outlines how we integrate partner services into our infrastructure. We build and run your service as a `standalone binary` that implements a gRPC server.
+## How we use your service
+This section outlines how we integrate partner services into our infrastructure. We build and run your service as a `standalone binary` that implements a gRPC server.
 To ensure a smooth and repeatable integration, we require your service code to follow a defined structure and include clear instructions for how to build the binary.
 
-### What We Do
+### What we do
 
-- We **build a standalone binary** from the code you provide.
-- We run this binary in a **Linux/amd64** environment, inside a **Docker container**.
-- Your binary must start and run a **gRPC server** that implements **all required gRPC calls** as defined in our proto files.
+- We build a standalone binary from the code you provide.
+- We run this binary in a Linux/amd64 environment, inside a Docker container.
+- Your binary must start and run a gRPC server that implements _all_ required gRPC calls as defined in our proto files.
 
 ---
 
 ### Code Requirements
 
-To be accepted, your codebase **must**:
+To be accepted, your codebase must:
 
 - Contain a clear and runnable `main` entry point (e.g., `main.go`, `main.py`, `main.java`, etc.) that starts a gRPC server.
-- Conform to the agreed-upon gRPC interface. **All required gRPC service methods** must be implemented.
-- Be structured in a way that allows for a clean, repeatable build process.
+- Conform to the agreed-upon gRPC interface. _All_ required gRPC service methods must be implemented.
+- Be structured to support a clean, repeatable build process.
 - Avoid dependencies that require manual input or undocumented setup steps.
 
-> ❗ **Note:** If your code does not conform to these requirements, we will request changes and pause the process until resolved.
+> NOTE: If your code does not conform to these requirements, we will request changes and pause the process until resolved.
 
 ---
 
-### Build Instructions
-To help us build the binary consistently, you must provide **one of the following** in your repository:
-- A **build script** (e.g., `build.sh` or `Makefile`) that automates the binary creation  
-  **OR**
+### Build instructions
+To help us build the binary consistently, you must provide either of the following in your repository:
+- A build script (e.g., `build.sh` or `Makefile`) that automates the binary creation  
 - A clearly documented, step-by-step guide in a `README.md` or `BUILD.md` file with commands we can run to build the binary.
 
 This should result in:
 
-- Producing a **self-contained executable** targeting `linux/amd64`
+- Producing a self-contained executable targeting `linux/amd64`
 - Include all necessary steps such as dependency installation, compilation flags, or environment setup
 
-### Testing the Binary
+### Testing the binary
 Before submitting the binary or code for service, you should test that the binary runs correctly on the target platform `linux/amd64` using Docker. This helps ensure that it behaves as expected in our environment.
 
-**Example Docker Test Command:**
+See the following example Docker test command:
+
 ```bash
 docker run --rm \
   --platform linux/amd64 \
