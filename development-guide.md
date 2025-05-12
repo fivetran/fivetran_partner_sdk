@@ -142,9 +142,29 @@ Batch files are compressed using [ZSTD](https://en.wikipedia.org/wiki/Zstd).
 - BINARY data is written to batch files using base64 encoding. You need to decode it to get back the original byte array.
 
 #### PARQUET (Available in V2)
-- Apache Avro schema is used to define the structure of the data in the batch files. When writing data, ensure that the schema is correctly defined and matches the data format to prevent issues during deserialization.
-- Parquet files are written using `AvroParquetWriter`.
-- BINARY data written is converted to byte array. Ensure that when reading from Parquet files, this byte array is properly handled and reconstructed as needed.
+Fivetran Partner SDK v2 provides full support for Apache Parquet, an industry-standard columnar file format that offers significant performance and efficiency advantages over row-based formats like CSV.
+
+- The `JAVA` implementation of [Apache Avro](https://avro.apache.org/) schema is used to define the structure of the data in the batch files. When writing data, ensure that the schema is correctly defined and matches the data format to prevent issues during deserialization.
+- Parquet files are written using [AvroParquetWriter](https://github.com/apache/parquet-java/blob/master/parquet-avro/src/main/java/org/apache/parquet/avro/AvroParquetWriter.java).
+- `BINARY` data written is converted to byte array. Ensure that when reading from Parquet files, this byte array is properly handled and reconstructed as needed.
+
+**Key Benefits**
+- Enhanced Performance: Parquet's columnar storage format enables faster data processing and reduced I/O operations, resulting in quicker sync times and lower resource utilization.
+- Reduced Storage Requirements: Parquet's efficient compression algorithms typically reduce storage needs by 75% compared to CSV formats, lowering storage costs.
+- Improved Data Type Handling: The SDK's Parquet implementation preserves data types accurately, including complex types like decimals, timestamps, and JSON.
+- Seamless Integration: You can leverage Parquet without additional configuration - the SDK automatically selects the optimal file format based on destination capabilities.
+
+**Supported Data Types**
+The Parquet implementation supports all standard data types:
+
+- Primitive types (Boolean, Integer, Float, String, etc.)
+- Complex types (Decimal, JSON, XML)
+- Temporal types (Date, Time, DateTime, Timestamp)
+- Binary data
+
+**Usage**
+You don't need to make any code changes to leverage Parquet - the SDK automatically determines whether to use CSV or Parquet format based on the destination's capabilities. When Parquet is selected, all data writing operations will use the optimized columnar format.
+This feature is particularly valuable when dealing with large datasets or analytics-focused workloads where query performance is critical.
 
 ### RPC Calls
 #### CreateTable
