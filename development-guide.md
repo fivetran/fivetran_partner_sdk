@@ -142,29 +142,34 @@ Batch files are compressed using [ZSTD](https://en.wikipedia.org/wiki/Zstd).
 - BINARY data is written to batch files using base64 encoding. You need to decode it to get back the original byte array.
 
 #### PARQUET (Available in V2)
-Fivetran Partner SDK v2 provides full support for Apache Parquet, an industry-standard columnar file format that offers significant performance and efficiency advantages over row-based formats like CSV.
+Fivetran Partner SDK v2 writes batch files in Apache Parquet, a columnar file format that delivers higher compression and better scan performance than row‑oriented formats such as CSV.
 
-- The `JAVA` implementation of [Apache Avro](https://avro.apache.org/) schema is used to define the structure of the data in the batch files. When writing data, ensure that the schema is correctly defined and matches the data format to prevent issues during deserialization.
-- Parquet files are written using [AvroParquetWriter](https://github.com/apache/parquet-java/blob/master/parquet-avro/src/main/java/org/apache/parquet/avro/AvroParquetWriter.java).
-- `BINARY` data written is converted to byte array. Ensure that when reading from Parquet files, this byte array is properly handled and reconstructed as needed.
+##### Implementation details
 
-**Key Benefits**
-- Enhanced Performance: Parquet's columnar storage format enables faster data processing and reduced I/O operations, resulting in quicker sync times and lower resource utilization.
-- Reduced Storage Requirements: Parquet's efficient compression algorithms typically reduce storage needs by 75% compared to CSV formats, lowering storage costs.
-- Improved Data Type Handling: The SDK's Parquet implementation preserves data types accurately, including complex types like decimals, timestamps, and JSON.
-- Seamless Integration: You can leverage Parquet without additional configuration - the SDK automatically selects the optimal file format based on destination capabilities.
+- **Schema definition** – The Partner SDK uses the *Java* implementation of the [Apache Avro](https://avro.apache.org/) schema to describe each record. Make sure the schema matches your data exactly; any mismatch will cause deserialization failures.
+- **Writer** – Parquet files are generated with [`AvroParquetWriter`](https://github.com/apache/parquet-java/blob/master/parquet-avro/src/main/java/org/apache/parquet/avro/AvroParquetWriter.java).
+- **Binary columns** – Binary values are serialized as byte arrays. When you read a Parquet file, convert these byte arrays back to their original types.
 
-**Supported Data Types**
+##### Why Parquet?
+
+- **Performance** – Columnar storage reduces I/O, so syncs finish faster and consume fewer resources.
+- **Compression** – Parquet’s built-in compression typically shrinks files by *up to* 75 percent compared with CSV.
+- **Type fidelity** – Numeric, temporal, and nested types (including decimals, timestamps, and JSON) are preserved without type loss.
+- **Zero configuration** – When the destination supports Parquet, the Partner SDK chooses it automatically, you do not have to change your code.
+
+##### Supported data types
+
 The Parquet implementation supports all standard data types:
 
-- Primitive types (Boolean, Integer, Float, String, etc.)
-- Complex types (Decimal, JSON, XML)
-- Temporal types (Date, Time, DateTime, Timestamp)
-- Binary data
+| Category | Types |
+|----------|-------|
+| Primitive | `boolean`, `int`, `long`, `float`, `double`, `string` |
+| Complex | `decimal`, `json`, `xml` |
+| Temporal | `date`, `time`, `datetime`, `timestamp` |
+| Binary | `binary` |
 
-**Usage**
-You don't need to make any code changes to leverage Parquet - the SDK automatically determines whether to use CSV or Parquet format based on the destination's capabilities. When Parquet is selected, all data writing operations will use the optimized columnar format.
-This feature is particularly valuable when dealing with large datasets or analytics-focused workloads where query performance is critical.
+##### Usage
+You do not need to modify your connector. The SDK decides whether to write CSV or Parquet based on the destination’s capabilities. Parquet is particularly valuable for large datasets and analytics-heavy workloads where query performance is critical.
 
 ### RPC Calls
 #### CreateTable
