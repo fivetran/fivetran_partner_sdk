@@ -251,7 +251,7 @@ To ensure a smooth and repeatable integration, we require your service code to f
 
 To be accepted, your codebase must:
 
-- Contain a clear and runnable `main` entry point (e.g., `main.go`, `main.py`, `main.java`, etc.) that starts a gRPC server.
+- Contain a clear and runnable `main` entry point (e.g., `main.go`, `main.py`, `Main.java`, etc.) that starts a gRPC server.
 - Conform to the agreed-upon gRPC interface. _All_ required gRPC service methods must be implemented.
 - Be structured to support a clean, repeatable build process.
 - Avoid dependencies that require manual input or undocumented setup steps.
@@ -285,6 +285,8 @@ docker run --rm \
   /usr/local/myapp/<binary_name> --port <port>
 ```
 Make sure the binary executes without errors and the gRPC server starts as expected.
+Then, run the tester to verify that all gRPC endpoints work as expected.  
+For details on running the tester, see the [Source Tester](https://github.com/fivetran/fivetran_partner_sdk/blob/main/tools/source-connector-tester/README.md) and [Destination Tester](https://github.com/fivetran/fivetran_partner_sdk/blob/main/tools/destination-connector-tester/README.md) documentation.
 
 ---
 
