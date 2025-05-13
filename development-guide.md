@@ -247,7 +247,7 @@ To ensure a smooth and repeatable integration, we require your service code to f
 
 ---
 
-### Code Requirements
+### Code requirements
 
 To be accepted, your codebase must:
 
