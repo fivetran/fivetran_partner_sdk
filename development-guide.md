@@ -157,16 +157,23 @@ Fivetran Partner SDK v2 writes batch files in Apache Parquet, a columnar file 
 - **Type fidelity** – Numeric, temporal, and nested types (including decimals, timestamps, and JSON) are preserved without type loss.
 - **Zero configuration** – When the destination supports Parquet, the Partner SDK chooses it automatically, you do not have to change your code.
 
-##### Supported data types
+##### Data types mapping
 
-The Parquet implementation supports all standard data types:
+Data mappings from Fivetran to Parquet batch files are as below:
 
-| Category | Types |
-|----------|-------|
-| Primitive | `boolean`, `int`, `long`, `float`, `double`, `string` |
-| Complex | `decimal`, `json`, `xml` |
-| Temporal | `date`, `time`, `datetime`, `timestamp` |
-| Binary | `binary` |
+| Fivetran Type | Parquet Type    |
+|---------------|-----------------|
+| Boolean       | `boolean`       |
+| Short, Int    | `INT32`         |
+| Long          | `INT64`         |
+| Float         | `Float`         |
+| Double        | `Double`        |
+| String        | `String`        |
+| BigDecimal    | `Decimal`       |
+| Instant       | `String`        |
+| LocalDate     | `String`        |
+| Binary        | `Binary`        |
+| LocalDateTime | UNSUPPORTED     |
 
 ##### Usage
 You do not need to modify your connector. The SDK decides whether to write CSV or Parquet based on the destination’s capabilities. Parquet is particularly valuable for large datasets and analytics-heavy workloads where query performance is critical.
