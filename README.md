@@ -28,6 +28,7 @@ You can look at the following public repos to see how other partners have built 
 * [Materialize](https://github.com/MaterializeInc/materialize/tree/main/src/fivetran-destination)
 * [Motherduck](https://github.com/MotherDuck-Open-Source/motherduck-fivetran-connector)
 * [Clickhouse](https://github.com/ClickHouse/clickhouse-fivetran-destination)
+* [Singlestore](https://github.com/singlestore-labs/singlestore-fivetran-destination)
 
 ## Partner Process
 
