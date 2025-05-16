@@ -142,9 +142,41 @@ Batch files are compressed using [ZSTD](https://en.wikipedia.org/wiki/Zstd).
 - BINARY data is written to batch files using base64 encoding. You need to decode it to get back the original byte array.
 
 #### PARQUET (Available in V2)
-- Apache Avro schema is used to define the structure of the data in the batch files. When writing data, ensure that the schema is correctly defined and matches the data format to prevent issues during deserialization.
-- Parquet files are written using `AvroParquetWriter`.
-- BINARY data written is converted to byte array. Ensure that when reading from Parquet files, this byte array is properly handled and reconstructed as needed.
+Fivetran Partner SDK v2 writes batch files in Apache Parquet, a columnar file format that delivers higher compression and better scan performance than row‑oriented formats such as CSV.
+
+##### Implementation details
+
+- **Schema definition** – The Partner SDK uses the *Java* implementation of the [Apache Avro](https://avro.apache.org/) schema to describe each record. Make sure the schema matches your data exactly; any mismatch will cause deserialization failures.
+- **Writer** – Parquet files are generated with [`AvroParquetWriter`](https://github.com/apache/parquet-java/blob/master/parquet-avro/src/main/java/org/apache/parquet/avro/AvroParquetWriter.java).
+- **Binary columns** – Binary values are serialized as byte arrays. When you read a Parquet file, convert these byte arrays back to their original types.
+
+##### Why Parquet?
+
+- **Performance** – Columnar storage reduces I/O, so syncs finish faster and consume fewer resources.
+- **Compression** – Parquet’s built-in compression typically shrinks files by *up to* 75 percent compared with CSV.
+- **Type fidelity** – Numeric, temporal, and nested types (including decimals, timestamps, and JSON) are preserved without type loss.
+- **Zero configuration** – When the destination supports Parquet, the Partner SDK chooses it automatically, you do not have to change your code.
+
+##### Data types mapping
+
+Data mappings from Fivetran to Parquet batch files are as below:
+
+| Fivetran Type | Parquet Type    |
+|---------------|-----------------|
+| Boolean       | `boolean`       |
+| Short, Int    | `INT32`         |
+| Long          | `INT64`         |
+| Float         | `Float`         |
+| Double        | `Double`        |
+| String        | `String`        |
+| BigDecimal    | `Decimal`       |
+| Instant       | `String`        |
+| LocalDate     | `String`        |
+| Binary        | `Binary`        |
+| LocalDateTime | UNSUPPORTED     |
+
+##### Usage
+You do not need to modify your connector. The SDK decides whether to write CSV or Parquet based on the destination’s capabilities. Parquet is particularly valuable for large datasets and analytics-heavy workloads where query performance is critical.
 
 ### RPC Calls
 #### CreateTable
