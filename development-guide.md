@@ -6,7 +6,7 @@ Fivetran SDK uses [gRPC](https://grpc.io/) to talk to partner code. The partner 
 
 ### Versions
 * gRPC: 1.61.1
-* protobuf: 3.25.2
+* protobuf: 4.29.3
 
 ### Language
 
