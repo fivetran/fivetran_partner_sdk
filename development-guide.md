@@ -1,12 +1,17 @@
 # SDK Development Guide
 
+## Getting Started
+
 Fivetran SDK uses [gRPC](https://grpc.io/) to talk to partner code. The partner side of the interface is always the server side. Fivetran implements the client side and initiates the requests.
+
+Start by using one of the examples as a template for your new SDK connector. If we don't have an example in 
+your language, create a new gRPC server project in your language of choice using the protobuf definition files at the root of this repo.
 
 ## General guidelines
 
 ### Versions
 * gRPC: 1.61.1
-* protobuf: 3.25.2
+* protobuf: 4.28.3
 
 ### Language
 
