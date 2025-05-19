@@ -155,7 +155,6 @@ Fivetran Partner SDK v2 writes batch files in Apache Parquet, a columnar file 
 - **Performance** – Columnar storage reduces I/O, so syncs finish faster and consume fewer resources.
 - **Compression** – Parquet’s built-in compression typically shrinks files by *up to* 75 percent compared with CSV.
 - **Type fidelity** – Numeric, temporal, and nested types (including decimals, timestamps, and JSON) are preserved without type loss.
-- **Zero configuration** – When the destination supports Parquet, the Partner SDK chooses it automatically, you do not have to change your code.
 
 ##### Data types mapping
 
@@ -175,8 +174,6 @@ Data mappings from Fivetran to Parquet batch files are as below:
 | Binary        | `Binary`        |
 | LocalDateTime | UNSUPPORTED     |
 
-##### Usage
-You do not need to modify your connector. The SDK decides whether to write CSV or Parquet based on the destination’s capabilities. Parquet is particularly valuable for large datasets and analytics-heavy workloads where query performance is critical.
 
 ### RPC Calls
 #### CreateTable
