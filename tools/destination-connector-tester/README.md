@@ -51,7 +51,9 @@ Destination tester simulates operations from a source by reading input files fro
 * soft_truncate_before
 
 ### Example input file
-Here is an example input file named `input_1.json`:
+Here is an example input file named `input_1.json`. 
+Make sure that the schema migrations are well tested for every chagne you make in destination code. This can be done by making sure the following input file is executed. 
+TODO: Provide more input files. 
 
 ```json
 {
@@ -87,6 +89,24 @@ Here is an example input file named `input_1.json`:
    "describe_table" : [
       "transaction"
    ],
+   "schema_migration" : {
+      "add_column": {
+         "migration_details": {
+            "schema": "public",
+            "table": "transaction",
+            "column": "name2",
+            "column_type" : "STRING"
+         }
+      },
+      "rename_column": {
+         "migration_details": {
+            "schema": "public",
+            "table": "transaction",
+            "from_column": "name2",
+            "to_column" : "name3"
+         }
+      }
+   },
    "ops" : [
       {
          "upsert": {

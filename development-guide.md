@@ -194,6 +194,7 @@ The `DescribeTable` RPC call should report all columns in the destination table,
 #### AlterTable
 - The `AlterTable` RPC call should be used for changing primary key columns, adding columns, and changing data types. 
 - However, this operation should not drop any columns even if the `AlterTable` request has a table with a different set of columns. Dropping columns could lead to unexpected customer data loss and is against Fivetran's general approach to data movement.
+- We should drop only if a flag is set. TODO: Elaborate
 
 #### WriteBatchRequest
 The `WriteBatchRequest` RPC call provides details about the batch files containing the records to be pushed to the destination. We provide the `WriteBatchRequest` parameter that contains all the information required for you to read the batch files. Here are some of the fields included in the request message:
@@ -222,6 +223,10 @@ Also, Fivetran deduplicates operations such that each primary key shows up only 
 The `WriteHistoryBatchRequest` RPC call provides details about the batch files containing the records to be written to the destination for [**History Mode**](https://fivetran.com/docs/using-fivetran/features#historymode). In addition to the parameters of the [`WriteBatchRequest`](#writebatchrequest), this request also contains the `earliest_start_files` parameter used for updating history mode-specific columns for the existing rows in the destination.
 
 > NOTE: To learn how to handle `earliest_start_files`, `replace_files`, `update_files` and `delete_files` in history mode, follow the [How to Handle History Mode Batch Files](how-to-handle-history-mode-batch-files.md) guide.
+
+#### Migrate
+The `Migrate` RPC call is used to perform schema migrations in the destination. Fivetran will make this call if needed. It will always happen at start of sync, ie before regular sync operations. It should contain the logic to perform the necessary schema changes in the customer's warehouse.
+More details here. TODO: Add link 
 
 ### Examples of data types
 Examples of each [DataType](https://github.com/fivetran/fivetran_sdk/blob/main/common.proto#L73C6-L73C14) as they would appear in CSV batch files are as follows:
