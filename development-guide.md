@@ -106,6 +106,14 @@ The [`ConfigurationForm` RPC call](#configurationform) retrieves the tests that 
 - Don't forget to handle new schemas/tables/columns per the information and user choices in `UpdateRequest#selection`.
 - Make sure you checkpoint at least once an hour. In general, the more frequently you do it, the better.
 
+### Checkpointing
+The checkpoint operation is an important concept in Fivetran. It is a marker that identifies that the state can be saved up till this point. Following good checkpointing practices is **very highly recommended**. 
+Fivetran syncs large volumes of data and across multiple tables, so it is important to checkpoint frequently to avoid losing data in case of a failure.
+In absence/scarcity of checkpoint, the same data will need to be fetched over again, which is redundant work. 
+If possible, we can checkpoint in between a table sync, if not possible then at least then checkpoint should be called after each table is synced. This is if the tables are synced synchronously. 
+
+While writing the logic for checkpoint, conditions that cause sync failures should be given good thought. The failure could be in the same table, or in any other table. It must be ensured that the cursor does not get saved ahead in time. 
+
 ### RPC calls
 #### Schema
 The `Schema` RPC call retrieves the user's schemas, tables, and columns. It also includes an optional `selection_not_supported` field that indicates whether the user can select or deselect tables and columns within the Fivetran dashboard.
