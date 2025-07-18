@@ -113,6 +113,11 @@ The `Schema` RPC call retrieves the user's schemas, tables, and columns. It also
 #### Update
 The `Update` RPC call should retrieve data from the source. We send a request using the `UpdateRequest` message, which includes the user's connection state, credentials, and schema information. The response, streaming through the `UpdateResponse` message, can contain data records and other supported operations.
 
+### Truncate record type
+The `truncate` is meant to (soft) delete any rows that may have existed prior to the timestamp when truncate was called. 
+It should be called before upserts only, or else, we would mark the entire table deleted.
+This is helpful in cases of a re-sync (an initial sync triggered again). It marks all rows that existed prior to the re-sync as `deleted` (since we cannot be sure the re-sync will necessarily overwrite them all). It picks out the rows that existed prior to the re-sync starting, in other words, where `_fivetran_synced` < "timestamp when `truncate` is called".
+
 ## Destination connector guidelines
 
 - The destination connector should implement the listed rpc calls to load the data sent by Fivetran.
@@ -324,5 +329,5 @@ For details on running the tester, see the [Source Tester](https://github.com/fi
 ### Is it possible for me to see the connector log output?
 Sort of. We will email you the logs for a failed sync through support but the number of log messages is limited and this is a slow process for debugging in general. What you need to do is add your own logging for your own platform of choice so you are not reliant on us for logs. Plus, that way, you can implement alerts, monitoring, etc.
 
-### Is it normal that, for a sync, there is an upsert event followed by a truncate event?
-Yes, definitely. This is most likely an initial sync where first there is a `truncate` operation and then `upserts`. The `truncate` in this case, is meant to (soft) delete any rows that may have existed prior to the initial sync starting. This is done to make sure all rows that may have existed prior to the initial sync are marked as deleted (since we cannot be sure the initial sync will necessarily overwrite them all). It is the author's responsibility to make sure `truncate` is called before upserts only, or else, we would mark the entire table deleted. It should pick out the rows that existed prior to the sync starting, in other words, where `_fivetran_synced` < "timestamp when truncate is called".
+### Is it normal that, for a connector source, there is a truncate event followed by an upsert event?
+This is most likely an initial sync where the source connector first calls the `truncate` operation and then `upserts`. The `truncate` in this case, is meant to (soft) delete any rows that may have existed prior to the initial sync starting. This is done to make sure all rows that may have existed prior to the initial sync are marked as deleted (since we cannot be sure the initial sync will necessarily overwrite them all). It should pick out the rows that existed prior to the sync starting, in other words, where `_fivetran_synced` < "timestamp when truncate is called in the source connector".
