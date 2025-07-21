@@ -133,7 +133,7 @@ To be accepted, your codebase must:
 
 ### Build instructions
 To help us build the binary consistently, you must provide either of the following in your repository:
-- A build script (e.g., `build.sh` or `Makefile`) that automates the binary creation
+- A build script (e.g., `build.sh` or `Makefile`) that automates the binary creation.
 - A clearly documented, step-by-step guide in a `README.md` or `BUILD.md` file with commands we can run to build the binary.
 
 This should result in:
