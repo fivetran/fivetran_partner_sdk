@@ -107,12 +107,11 @@ The [`ConfigurationForm` RPC call](#configurationform) retrieves the tests that 
 - Make sure you checkpoint at least once an hour. In general, the more frequently you do it, the better.
 
 ### Checkpointing
-The checkpoint operation is an important concept in Fivetran. It is a marker that identifies that the state can be saved up till this point. Following good checkpointing practices is **very highly recommended**. 
-Fivetran syncs large volumes of data and across multiple tables, so it is important to checkpoint frequently to avoid losing data in case of a failure.
-In absence/scarcity of checkpoint, the same data will need to be fetched over again, which is redundant work. 
-If possible, we can checkpoint in between a table sync, if not possible then at least then checkpoint should be called after each table is synced. This is if the tables are synced synchronously. 
-
-While writing the logic for checkpoint, conditions that cause sync failures should be given good thought. The failure could be in the same table, or in any other table. It must be ensured that the cursor does not get saved ahead in time. 
+The `checkpoint` operation is a critical concept in Fivetran. It marks a specific point in the sync process up to which the `state` (a collection of `cursors`) can be safely saved. Following good checkpointing practices is **strongly recommended**, especially given the high volume of data and number of tables involved in a typical Fivetran sync.
+Below are some best practices:
+- Frequent checkpointing is important to avoid data reprocessing in the event of a failure. Without regular checkpoints, the system may need to re-fetch large amounts of already-processed data, resulting in redundant work and increased sync times.
+- Where possible, consider checkpointing even within a table sync. If that’s not feasible, a checkpoint should be made at minimum after each table is synced—this applies when tables are being synced synchronously.
+- When implementing checkpoint logic, it’s crucial to account for sync failures. Ensure that the cursor is not advanced prematurely, as this could result in data loss.
 
 ### RPC calls
 #### Schema
