@@ -116,7 +116,7 @@ The `Update` RPC call should retrieve data from the source. We send a request us
 ### Truncate RecordType
 The `truncate` record type is meant to (soft) delete any rows that may have existed prior to the timestamp when truncate was called. 
 It should be called before upserts only, or else, we would mark the entire table deleted.
-This is helpful in cases of a re-sync (an initial sync triggered again). It marks all rows that existed prior to the re-sync as `deleted` (since we cannot be sure the re-sync will necessarily overwrite them all). It picks out the rows that existed prior to the re-sync starting, in other words, where `_fivetran_synced` < "timestamp when `truncate` is called".
+This is helpful in cases of a re-sync (an initial sync triggered again). It marks all rows that existed prior to the re-sync as `deleted` (since we cannot be sure the re-sync will necessarily overwrite them all). It picks out the rows that existed prior to the re-sync starting, in other words, where `_fivetran_synced` < "timestamp when `truncate` is called". It then marks those rows as soft deleted i.e. making _`fivetran_deleted` = `true`
 
 ## Destination connector guidelines
 
