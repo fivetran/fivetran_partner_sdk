@@ -18,7 +18,7 @@
    docker pull us-docker.pkg.dev/build-286712/public-docker-us/sdktesters-v2/sdk-tester:<version>   
     ```
    
-2. Run a container using the image with the following command. Make sure to map a local directory for storing files that the tool generates by replacing `<local-data-folder>` in the command, and replace <version> with the version of the image you pulled. Use the port number your gRPC server is running on. In most cases, it should be `50051`.
+2. Run a container using the image with the following command. Make sure to map a local directory for storing files that the tool generates by replacing `<local-data-folder>` in the command, and replace <version> with the version of the image you pulled. Use the port number your gRPC server is running on. It should be `50051` if you followed the Fivetran documentation correctly.
 
 ```
 docker run --mount type=bind,source=<local-data-folder>,target=/data -a STDIN -a STDOUT -a STDERR -it -e GRPC_HOSTNAME=host.docker.internal --network=host us-docker.pkg.dev/build-286712/public-docker-us/sdktesters-v2/sdk-tester:<version> --tester-type source --port <port-number>
