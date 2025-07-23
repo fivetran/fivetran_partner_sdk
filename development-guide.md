@@ -127,7 +127,7 @@ The `update` record type should be used when you want to partially update a row 
 The `delete` record type is used to soft delete a record in the destination. If a record with that primary key is not present in the destination, it is simply ignored. 
 
 #### Truncate
-The `truncate` record type is meant to (soft) delete any rows that may have existed prior to the timestamp when truncate was called. 
+The `truncate` record type is meant to (soft) delete any rows that may have existed prior to the timestamp when truncate was called. Soft delete means to update the `_fivetran_deleted` column of a row to `true`. 
 It should be called before upserts only, or else, we would mark all rows of the table as soft deleted.
 This is helpful in cases of a re-sync (an initial sync triggered again). It marks all rows that existed prior to the re-sync as `deleted` (since we cannot be sure the re-sync will necessarily overwrite them all). It picks out the rows that existed prior to the re-sync starting, in other words, where `_fivetran_synced` < "timestamp when `truncate` is called". It then marks those rows as soft deleted i.e. making _`fivetran_deleted` = `true`.
 Truncate is different from the above three record types in the sense that it operates on the entire table, not on a single row.
