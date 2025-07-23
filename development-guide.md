@@ -110,7 +110,7 @@ The [`ConfigurationForm` RPC call](#configurationform) retrieves the tests that 
 The `checkpoint` operation is a critical concept in Fivetran. It marks a specific point in the sync process up to which the `state` (a collection of `cursors`) can be safely saved. Following good checkpointing practices is **strongly recommended**, especially given the high volume of data and number of tables involved in a typical Fivetran sync.
 Below are some best practices:
 - Frequent checkpointing is important to avoid data reprocessing in the event of a failure. Without regular checkpoints, the system may need to re-fetch large amounts of already-processed data, resulting in redundant work and increased sync times.
-- Where possible, consider checkpointing even within a table sync. If that’s not feasible, a checkpoint should be made at minimum after each table is synced—this applies when tables are being synced synchronously.
+- Where possible, consider checkpointing even within a table sync. If that’s not feasible, a checkpoint should be made at minimum after each table is synced — this applies when tables are being synced synchronously.
 - When implementing checkpoint logic, it’s crucial to account for sync failures. Ensure that the cursor is not advanced prematurely, as this could result in data loss.
 
 ### RPC calls
