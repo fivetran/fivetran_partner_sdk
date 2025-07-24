@@ -1,7 +1,7 @@
-# Source Connector guidelines
+# Source Connector Guidelines
 
-- Don't push anything other than source data to the destination. State data is saved to production database and returned in `UpdateRequest`.
-- Don't forget to handle new schemas/tables/columns per the information and user choices in `UpdateRequest#selection`.
+- Don't push anything other than source data to the destination. State data is saved to a production database and returned in `UpdateRequest`.
+- Make sure to handle new schemas/tables/columns per the information and user choices in `UpdateRequest#selection`.
 - Make sure you checkpoint at least once an hour. In general, the more frequently you do it, the better.
 
 ## RPC calls
