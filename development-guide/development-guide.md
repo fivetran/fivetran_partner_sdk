@@ -5,8 +5,8 @@ Fivetran SDK uses [gRPC](https://grpc.io/) to talk to partner code. The partner 
 ## General guidelines
 
 ### Versions
-* gRPC: 1.61.1
-* protobuf: 4.29.3
+- gRPC: 1.61.1
+- protobuf: 4.29.3
 
 ### Language
 
@@ -14,13 +14,13 @@ At the moment, partner code should be developed in a language that can generate 
 
 ### Command line arguments
 The executable needs to do the following:
-* Accept a `--port` argument that takes an integer as a port number to listen to.
-* Listen on both IPV4 (i.e. 0.0.0.0) and IPV6 (i.e ::0), but if only one is possible, it should listen on IPV4.
+- Accept a `--port` argument that takes an integer as a port number to listen to.
+- Listen on both IPV4 (i.e. 0.0.0.0) and IPV6 (i.e ::0), but if only one is possible, it should listen on IPV4.
 
 ### Proto files
 
-* Partners should not add the proto files to their repos. Proto files should be pulled in from this repo at build time and added to `.gitignore` so they are excluded.
-* Always use proto files from latest release and update your code if necessary. Older releases proto files can be considered deprecated and will be expired at later date.
+- Partners should not add the proto files to their repos. Proto files should be pulled in from this repo at build time and added to `.gitignore` so they are excluded.
+- Always use proto files from latest release and update your code if necessary. Older releases proto files can be considered deprecated and will be expired at later date.
 
 ### Logging
 
@@ -54,6 +54,7 @@ The executable needs to do the following:
 
 ### User alerts
 > NOTE: Available in V2 only.
+
 - Partners can throw alerts on the Fivetran dashboard to notify customers about potential issues with their connector.
 - These issues may include bad source data or connection problems with the source itself. Where applicable, the alerts should also provide guidance to customers on how to resolve the problem.
 - We allow throwing [errors](https://fivetran.com/docs/using-fivetran/fivetran-dashboard/alerts#errors) and [warnings](https://fivetran.com/docs/using-fivetran/fivetran-dashboard/alerts#warnings).
@@ -82,7 +83,7 @@ The following are hard requirements to be able to deploy partner code to Fivetra
 - Do not log sensitive data. Ensure only necessary information is kept in logs, and never log any sensitive data. Such data may include credentials (passwords, tokens, keys, etc.), customer data, payment information, or PII.
 - Encrypt HTTP requests. Entities like URLs, URL parameters, and query parameters are always encrypted for logging, and customer approval is needed to decrypt and examine them.
 
-## Setup Form Guidelines
+## Setup form guidelines
 - Keep the form clear and concise, only requesting essential information for successful connector setup.
 - Use clear and descriptive labels for each form field. Avoid technical jargon if possible.
 - Organize the fields in a logical order that reflects the setup process.
@@ -100,11 +101,11 @@ The [`ConfigurationForm` RPC call](#configurationform) retrieves the tests that 
 - Toggle field: A toggle switch for binary options (e.g., on/off or yes/no).
 - Conditional fields (Available in V2): This feature allows you to define fields that are dependent on the value of a specific parent field. The message consists of two nested-messages: `VisibilityCondition` and a list of dependent form fields. The `VisibilityCondition` message specifies the parent field and its condition value. The list of dependent fields defines the fields that are shown when the value of the parent field provided in the setup form matches the specified condition field.
 
-## Source Connector guidelines
-Refer to our source connector development guide [here](source-connector-development-guide.md).
+## Source connector guidelines
+Refer to our [source connector development guide](source-connector-development-guide.md).
 
-## Destination Connector guidelines
-Refer to our destination connector development guide [here](destination-connector-development-guide.md).
+## Destination connector guidelines
+Refer to our [destination connector development guide](destination-connector-development-guide.md).
 
 ## How we use your service
 This section outlines how we integrate partner services into our infrastructure. We build and run your service as a `standalone binary` that implements a gRPC server.
