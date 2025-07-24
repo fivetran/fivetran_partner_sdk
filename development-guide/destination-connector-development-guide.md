@@ -1,4 +1,4 @@
-# Destination connector guidelines
+# Destination Connector Guidelines
 
 The destination connector should implement the listed rpc calls to load the data Fivetran sends.
 
@@ -26,7 +26,7 @@ Fivetran creates batch files using `com.fasterxml.jackson.dataformat.csv.CsvSche
 
 BINARY data is written to batch files using base64 encoding. You need to decode it to get back the original byte array.
 
-### PARQUET (Available in V2)
+### PARQUET (available in V2)
 Fivetran Partner SDK v2 writes batch files in Apache Parquet, a columnar file format that delivers higher compression and better scan performance than row‑oriented formats such as CSV.
 
 #### Implementation details
