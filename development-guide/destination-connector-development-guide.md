@@ -1,20 +1,19 @@
 # Destination connector guidelines
 
-- The destination connector should implement the listed rpc calls to load the data sent by Fivetran.
+The destination connector should implement the listed rpc calls to load the data Fivetran sends.
 
 ## System columns
-- In addition to source columns, Fivetran sends the following additional system columns if and when required:
-    - `_fivetran_synced`: This is a `UTC_DATETIME` column that represents the start of sync. Every table has this system column.
-    - `_fivetran_deleted`: This column is used to indicate whether a given row is deleted at the source or not. If the source soft-deletes a row or a table, this system column is added to the table.
-    - `_fivetran_id`: Fivetran supports primary-keyless source tables by adding this column as a stand-in pseudo primary key column so that all destination tables have a primary key.
-    - `_fivetran_active`, `_fivetran_start`, `_fivetran_end`: These columns are used in history mode. For more information, refer [here](../how-to-handle-history-mode-batch-files.md).
+In addition to source columns, Fivetran sends the following additional system columns if and when required:
+- `_fivetran_synced`: This is a `UTC_DATETIME` column that represents the start of sync. Every table has this system column.
+- `_fivetran_deleted`: This column is used to indicate whether a given row is deleted at the source or not. If the source soft-deletes a row or a table, this system column is added to the table.
+- `_fivetran_id`: Fivetran supports primary-keyless source tables by adding this column as a stand-in pseudo primary key column so that all destination tables have a primary key.
+- `_fivetran_active`, `_fivetran_start`, `_fivetran_end`: These columns are used in history mode. For more information, see our [How to Handle History Mode Batch Files documentation](../how-to-handle-history-mode-batch-files.md).
 
 ## Compression
 Batch files are compressed using [ZSTD](https://en.wikipedia.org/wiki/Zstd).
 
 ## Encryption
-- Each batch file is encrypted separately using [AES-256](https://en.wikipedia.org/wiki/Advanced_Encryption_Standard) in [CBC](https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation) mode and with `PKCS5Padding`.
-- You can find the encryption key for each batch file in the `WriteBatchRequest#keys` field.
+- Each batch file is encrypted separately using [AES-256](https://en.wikipedia.org/wiki/Advanced_Encryption_Standard) in [CBC](https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation) mode and with `PKCS5Padding`. - You can find the encryption key for each batch file in the `WriteBatchRequest#keys` field.
 - First 16 bytes of each batch file hold the IV vector.
 
 ## Batch files
@@ -23,8 +22,9 @@ Batch files are compressed using [ZSTD](https://en.wikipedia.org/wiki/Zstd).
 - We support CSV and PARQUET file format.
 
 ### CSV
-- Fivetran creates batch files using `com.fasterxml.jackson.dataformat.csv.CsvSchema`, which by default doesn't consider backslash '\\' an escape character. If you are reading the batch file then make sure that you do not consider backslash '\\' an escape character.
-- BINARY data is written to batch files using base64 encoding. You need to decode it to get back the original byte array.
+Fivetran creates batch files using `com.fasterxml.jackson.dataformat.csv.CsvSchema`, which by default doesn't consider backslash '\\' an escape character. If you are reading the batch file then make sure that you do not consider backslash '\\' an escape character.
+
+BINARY data is written to batch files using base64 encoding. You need to decode it to get back the original byte array.
 
 ### PARQUET (Available in V2)
 Fivetran Partner SDK v2 writes batch files in Apache Parquet, a columnar file format that delivers higher compression and better scan performance than row‑oriented formats such as CSV.
@@ -84,13 +84,9 @@ The `DescribeTable` RPC call should report all columns in the destination table,
 The `WriteBatchRequest` RPC call provides details about the batch files containing the records to be pushed to the destination. We provide the `WriteBatchRequest` parameter that contains all the information required for you to read the batch files. Here are some of the fields included in the request message:
 
 - `replace_files` is for the `upsert` operation where the rows should be inserted if they don't exist or updated if they do. Each row will always provide values for all columns. Set the `_fivetran_synced` column in the destination with the values coming in from the batch files.
-
 - `update_files` is for the `update` operation where modified columns have actual values whereas unmodified columns have the special value `unmodified_string` in `FileParams`. Soft-deleted rows will arrive in here as well. Update the `_fivetran_synced` column in the destination with the values coming in from the batch files.
-
 - `delete_files` is for the `hard delete` operation. Use primary key columns (or `_fivetran_id` system column for primary-keyless tables) to perform `DELETE FROM`.
-
 - `keys` is a map that provides a list of secret keys, one for each batch file, that can be used to decrypt them.
-
 - `file_params` provides information about the file type and any configurations applied to it, such as encryption or compression.
 
 Also, Fivetran deduplicates operations such that each primary key shows up only once in any of the operations.
