@@ -106,7 +106,7 @@ The [`ConfigurationForm` RPC call](#configurationform) retrieves the tests that 
 - Don't forget to handle new schemas/tables/columns per the information and user choices in `UpdateRequest#selection`.
 - Make sure you checkpoint at least once an hour. In general, the more frequently you do it, the better.
 
-> NOTE: The `NAIVE_TIME` data type is not supported for source connectors as many of Fivetran developed destinations do not support it. Only [Partner destinations](README.md#destinations) support it.
+> NOTE: Source connectors do not support the `NAIVE_TIME` data type because many Fivetran-developed destinations do not support it. Only [partner-built destinations](README.md#destinations) support the `NAIVE_TIME` data type.
 
 ### RPC calls
 #### Schema
