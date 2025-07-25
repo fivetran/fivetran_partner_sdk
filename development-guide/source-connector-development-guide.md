@@ -21,6 +21,28 @@ The `Schema` RPC call retrieves the user's schemas, tables, and columns. It also
 ### Update
 The `Update` RPC call should retrieve data from the source. We send a request using the `UpdateRequest` message, which includes the user's connection state, credentials, and schema information. The response, streaming through the `UpdateResponse` message, can contain data records and other supported operations.
 
+### Record types
+
+#### Upsert
+The `upsert` record type essentially translates to a delete + insert SQL operation, ie, if a row with that primary key is already present in the destination, it will first be deleted then re-inserted. If the row with that primary key does not exist in the destination, it boils down to a simple insert.
+This means that `upsert` always requires all columns to be present in the record even if they are not modified in the source. If a column is absent, the value will be updated to `null` in the destination.
+This is the most frequently used record type.
+
+#### Update
+The `update` record type should be used when you want to partially update a row in the destination, ie, only the columns present in the record will be updated. The rest of the columns will remain unchanged. If a row with that primary key is not present in the destination, it is simply ignored.
+
+#### Delete
+The `delete` record type is used to soft delete a particular record in the destination. If a record with that primary key is not present in the destination, it is simply ignored.
+
+#### Truncate
+The truncate record type is used to soft delete any rows that existed prior to the timestamp when truncate is called. Soft delete means updating the _`fivetran_deleted` column of a row to `true`.
+
+It should be called before upserts only — otherwise, all rows in the table will be incorrectly marked as soft deleted.
+
+`Truncate` is especially useful during a re-sync (an initial sync triggered again). It marks all rows that existed before the re-sync started as soft deleted, since we cannot guarantee the re-sync will overwrite them all (records deleted in the source will not be fetched and hence not overwritten). It identifies these rows by checking where _`fivetran_synced` is less than the timestamp when `truncate` was called, and sets _`fivetran_deleted` = `true` for them.
+
+Unlike other record types mentioned above, `truncate` operates on the entire table rather than on individual rows.
+
 ## Testing
 The following is a list of test scenarios we recommend you consider:
 
