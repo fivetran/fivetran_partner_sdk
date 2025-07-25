@@ -145,5 +145,5 @@ The following is a list of test scenarios we recommend you consider:
 
 ## FAQ
 
-### Is it normal that, for a sync, there is an upsert event followed by a truncate event?
-Yes, definitely. This is most likely an initial sync where there is nothing but upsert operations, all followed by a truncate, which is meant to (soft) delete any rows that may have existed prior to the initial sync starting. This is done to make sure all rows that may have existed prior to the initial sync are marked as deleted (since we cannot be sure the initial sync will necessarily overwrite them all). The "before timestamp" is key to the truncate operation so you don't just mark the entire table deleted. It should pick out the rows that existed prior to the sync starting, in other words, where `_fivetran_synced` < "truncate before timestamp".
+### Is it normal that, a source connector sends a truncate event followed by upsert event(s)?
+Yes, definitely. This is most likely an initial sync where the source connector first calls the `truncate` operation and then `upserts`. The `truncate` in this case, is meant to (soft) delete any rows that may have existed prior to the initial sync starting. This is done to make sure all rows that may have existed prior to the initial sync are marked as deleted (since we cannot be sure the initial sync will necessarily overwrite them all). It should pick out the rows that existed prior to the sync starting, in other words, where `_fivetran_synced` < "timestamp when `truncate` is called in the source connector".
