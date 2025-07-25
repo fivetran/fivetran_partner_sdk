@@ -1,13 +1,13 @@
 # Fivetran Partner SDK
 A way for partners to create source and destination connectors that run on [Fivetran’s platform](https://www.fivetran.com/). Read more in our [product docs](https://fivetran.com/docs/partner-built-program). 
 
-## Repo Structure
+## Repo structure
 This repo consists of example source and destination connectors along with a local testing environment. Both connectors are written in a [gRPC supported language](https://grpc.io/docs/languages/) that can generate a statically linked binary. We recommend Java, Golang, or Rust. 
 * [Examples](examples)
 * [Local Testing Tools](tools/)
 
 ## Development
-You can follow the [SDK Development Guide](development-guide.md) for guidance on how to develop your code. 
+You can follow the [SDK Development Guide](development-guide/development-guide.md) for guidance on how to develop your code. 
 
 > NOTE: If you're a new partner that just started working with the Connector SDK, use [V2 release](https://github.com/fivetran/fivetran_sdk/releases/tag/v2). We will continue to support [V1 release](https://github.com/fivetran/fivetran_sdk/releases/tag/v1) for partners that have used them to build their SDK connectors, and these will be removed once the migration to V2 is complete.
 
@@ -19,7 +19,7 @@ Our READMEs for [source connectors](tools/source-connector-tester/) and [destina
 
 > NOTE: To run an example connector from the `examples` directory, follow the README specific to the example. 
 
-### Other Examples
+### Other examples
 You can look at the following public repos to see how other partners have built their connectors:
 #### Connectors
 * [PlanetScale](https://github.com/planetscale/fivetran-source)
@@ -30,7 +30,7 @@ You can look at the following public repos to see how other partners have built 
 * [Clickhouse](https://github.com/ClickHouse/clickhouse-fivetran-destination)
 * [Singlestore](https://github.com/singlestore-labs/singlestore-fivetran-destination)
 
-## Partner Process
+## Partner process
 
 ### How does it work?
 You build a source or destination connector using our SDK in this repo. We’ll deploy it to our platform, and customers can discover it via the Fivetran website, dashboard, and product documentation. We’ll tag it with a `partner-built` designation and explain the support process to customers. 
