@@ -55,6 +55,9 @@ Here is an example input file named `input_1.json`:
 
 ```json
 {
+   "describe_table" : [
+      "transaction"
+   ],
    "create_table" : {
       "transaction": {
          "columns": {
@@ -84,9 +87,6 @@ Here is an example input file named `input_1.json`:
          "history_mode": true
       }
    },
-   "describe_table" : [
-      "transaction"
-   ],
    "ops" : [
       {
          "upsert": {
