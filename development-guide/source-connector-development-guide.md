@@ -24,17 +24,21 @@ The `Update` RPC call should retrieve data from the source. We send a request us
 ### Record types as defined by operation
 
 #### Upsert
+Scope: Row
 The `upsert` record type essentially translates to a delete + insert SQL operation, i.e., if a row with that primary key is already present in the destination, it will first be deleted then re-inserted. If the row with that primary key does not exist in the destination, it boils down to a simple insert.
 This means that `upsert` always requires all columns to be present in the record even if they are not modified in the source. If a column is absent, the value will be updated to `null` in the destination.
 This is the most frequently used record type.
 
 #### Update
+Scope: Row
 The `update` record type should be used when you want to partially update a row in the destination, i.e., only the columns present in the record will be updated. The rest of the columns will remain unchanged. If a row with that primary key is not present in the destination, it is simply ignored.
 
 #### Delete
+Scope: Row
 The `delete` record type is used to soft delete a particular record in the destination. If a record with that primary key is not present in the destination, it is simply ignored.
 
 #### Truncate
+Scope: Table
 The truncate record type is used to soft delete any rows that existed prior to the timestamp when truncate is called. Soft delete means updating the _`fivetran_deleted` column of a row to `true`.
 
 It should be called before upserts only — otherwise, all rows in the table will be incorrectly marked as soft deleted.
