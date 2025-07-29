@@ -21,7 +21,7 @@ The `Schema` RPC call retrieves the user's schemas, tables, and columns. It also
 ### Update
 The `Update` RPC call should retrieve data from the source. We send a request using the `UpdateRequest` message, which includes the user's connection state, credentials, and schema information. The response, streaming through the `UpdateResponse` message, can contain data records and other supported operations.
 
-### Record types
+### Record types as defined by operation
 
 #### Upsert
 The `upsert` record type essentially translates to a delete + insert SQL operation, i.e., if a row with that primary key is already present in the destination, it will first be deleted then re-inserted. If the row with that primary key does not exist in the destination, it boils down to a simple insert.
