@@ -39,7 +39,7 @@ The truncate record type is used to soft delete any rows that existed prior to t
 
 It should be called before upserts only — otherwise, all rows in the table will be incorrectly marked as soft deleted.
 
-`Truncate` is especially useful during a re-sync (an initial sync triggered again). It marks all rows that existed before the re-sync started as soft deleted, since we cannot guarantee the re-sync will overwrite them all (records deleted in the source will not be fetched and hence not overwritten). It identifies these rows by checking where _`fivetran_synced` is less than the timestamp when `truncate` was called, and sets _`fivetran_deleted` = `true` for them.
+`Truncate` is particularly useful during a re-sync (i.e., when an initial sync is triggered again). Because re-syncs do not fetch records that have been deleted in the source, we can't guarantee that all existing rows will be overwritten. To prevent stale data from persisting, `truncate` soft deletes all rows that existed before the re-sync began. It does this by identifying rows where `_fivetran_synced` is earlier than the timestamp when `truncate` was called, and setting `_fivetran_deleted = true for them`.
 
 Unlike other record types mentioned above, `truncate` operates on the entire table rather than on individual rows.
 
