@@ -15,6 +15,8 @@ WARNING = "WARNING"
 SEVERE = "SEVERE"
 
 class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
+    table_map = {}
+
     def ConfigurationForm(self, request, context):
         log_message(INFO, "Fetching Configuration form")
 
@@ -191,12 +193,14 @@ class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
 
     def CreateTable(self, request, context):
         print("[CreateTable] :" + str(request.schema_name) + " | " + str(request.table.name) + " | " + str(request.table.columns))
+        DestinationImpl.table_map[request.table.name] = request.table
         return destination_sdk_pb2.CreateTableResponse(success=True)
 
     def AlterTable(self, request, context):
         res: destination_sdk_pb2.AlterTableResponse
 
         print("[AlterTable]: " + str(request.schema_name) + " | " + str(request.table.name) + " | " + str(request.table.columns))
+        DestinationImpl.table_map[request.table.name] = request.table
         return destination_sdk_pb2.AlterTableResponse(success=True)
 
     def Truncate(self, request, context):
@@ -280,11 +284,11 @@ class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
         return res
 
     def DescribeTable(self, request, context):
-        column1 = common_pb2.Column(name="a1", type=common_pb2.DataType.UNSPECIFIED, primary_key=True)
-        column2 = common_pb2.Column(name="a2", type=common_pb2.DataType.DOUBLE)
-        table: common_pb2.Table = common_pb2.Table(name=request.table_name, columns=[column1, column2])
         log_message(SEVERE, "Sample severe message: Completed fetching table info")
-        return destination_sdk_pb2.DescribeTableResponse(not_found=False, table=table)
+        if request.table_name not in DestinationImpl.table_map:
+            return destination_sdk_pb2.DescribeTableResponse(not_found=True)
+        else:
+            return destination_sdk_pb2.DescribeTableResponse(not_found=False, table=DestinationImpl.table_map[request.table_name])
 
 def log_message(level, message):
     print(f'{{"level":"{level}", "message": "{message}", "message-origin": "sdk_destination"}}')
