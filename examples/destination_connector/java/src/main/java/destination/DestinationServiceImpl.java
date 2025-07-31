@@ -6,12 +6,14 @@ import fivetran_sdk.v2.*;
 import io.grpc.stub.StreamObserver;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.*;
 
 public class DestinationServiceImpl extends DestinationConnectorGrpc.DestinationConnectorImplBase {
 
     private static final Logger logger = getLogger();
+    private static final Map<String, Table> tableMap = new HashMap<>();
 
     // Get the configured logger
     private static Logger getLogger() {
@@ -200,7 +202,7 @@ public class DestinationServiceImpl extends DestinationConnectorGrpc.Destination
                 .setConditionalFields(
                         ConditionalFields.newBuilder()
                                 .setCondition(visibilityConditionForDatabase)
-                                .addAllFields(Arrays.asList(host, port, user, password, database,  table))
+                                .addAllFields(Arrays.asList(host, port, user, password, database, table))
                                 .build())
                 .build();
 
@@ -235,16 +237,12 @@ public class DestinationServiceImpl extends DestinationConnectorGrpc.Destination
     @Override
     public void describeTable(DescribeTableRequest request, StreamObserver<DescribeTableResponse> responseObserver) {
         Map<String, String> configuration = request.getConfigurationMap();
-
-        DescribeTableResponse response = DescribeTableResponse.newBuilder()
-                .setTable(
-                        Table.newBuilder()
-                                .setName(request.getTableName())
-                                .addAllColumns(
-                                Arrays.asList(
-                                        Column.newBuilder().setName("a1").setType(DataType.UNSPECIFIED).setPrimaryKey(true).build(),
-                                        Column.newBuilder().setName("a2").setType(DataType.DOUBLE).build())
-                        ).build()).build();
+        DescribeTableResponse response;
+        if (!tableMap.containsKey(request.getTableName())) {
+            response = DescribeTableResponse.newBuilder().setNotFound(true).build();
+        } else {
+            response = DescribeTableResponse.newBuilder().setTable(tableMap.get(request.getTableName())).build();
+        }
 
         responseObserver.onNext(response);
         logger.severe("Sample Severe log: Completed describe Table method");
@@ -258,6 +256,7 @@ public class DestinationServiceImpl extends DestinationConnectorGrpc.Destination
         String message = "[CreateTable]: "
                 + request.getSchemaName() + " | " + request.getTable().getName() + " | " + request.getTable().getColumnsList();
         logger.info(message);
+        tableMap.put(request.getTable().getName(), request.getTable());
         responseObserver.onNext(CreateTableResponse.newBuilder().setSuccess(true).build());
         responseObserver.onCompleted();
     }
@@ -269,6 +268,7 @@ public class DestinationServiceImpl extends DestinationConnectorGrpc.Destination
         String message = "[AlterTable]: " +
                 request.getSchemaName() + " | " + request.getTable().getName() + " | " + request.getTable().getColumnsList();
         logger.info(message);
+        tableMap.put(request.getTable().getName(), request.getTable());
         responseObserver.onNext(AlterTableResponse.newBuilder().setSuccess(true).build());
         responseObserver.onCompleted();
     }
