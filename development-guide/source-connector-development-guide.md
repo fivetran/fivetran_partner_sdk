@@ -26,7 +26,9 @@ The `Update` RPC call should retrieve data from the source. We send a request us
 #### Upsert
 Scope: Row
 The `upsert` record type essentially translates to a delete + insert SQL operation, i.e., if a row with that primary key is already present in the destination, it will first be deleted then re-inserted. If the row with that primary key does not exist in the destination, it boils down to a simple insert.
-This means that `upsert` always requires all columns to be present in the record even if they are not modified in the source. If a column is absent, the value will be updated to `null` in the destination.
+This means that `upsert` always requires all columns to be present in the record even if they are not modified in the source.
+
+> IMPORTANT: If a column would be absent, the relevant column value would be updated to `null` in the destination, which should not happen.
 This is the most frequently used record type.
 
 #### Update
