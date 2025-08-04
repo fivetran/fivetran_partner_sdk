@@ -116,11 +116,6 @@ Here is an example input file named `input_1.json`:
          }
       },
       {
-         "soft_truncate_before": [
-            "transaction"
-         ]
-      },
-      {
          "upsert": {
             "transaction": [
                {"id":10, "amount": 200, "desc": "three", "op_time":"2005-05-26T20:57:00Z"},
