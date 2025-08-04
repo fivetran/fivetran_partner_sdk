@@ -6,7 +6,7 @@
 
 > NOTE: Source connectors do not support the `NAIVE_TIME` data type because many Fivetran-developed destinations do not support it. Only [partner-built destinations](README.md#destinations) support the `NAIVE_TIME` data type.
 
-### Checkpointing
+## Checkpointing
 The `checkpoint` operation is a critical concept in Fivetran. It marks a specific point in the sync process up to which the `state` (a collection of `cursors`) can be safely saved. Following good checkpointing practices is _strongly recommended_, especially given the high volume of data and number of tables involved in a typical Fivetran sync.
 
 Below are some best practices:
@@ -21,26 +21,26 @@ The `Schema` RPC call retrieves the user's schemas, tables, and columns. It also
 ### Update
 The `Update` RPC call should retrieve data from the source. We send a request using the `UpdateRequest` message, which includes the user's connection state, credentials, and schema information. The response, streaming through the `UpdateResponse` message, can contain data records and other supported operations.
 
-### Record types as defined by operation
+## Record types as defined by operation
 
-#### Upsert
-Scope: Row
+### Upsert
+Scope: Row<br>
 The `upsert` record type essentially translates to a delete + insert SQL operation, i.e., if a row with that primary key is already present in the destination, it will first be deleted then re-inserted. If the row with that primary key does not exist in the destination, it boils down to a simple insert.
 This means that `upsert` always requires all columns to be present in the record even if they are not modified in the source.
 
 > IMPORTANT: If a column would be absent, the relevant column value would be updated to `null` in the destination, which should not happen.
 This is the most frequently used record type.
 
-#### Update
-Scope: Row
+### Update
+Scope: Row<br>
 The `update` record type should be used when you want to partially update a row in the destination, i.e., only the columns present in the record will be updated. The rest of the columns will remain unchanged. If a row with that primary key is not present in the destination, it is simply ignored.
 
-#### Delete
-Scope: Row
+### Delete
+Scope: Row<br>
 The `delete` record type is used to soft delete a particular record in the destination. If a record with that primary key is not present in the destination, it is simply ignored.
 
-#### Truncate
-Scope: Table
+### Truncate
+Scope: Table<br>
 The truncate record type is used to soft delete any rows that existed prior to the timestamp when truncate is called. Soft delete means updating the _`fivetran_deleted` column of a row to `true`.
 
 It should be called before upserts only — otherwise, all rows in the table will be incorrectly marked as soft deleted.
