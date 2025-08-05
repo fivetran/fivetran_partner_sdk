@@ -89,24 +89,6 @@ TODO: Provide more input files.
    "describe_table" : [
       "transaction"
    ],
-   "schema_migration" : {
-      "add_column": {
-         "migration_details": {
-            "schema": "public",
-            "table": "transaction",
-            "column": "name2",
-            "column_type" : "STRING"
-         }
-      },
-      "rename_column": {
-         "migration_details": {
-            "schema": "public",
-            "table": "transaction",
-            "from_column": "name2",
-            "to_column" : "name3"
-         }
-      }
-   },
    "ops" : [
       {
          "upsert": {
