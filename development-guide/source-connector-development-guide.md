@@ -16,7 +16,7 @@ Below are some best practices:
 
 ## RPC calls
 ### Schema
-The `Schema` RPC call retrieves the user's schemas, tables, and columns. It also includes an optional `selection_not_supported` field, which indicates whether the user can select or deselect tables and columns within the Fivetran dashboard. If `selection_not_supported` is false, the connector supports exclusion, meaning the customer can choose which tables or columns should be synced. If it’s true, all tables and columns will always be synced, and the customer cannot exclude specific ones.
+The `Schema` RPC call retrieves the user's schemas, tables, and columns. It also includes an optional `selection_not_supported` field, which indicates whether the user can select or deselect tables and columns within the Fivetran dashboard. If `selection_not_supported` is false, the connector supports exclusion, meaning the customer can choose which tables or columns should be synced. If it’s true, all tables and columns will always be synced, and the customer cannot exclude specific ones. We recommend setting to False so that customers can choose which tables or columns should be synced as this is Fivetran's standard approach.
 
 ### Update
 The `Update` RPC call should retrieve data from the source. We send a request using the `UpdateRequest` message, which includes the user's connection state, credentials, and schema information. The response, streaming through the `UpdateResponse` message, can contain data records and other supported operations.
