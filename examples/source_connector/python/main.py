@@ -12,6 +12,8 @@ from sdk_pb2 import connector_sdk_pb2
 INFO = "INFO"
 WARNING = "WARNING"
 SEVERE = "SEVERE"
+MAX_BATCH_RECORDS = 100
+MAX_BATCH_SIZE_IN_BYTES = 100 * 1024  # 100 KiB
 
 class ConnectorService(connector_sdk_pb2_grpc.SourceConnectorServicer):
     def ConfigurationForm(self, request, context):
@@ -186,83 +188,148 @@ class ConnectorService(connector_sdk_pb2_grpc.SourceConnectorServicer):
 
         return connector_sdk_pb2.SchemaResponse(without_schema=table_list)
 
-    def Update(self, request, context):
+    def _make_string_value(self, value: str) -> common_pb2.ValueType:
+        v = common_pb2.ValueType()
+        v.string = value
+        return v
 
-        log_message(WARNING, "Sync Start")
+    def _make_double_value(self, value: float) -> common_pb2.ValueType:
+        v = common_pb2.ValueType()
+        v.double = value
+        return v
+
+    def _build_record(self, table: str, record_type: int, data: dict) -> connector_sdk_pb2.Record:
+        rec = connector_sdk_pb2.Record()
+        rec.type = record_type
+        rec.table_name = table
+        for col, val in data.items():
+            rec.data[col].CopyFrom(val)
+        return rec
+
+    def _records_byte_size(self, records_list):
+        """Compute serialized size (bytes) of a Records batch via protobuf ByteSize()."""
+        return connector_sdk_pb2.Records(records=records_list).ByteSize()
+
+    def _flush_batch_if_not_empty(self, batch):
+        """Yield a batched UpdateResponse if the batch is not empty, then clear it."""
+        if batch:
+            yield connector_sdk_pb2.UpdateResponse(
+                records=connector_sdk_pb2.Records(records=batch)
+            )
+            batch.clear()
+
+    def _initialize_state(self, request) -> dict:
         state_json = "{}"
         if request.HasField('state_json'):
             state_json = request.state_json
-
-        state = json.loads(state_json)
+        state = json.loads(state_json or "{}")
         if state.get("cursor") is None:
             state["cursor"] = 0
+        return state
 
-        # -- Send UPSERT records
+    def _emit_batched_records(self, state: dict):
+        """
+        Batch records while enforcing BOTH:
+          - <= MAX_BATCH_RECORDS per batch
+          - <= MAX_BATCH_SIZE_IN_BYTES serialized size per batch
+        """
+        batch = []
+
+        def can_append_without_exceeding_caps(candidate: connector_sdk_pb2.Record) -> bool:
+            # Count cap
+            if len(batch) + 1 > MAX_BATCH_RECORDS:
+                return False
+            # Byte-size cap (exact via proto ByteSize)
+            return self._records_byte_size(batch + [candidate]) <= MAX_BATCH_SIZE_IN_BYTES
+
+        def append_or_flush_then_append(candidate: connector_sdk_pb2.Record):
+            """Append candidate or flush first; if still too big alone, emit individually."""
+            nonlocal batch
+            if can_append_without_exceeding_caps(candidate):
+                batch.append(candidate)
+                return
+
+            # Flush current batch first
+            yield from self._flush_batch_if_not_empty(batch)
+
+            # If candidate still exceeds size cap by itself, send individually
+            if self._records_byte_size([candidate]) > MAX_BATCH_SIZE_IN_BYTES:
+                log_message(WARNING, "Single record exceeds 100KiB, emitting individually")
+                yield connector_sdk_pb2.UpdateResponse(record=candidate)
+            else:
+                batch.append(candidate)
+
+        # Demo data: UPSERTs for table1
         for t in range(0, 3):
-            val1 = common_pb2.ValueType()
-            val1.string = "a-" + str(t)
-
-            val2 = common_pb2.ValueType()
-            val2.double = t * 0.234
-
-            record = connector_sdk_pb2.Record()
-            record.type = common_pb2.RecordType.UPSERT
-            record.table_name = "table1"
-            record.data["a1"].CopyFrom(val1)
-            record.data["a2"].CopyFrom(val2)
+            rec = self._build_record(
+                table="table1",
+                record_type=common_pb2.RecordType.UPSERT,
+                data={
+                    "a1": self._make_string_value(f"a-{t}"),
+                    "a2": self._make_double_value(t * 0.234),
+                },
+            )
             state["cursor"] += 1
+            yield from append_or_flush_then_append(rec)
 
-            yield connector_sdk_pb2.UpdateResponse(record=record)
-
-        # -- Send UPSERT record for table2
-        val1 = common_pb2.ValueType()
-        val1.string = "b1"
-        val2 = common_pb2.ValueType()
-        val2.string = "ben"
-        record = connector_sdk_pb2.Record()
-        record.type = common_pb2.RecordType.UPSERT
-        record.table_name = "table2"
-        record.data["b1"].CopyFrom(val1)
-        record.data["b2"].CopyFrom(val2)
+        # Demo data: UPSERT for table2
+        rec = self._build_record(
+            table="table2",
+            record_type=common_pb2.RecordType.UPSERT,
+            data={
+                "b1": self._make_string_value("b1"),
+                "b2": self._make_string_value("ben"),
+            },
+        )
         state["cursor"] += 1
+        yield from append_or_flush_then_append(rec)
 
-        yield connector_sdk_pb2.UpdateResponse(record=record)
+        # Final flush of leftovers
+        yield from self._flush_batch_if_not_empty(batch)
 
-        # -- Send UPDATE record
-        val1 = common_pb2.ValueType()
-        val1.string = "a-0"
-
-        val2 = common_pb2.ValueType()
-        val2.double = 110.234
-
-        record = connector_sdk_pb2.Record()
-        record.type = common_pb2.RecordType.UPDATE
-        record.table_name = "table1"
-        record.data["a1"].CopyFrom(val1)
-        record.data["a2"].CopyFrom(val2)
-
-        yield connector_sdk_pb2.UpdateResponse(record=record)
+    def _emit_individual_records(self, state: dict):
+        # UPDATE
+        update_record = self._build_record(
+            table="table1",
+            record_type=common_pb2.RecordType.UPDATE,
+            data={
+                "a1": self._make_string_value("a-0"),
+                "a2": self._make_double_value(110.234),
+            },
+        )
+        yield connector_sdk_pb2.UpdateResponse(record=update_record)
         state["cursor"] += 1
+        log_message(WARNING, "Emitted individual UPDATE record")
 
-        log_message(WARNING, "Completed sending update records")
-
-        # -- Send DELETE record
-        val1 = common_pb2.ValueType()
-        val1.string = "a-2"
-
-        record = connector_sdk_pb2.Record()
-        record.type = common_pb2.RecordType.DELETE
-        record.table_name = "table1"
-        record.data["a1"].CopyFrom(val1)
-
-        yield connector_sdk_pb2.UpdateResponse(record=record)
+        # DELETE
+        delete_record = self._build_record(
+            table="table1",
+            record_type=common_pb2.RecordType.DELETE,
+            data={"a1": self._make_string_value("a-2")},
+        )
+        yield connector_sdk_pb2.UpdateResponse(record=delete_record)
         state["cursor"] += 1
+        log_message(WARNING, "Emitted individual DELETE record")
 
+    def _emit_checkpoint(self, state: dict):
         checkpoint = connector_sdk_pb2.Checkpoint()
         checkpoint.state_json = json.dumps(state)
         yield connector_sdk_pb2.UpdateResponse(checkpoint=checkpoint)
 
-        log_message(SEVERE, "Sending severe log: Completed Update method")
+    def Update(self, request, context):
+        """
+        Main update handler that combines batched and individual record emissions.
+        """
+        log_message(WARNING, "Sync Start")
+        state = self._initialize_state(request)
+
+        yield from self._emit_batched_records(state)
+
+        yield from self._emit_individual_records(state)
+
+        yield from self._emit_checkpoint(state)
+
+        log_message(SEVERE, "Completed Update with batched + individual records")
 
 
 def log_message(level, message):

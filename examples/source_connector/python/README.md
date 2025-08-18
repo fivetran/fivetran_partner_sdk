@@ -4,7 +4,7 @@
 - Python 3.9 or later
 
 ## Steps
-- Run the build.sh file to copy protos, install python dependencies in virtual environment
+- Run the build.sh file to copy protos, install Python dependencies in virtual environment
 ```commandline
 sh build.sh
 ```
@@ -13,3 +13,5 @@ sh build.sh
 ```commandline
 sh run.sh
 ```
+
+- Now you can follow how to test your server using our testers, refer [How to Use Source Testers](/tools/source-connector-tester/README.md).
