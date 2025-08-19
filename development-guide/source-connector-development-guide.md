@@ -51,6 +51,25 @@ It should be called before upserts only — otherwise, all rows in the table wil
 
 `Truncate` is the first operation performed during both initial syncs and re-syncs. Unlike `upsert`, `update`, and `delete`, which apply to individual rows, truncate operates on the entire table.
 
+### Batching of records
+
+To improve sync efficiency and reduce gRPC overhead, source connectors can return multiple records in a single `UpdateResponse` using the `records` field. This allows records to be grouped into batches instead of sending each one individually.
+
+#### Limits
+- A batch must not contain more than **100 records**.
+
+These limits are enforced by Fivetran’s SDK and must be respected by all connectors.
+
+#### Best practices
+- Prefer batching whenever possible, especially when emitting large volumes of upserts.
+- Flush the batch frequently to stay within the hard limits and avoid memory buildup.
+- Checkpoint regularly in between batches to minimize reprocessing in case of sync interruptions.
+- For wide or very large rows, monitor serialized size before adding them to a batch. If adding a record would exceed the limit, flush the current batch first.
+
+#### Example
+You can refer to our [Python example](/examples/source_connector/python/), to see how batching can be implemented.
+
+
 ## Testing
 The following is a list of test scenarios we recommend you consider:
 

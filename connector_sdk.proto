@@ -71,6 +71,7 @@ message UpdateResponse {
         Checkpoint checkpoint = 3;
         Warning warning = 4;
         Task task = 5;
+        Records records = 6;
     }
 }
 
@@ -79,6 +80,10 @@ message SchemaChange {
         SchemaList with_schema = 1;
         TableList without_schema = 2;
     }
+}
+
+message Records {
+    repeated Record records = 1;
 }
 
 message Record {
