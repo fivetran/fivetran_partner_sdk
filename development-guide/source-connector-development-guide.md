@@ -60,7 +60,7 @@ To improve sync efficiency and reduce gRPC overhead, source connectors can retur
 
 These limits are enforced by Fivetran’s SDK and must be respected by all connectors.
 
-#### Best Practices
+#### Best practices
 - Prefer batching whenever possible, especially when emitting large volumes of upserts.
 - Flush the batch frequently to stay within the hard limits and avoid memory buildup.
 - Checkpoint regularly in between batches to minimize reprocessing in case of sync interruptions.
