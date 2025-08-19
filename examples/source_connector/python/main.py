@@ -12,7 +12,7 @@ from sdk_pb2 import connector_sdk_pb2
 INFO = "INFO"
 WARNING = "WARNING"
 SEVERE = "SEVERE"
-MAX_BATCH_RECORDS = 100
+MAX_BATCH_RECORDS = 100 # The maximum number of records in a batch allowed by Fivetran
 MAX_BATCH_SIZE_IN_BYTES = 100 * 1024  # 100 KiB
 
 class ConnectorService(connector_sdk_pb2_grpc.SourceConnectorServicer):
