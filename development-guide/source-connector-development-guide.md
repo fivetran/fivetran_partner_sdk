@@ -51,7 +51,7 @@ It should be called before upserts only — otherwise, all rows in the table wil
 
 `Truncate` is the first operation performed during both initial syncs and re-syncs. Unlike `upsert`, `update`, and `delete`, which apply to individual rows, truncate operates on the entire table.
 
-### Batching of Records
+### Batching of records
 
 To improve sync efficiency and reduce gRPC overhead, source connectors can return multiple records in a single `UpdateResponse` using the `records` field. This allows records to be grouped into batches instead of sending each one individually.
 
