@@ -32,7 +32,7 @@ For this file, the following operations must be implemented in the exact order a
   ```sql
   UPDATE <schema.table> SET _fivetran_active = FALSE, _fivetran_end = _fivetran_start - 1 msec WHERE _fivetran_active = TRUE AND pk1 = <val> {AND  pk2 = <val>.....}`
   ```
-Suppose the existing table in destination is as follows:
+Suppose the existing table in the destination is as follows:
 
 ID(PK) | COL1 | COL2 | _fivetran_start | _fivetran_end | _fivetran_active 
 --- |------|------|-----------------|---------------| --- 
@@ -42,25 +42,15 @@ ID(PK) | COL1 | COL2 | _fivetran_start | _fivetran_end | _fivetran_active
 4 | lmn  | 5    | T104            | TMAX          | TRUE
 1 | pqr  | 2    | T200            | TMAX          | TRUE
 
-> Note: The `_fivetran_start` is in increasing order T200 > T104 > T103 > T102 > T100.
+> Note: The `_fivetran_start` is in an increasing order `T200` > `T104` > `T103` > `T102` > `T100`.
 
-At the source, the record with ID = 1 is updated:
+At the source, the records with IDs = [1,2,3] are updated as follows:
 
-ID(PK) | COL1 | Timestamp
---- |------| ---
-1 | efg  | T150
-
-and the record with ID = 2 is updated:
-
-ID(PK) | COL1 | Timestamp
---- |------| ---
-2 | hij  | T105
-
-and the record with ID = 3 is updated:
-
-ID(PK) | COL1 | Timestamp
---- |------| ---
-3 | pqr  | T105
+ID(PK) | COL1 | COL2 | Timestamp
+--- |------|---| ---
+1 | efg  | 6 | T150
+2 | hij  | 7 | T105
+3 | pqr  | 8 | T105
 
 The earliest start batch file will be as follows:
 
@@ -72,17 +62,27 @@ ID(PK) | _fivetran_start
 
 Step1:- Delete operation queries to remove any overlapping records where existing `_fivetran_start` is greater than the earliest `_fivetran_start` timestamp value in the `earliest_start_files` file:
 ```sql
-DELETE FROM <schema.table> WHERE ID = 1 AND _fivetran_start >= T150;
-DELETE FROM <schema.table> WHERE ID = 2 AND _fivetran_start >= T105;
-DELETE FROM <schema.table> WHERE ID = 3 AND _fivetran_start >= T105;
+DELETE FROM <schema.table>
+WHERE 
+    (ID = 1 AND _fivetran_start >= T150)
+    OR (ID = 2 AND _fivetran_start >= T105)
+    OR (ID = 3 AND _fivetran_start >= T105);
 ```
 
 Step2:- Update operation queries to update the values of the history mode-specific system columns `fivetran_active` and `fivetran_end` in the destination.
 
 ```sql
-UPDATE <schema.table> SET _fivetran_active = FALSE, _fivetran_end = T150 - 1 WHERE ID = 1 AND _fivetran_active = TRUE;
-UPDATE <schema.table> SET _fivetran_active = FALSE, _fivetran_end = T105 - 1 WHERE ID = 2 AND _fivetran_active = TRUE;
-UPDATE <schema.table> SET _fivetran_active = FALSE, _fivetran_end = T105 - 1 WHERE ID = 3 AND _fivetran_active = TRUE;
+UPDATE <schema.table>
+SET 
+    _fivetran_active = FALSE,
+    _fivetran_end = CASE 
+                        WHEN ID = 1 THEN T150 - 1
+                        WHEN ID = 2 THEN T105 - 1
+                        WHEN ID = 3 THEN T105 - 1
+                    END
+WHERE 
+    ID IN (1, 2, 3)
+    AND _fivetran_active = TRUE;
 ```
 
 The final destination table will be as follows:
