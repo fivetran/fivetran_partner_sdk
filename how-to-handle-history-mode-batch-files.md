@@ -32,6 +32,9 @@ For this file, the following operations must be implemented in the exact order a
   ```sql
   UPDATE <schema.table> SET _fivetran_active = FALSE, _fivetran_end = _fivetran_start - 1 msec WHERE _fivetran_active = TRUE AND pk1 = <val> {AND  pk2 = <val>.....}`
   ```
+
+##### Example 
+
 Suppose the existing table in the destination is as follows:
 
 ID(PK) | COL1 | COL2 | _fivetran_start | _fivetran_end | _fivetran_active 
@@ -44,7 +47,7 @@ ID(PK) | COL1 | COL2 | _fivetran_start | _fivetran_end | _fivetran_active
 
 > Note: The `_fivetran_start` is in an increasing order `T200` > `T104` > `T103` > `T102` > `T100`.
 
-At the source, the records with IDs = [1,2,3] are updated as follows:
+At the source, the records with IDs = `[1,2,3]` are updated as follows:
 
 ID(PK) | COL1 | COL2 | Timestamp
 --- |------|---| ---
@@ -60,30 +63,28 @@ ID(PK) | _fivetran_start
 2  | T105
 3  | T105
 
-Step1:- Delete operation queries to remove any overlapping records where existing `_fivetran_start` is greater than the earliest `_fivetran_start` timestamp value in the `earliest_start_files` file:
-```sql
-DELETE FROM <schema.table>
-WHERE 
-    (ID = 1 AND _fivetran_start >= T150)
-    OR (ID = 2 AND _fivetran_start >= T105)
-    OR (ID = 3 AND _fivetran_start >= T105);
-```
-
-Step2:- Update operation queries to update the values of the history mode-specific system columns `fivetran_active` and `fivetran_end` in the destination.
-
-```sql
-UPDATE <schema.table>
-SET 
-    _fivetran_active = FALSE,
-    _fivetran_end = CASE 
-                        WHEN ID = 1 THEN T150 - 1
-                        WHEN ID = 2 THEN T105 - 1
-                        WHEN ID = 3 THEN T105 - 1
-                    END
-WHERE 
-    ID IN (1, 2, 3)
-    AND _fivetran_active = TRUE;
-```
+1. Delete operation queries to remove any overlapping records where existing `_fivetran_start` is greater than the earliest `_fivetran_start` timestamp value in the `earliest_start_files` file:
+  ```sql
+  DELETE FROM <schema.table>
+  WHERE 
+      (ID = 1 AND _fivetran_start >= T150)
+      OR (ID = 2 AND _fivetran_start >= T105)
+      OR (ID = 3 AND _fivetran_start >= T105);
+  ```
+2. Update operation queries to update the values of the history mode-specific system columns `fivetran_active` and `fivetran_end` in the destination.
+  ```sql
+  UPDATE <schema.table>
+  SET 
+      _fivetran_active = FALSE,
+      _fivetran_end = CASE 
+                          WHEN ID = 1 THEN T150 - 1
+                          WHEN ID = 2 THEN T105 - 1
+                          WHEN ID = 3 THEN T105 - 1
+                      END
+  WHERE 
+      ID IN (1, 2, 3)
+      AND _fivetran_active = TRUE;
+  ```
 
 The final destination table will be as follows:
 
