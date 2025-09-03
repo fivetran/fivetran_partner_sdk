@@ -372,9 +372,7 @@ Once running, the connector exposes a gRPC server on `localhost:50052`. Test it 
 ### 1. Fivetran Destination Tester
 Use the testing tools provided in the repository:
 ```bash
-# Navigate to tester directory
-cd ../../tools/destination-connector-tester/
-# Follow tester-specific instructions
+Follow this guide: https://github.com/fivetran/fivetran_partner_sdk/blob/main/tools/destination-connector-tester/README.md
 ```
 
 ### 2. gRPC Command Line Tools
