@@ -235,7 +235,7 @@ Creates a sophisticated dynamic configuration UI:
   - **Delete files**: Record deletions
 - **File processing pipeline**: Decryption → Decompression → CSV parsing → Display
 
-#### 8. `WriteHistoryBatch()` ⭐ **Advanced Feature**
+#### 8. `WriteHistoryBatch()`  **Advanced Feature**
 - **Specialized method** for history mode operations
 - Processes files in **exact order** for data consistency:
   1. **`earliest_start_files`**: Records with earliest `_fivetran_start` timestamps
@@ -405,191 +405,6 @@ response = stub.ConfigurationForm(destination_sdk_pb2.ConfigurationFormRequest()
 print(f"Configuration form: {response}")
 ```
 
-## Customization Guide
-
-To adapt this example for your actual destination system:
-
-### 1. Implement Real Data Writing
-
-Replace the print statements in `WriteBatch()` with actual data writing logic:
-
-```python
-def WriteBatch(self, request, context):
-    try:
-        # Extract configuration
-        config = dict(request.configuration)
-        writer_type = config.get('writerType', 'Database')
-        
-        # Process files based on destination type
-        if writer_type == 'Database':
-            self.write_to_database(request, config)
-        elif writer_type == 'File':
-            self.write_to_file_system(request, config)
-        elif writer_type == 'Cloud':
-            self.write_to_cloud_storage(request, config)
-        
-        return destination_sdk_pb2.WriteBatchResponse(success=True)
-    except Exception as e:
-        log_message(SEVERE, f"Batch write failed: {e}")
-        return destination_sdk_pb2.WriteBatchResponse(
-            success=False, 
-            error_message=str(e)
-        )
-```
-
-### 2. Add Database Connectivity
-
-```python
-import psycopg2  # For PostgreSQL
-import pymongo   # For MongoDB
-import sqlite3   # For SQLite
-
-def write_to_database(self, request, config):
-    # PostgreSQL example
-    conn = psycopg2.connect(
-        host=config['host'],
-        port=config['port'],
-        database=config['database'],
-        user=config['user'],
-        password=config['password']
-    )
-    
-    cursor = conn.cursor()
-    
-    # Process each file type
-    for file_path in request.replace_files:
-        self.process_replace_file(file_path, cursor, request.keys)
-    
-    conn.commit()
-    conn.close()
-```
-
-### 3. Implement Cloud Storage Integration
-
-```python
-import boto3           # For AWS S3
-import azure.storage   # For Azure Blob Storage
-from google.cloud import storage  # For Google Cloud Storage
-
-def write_to_cloud_storage(self, request, config):
-    if config['region'] == 'AWS':
-        s3_client = boto3.client('s3',
-            aws_access_key_id=config['user'],
-            aws_secret_access_key=config['password']
-        )
-        # Process files to S3
-        
-    elif config['region'] == 'Azure':
-        # Azure Blob Storage implementation
-        pass
-        
-    elif config['region'] == 'Google Cloud':
-        # Google Cloud Storage implementation
-        pass
-```
-
-### 4. Enhanced File Processing
-
-```python
-import pandas as pd
-import json
-
-def process_replace_file(self, file_path, cursor, encryption_keys):
-    try:
-        # Decrypt and decompress file
-        encryption_key = encryption_keys.get(file_path)
-        decrypted_data = self.decrypt_and_decompress_file(file_path, encryption_key)
-        
-        # Parse CSV data
-        df = pd.read_csv(io.StringIO(decrypted_data))
-        
-        # Process each record
-        for _, row in df.iterrows():
-            # Insert into database
-            cursor.execute(
-                "INSERT INTO {} ({}) VALUES ({})".format(
-                    self.get_table_name(),
-                    ', '.join(df.columns),
-                    ', '.join(['%s'] * len(df.columns))
-                ),
-                tuple(row)
-            )
-            
-    except Exception as e:
-        log_message(SEVERE, f"Failed to process replace file {file_path}: {e}")
-        raise
-```
-
-### 5. Advanced History Mode Implementation
-
-```python
-def WriteHistoryBatch(self, request, context):
-    try:
-        config = dict(request.configuration)
-        
-        # Process in exact order for data consistency
-        
-        # 1. Process earliest start files
-        for file_path in request.earliest_start_files:
-            self.process_earliest_start_file(file_path, config, request.keys)
-        
-        # 2. Process replace files
-        for file_path in request.replace_files:
-            self.process_history_replace_file(file_path, config, request.keys)
-        
-        # 3. Process update files with history tracking
-        for file_path in request.update_files:
-            self.process_history_update_file(file_path, config, request.keys)
-        
-        # 4. Process delete files (deactivate records)
-        for file_path in request.delete_files:
-            self.process_history_delete_file(file_path, config, request.keys)
-        
-        return destination_sdk_pb2.WriteBatchResponse(success=True)
-        
-    except Exception as e:
-        log_message(SEVERE, f"History batch write failed: {e}")
-        return destination_sdk_pb2.WriteBatchResponse(
-            success=False,
-            error_message=str(e)
-        )
-
-def process_history_delete_file(self, file_path, config, keys):
-    # Deactivate records instead of deleting them
-    # UPDATE table SET _fivetran_active = FALSE, _fivetran_end = NOW() WHERE primary_key IN (...)
-    pass
-```
-
-### 6. Configuration Form Enhancements
-
-```python
-def ConfigurationForm(self, request, context):
-    form_fields = common_pb2.ConfigurationFormResponse(
-        schema_selection_supported=True,
-        table_selection_supported=True
-    )
-    
-    # Add custom validation rules
-    validation_rule = common_pb2.ValidationRule(
-        field_name="port",
-        rule_type=common_pb2.ValidationRule.RANGE,
-        min_value=1,
-        max_value=65535
-    )
-    
-    # Add custom field types
-    batch_size_field = common_pb2.FormField(
-        name="batchSize",
-        label="Batch Size",
-        description="Number of records per batch",
-        text_field=common_pb2.TextField.PlainText,
-        default_value="1000"
-    )
-    
-    form_fields.fields.append(batch_size_field)
-    return form_fields
-```
-
 ## Troubleshooting
 
 ### Common Issues
@@ -604,20 +419,7 @@ def ConfigurationForm(self, request, context):
    python3 -m venv destination_run
    ```
 
-2. **Python 3.12 compatibility error** (`AttributeError: module 'pkgutil' has no attribute 'ImpImporter'`):
-   ```bash
-   # This error occurs with older grpcio-tools versions on Python 3.12
-   # The build.sh script now uses updated compatible versions
-   
-   # If you see this error, clean and rebuild:
-   rm -rf destination_run
-   sh build.sh
-   
-   # Or manually update to compatible versions:
-   pip install grpcio==1.65.5 grpcio-tools==1.65.5 protobuf==5.27.2
-   ```
-
-3. **Protocol buffer compilation errors**:
+2. **Protocol buffer compilation errors**:
    ```bash
    # Ensure proto files are copied
    ls -la protos/
@@ -626,7 +428,7 @@ def ConfigurationForm(self, request, context):
    python -m grpc_tools.protoc --proto_path=protos --python_out=sdk_pb2 --grpc_python_out=sdk_pb2 protos/*.proto
    ```
 
-4. **Dependency installation failures**:
+3. **Dependency installation failures**:
    ```bash
    # Update pip first
    pip install --upgrade pip
@@ -635,7 +437,7 @@ def ConfigurationForm(self, request, context):
    pip install -r requirements.txt -v
    ```
 
-5. **Port conflicts**:
+4. **Port conflicts**:
    ```bash
    # Check if port is already in use
    lsof -i :50052
@@ -644,12 +446,12 @@ def ConfigurationForm(self, request, context):
    python main.py --port 50053
    ```
 
-6. **File decryption errors**:
+5. **File decryption errors**:
    - Ensure encryption keys are provided correctly
    - Verify file is properly encrypted with AES CBC mode
    - Check file permissions and accessibility
 
-7. **gRPC connection issues**:
+6. **gRPC connection issues**:
    ```bash
    # Test basic connectivity
    telnet localhost 50052
@@ -657,27 +459,6 @@ def ConfigurationForm(self, request, context):
    # Verify gRPC server is running
    grpcurl -plaintext localhost:50052 list
    ```
-
-### Debug Mode
-
-Enable detailed logging for troubleshooting:
-
-```python
-import logging
-
-# Add to main.py
-logging.basicConfig(level=logging.DEBUG)
-
-# Enhanced error logging in methods
-try:
-    # Your code here
-    pass
-except Exception as e:
-    log_message(SEVERE, f"Detailed error: {e}")
-    import traceback
-    traceback.print_exc()
-    raise
-```
 
 ### Performance Monitoring
 
