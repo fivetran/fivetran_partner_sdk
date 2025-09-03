@@ -249,7 +249,7 @@ Once running, the connector exposes a gRPC server on `localhost:50051`. Test it 
 
 1. **Fivetran Connector Tester**: Use the testing tools in the repository:
    ```bash
-   # Follow the guide at /tools/source-connector-tester/README.md
+   # Follow this guide: https://github.com/fivetran/fivetran_partner_sdk/blob/main/tools/source-connector-tester/README.md
    ```
 
 2. **gRPC clients**: Connect using grpcurl or similar tools:
