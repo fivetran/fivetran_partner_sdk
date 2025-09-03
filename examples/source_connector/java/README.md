@@ -25,7 +25,8 @@ The example connector simulates a data source with:
 
 ## Prerequisites
 
-- **JDK v17** or later
+- **JDK v17** or later  
+  > **Note:** JDK 17+ is required for compatibility with Gradle 8 and the build tooling, even though the connector targets Java 8 bytecode for maximum compatibility.
 - **Gradle 8** or later
 - Protocol Buffers compiler (automatically handled by Gradle plugin)
 
