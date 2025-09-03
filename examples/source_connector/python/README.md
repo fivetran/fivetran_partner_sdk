@@ -336,17 +336,6 @@ pip install watchdog
 # Then use a file watcher tool or IDE with auto-restart
 ```
 
-### Debugging
-Add debug logging:
-```python
-import logging
-logging.basicConfig(level=logging.DEBUG)
-
-def log_debug(message):
-    if DEBUG:
-        logging.debug(message)
-```
-
 ### Adding HTTP Clients
 For real data sources, add HTTP client dependencies:
 ```bash
