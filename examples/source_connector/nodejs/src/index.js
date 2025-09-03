@@ -249,7 +249,10 @@ const configurationForm = (call, callback) => {
     '0.0.0.0'.concat(':').concat(port),
     grpc.ServerCredentials.createInsecure(),
     (error, port) => {
-      console.log(`Server running at http://127.0.0.1:${port}`);
-      !error ? server.start() : console.log("Server failed with error: " + error)
+      if (error) {
+        console.log("Server failed with error: " + error);
+      } else {
+        console.log(`Server running at http://127.0.0.1:${port}`);
+      }
     }
   );

@@ -15,3 +15,4 @@ examples/**/*pb2.pyi
 examples/**/*pb2_grpc.py
 examples/**/node_modules/
 examples/**/package-lock.json
+examples/**/binary
