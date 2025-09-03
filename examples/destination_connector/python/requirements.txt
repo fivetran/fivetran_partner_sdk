@@ -1,8 +1,8 @@
-grpcio==1.60.1
-grpcio-tools==1.60.1
-protobuf==4.25.3
+grpcio==1.65.5
+grpcio-tools==1.65.5
+protobuf==5.27.2
 google~=3.0.0
-pip~=23.0.1
-setuptools~=65.5.0
-zstandard~=0.22.0
-pycryptodome==3.19.1
+pip~=24.0
+setuptools~=70.0.0
+zstandard~=0.23.0
+pycryptodome==3.20.0
