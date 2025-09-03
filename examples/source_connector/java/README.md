@@ -303,13 +303,6 @@ In `ConnectorServiceImpl.update()`:
    ./gradlew --refresh-dependencies build
    ```
 
-### Debug Mode
-
-Enable verbose logging by modifying the logger configuration in `ConnectorServiceImpl`:
-```java
-rootLogger.setLevel(Level.FINE);
-```
-
 ### Gradle Tasks
 
 Useful Gradle tasks:
