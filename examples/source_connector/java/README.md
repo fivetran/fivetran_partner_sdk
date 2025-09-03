@@ -203,7 +203,7 @@ docker run -p 50051:50051 java-connector
 ```
 
 The Docker container:
-- Uses OpenJDK 11 runtime
+- Uses OpenJDK 17 runtime
 - Exposes port 50051
 - Includes JVM flags for module access compatibility
 
