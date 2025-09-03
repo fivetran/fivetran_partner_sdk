@@ -254,7 +254,7 @@ cp $(command -v node) binary.exe
 
 Once running, the connector exposes a gRPC server on `localhost:50051`. Test it using:
 
-1. **Fivetran Connector Tester**: Use the testing tools in the repository
+1. **Fivetran Connector Tester**: Follow this [guide](https://github.com/fivetran/fivetran_partner_sdk/blob/main/tools/source-connector-tester/README.md).
 2. **gRPC clients**: Connect using grpcurl:
    ```bash
    grpcurl -plaintext localhost:50051 list
