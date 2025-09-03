@@ -24,7 +24,7 @@ The example connector simulates a data source with:
 
 ## Prerequisites
 
-- Go 1.21 or later
+- Go 1.23 or later
 - Protocol Buffers compiler (`protoc`)
 - Go protobuf plugins
 
