@@ -18,7 +18,132 @@ service DestinationConnector {
     rpc Truncate(TruncateRequest) returns (TruncateResponse) {}
     rpc WriteBatch (WriteBatchRequest) returns (WriteBatchResponse) {}
     rpc WriteHistoryBatch (WriteHistoryBatchRequest) returns (WriteBatchResponse) {}
+    rpc Migrate (MigrateRequest) returns (MigrateResponse) {}
 }
+
+message MigrateRequest {
+    map<string, string> configuration = 1;
+    MigrationDetails details = 2;
+}
+
+message MigrateResponse {
+    oneof response {
+        bool success = 1;
+        bool unsupported = 2;
+        Warning warning = 3;
+        Task task = 4;
+    }
+}
+
+message MigrationDetails {
+    string schema = 1;
+    string table = 2;
+
+    oneof operation {
+        DropOperation drop = 3;
+        CopyOperation copy = 4;
+        RenameOperation rename = 5;
+        AddOperation add = 6;
+        UpdateColumnValueOperation update_column_value = 7;
+        SyncModeMigrationOperation sync_mode_migration = 8;
+    }
+}
+
+message DropOperation {
+    oneof entity {
+        bool drop_table = 1;
+        DropColumnInHistoryMode drop_column_in_history_mode = 2;
+    }
+}
+
+message DropColumnInHistoryMode {
+    string column = 1;
+    string operation_timestamp = 2;
+}
+
+message CopyOperation {
+    oneof entity {
+        CopyTable copy_table = 1;
+        CopyColumn copy_column = 2;
+        CopyTableToHistoryMode copy_table_to_history_mode = 3;
+    }
+}
+
+message CopyTable {
+    string from_table = 1;
+    string to_table = 2;
+}
+
+message CopyColumn {
+    string from_column = 1;
+    string to_column = 2;
+}
+
+message CopyTableToHistoryMode {
+    string from_table = 1;
+    string to_table = 2;
+    string soft_deleted_column = 3;
+}
+
+message RenameOperation {
+    oneof entity {
+        RenameTable rename_table = 1;
+        RenameColumn rename_column = 2;
+    }
+}
+
+message RenameTable {
+    string from_table = 1;
+    string to_table = 2;
+}
+
+message RenameColumn {
+    string from_column = 1;
+    string to_column = 2;
+}
+
+message AddOperation {
+    oneof entity {
+        AddColumnInHistoryMode add_column_in_history_mode = 1;
+        AddColumnWithDefaultValue add_column_with_default_value = 2;
+    }
+}
+
+message AddColumnWithDefaultValue {
+    string column = 1;
+    DataType column_type = 2;
+    string default_value = 3;
+}
+
+message AddColumnInHistoryMode {
+    string column = 1;
+    DataType column_type = 2;
+    string default_value = 3;
+    string operation_timestamp = 4;
+}
+
+
+message UpdateColumnValueOperation {
+    string column = 1;
+    string value = 2;
+}
+
+
+message SyncModeMigrationOperation {
+    SyncModeMigrationType type = 1;
+    optional string soft_deleted_column = 2;
+    optional bool keep_deleted_rows = 3;
+}
+
+enum SyncModeMigrationType {
+    SOFT_DELETE_TO_LIVE = 0;
+    SOFT_DELETE_TO_HISTORY = 1;
+    HISTORY_TO_SOFT_DELETE = 2;
+    HISTORY_TO_LIVE = 3;
+    LIVE_TO_SOFT_DELETE = 4;
+    LIVE_TO_HISTORY = 5;
+}
+
 
 message CapabilitiesRequest {}
 
@@ -59,7 +184,9 @@ message AlterTableRequest {
     map<string, string> configuration = 1;
     string schema_name = 2;
     Table table = 3;
+    bool drop_columns = 4;
 }
+
 
 message AlterTableResponse {
     oneof response {
