@@ -10,6 +10,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.*;
 
+import static fivetran_sdk.v2.MigrationDetails.OperationCase.*;
+
 public class DestinationServiceImpl extends DestinationConnectorGrpc.DestinationConnectorImplBase {
 
     private static final Logger logger = getLogger();
@@ -264,13 +266,103 @@ public class DestinationServiceImpl extends DestinationConnectorGrpc.Destination
     @Override
     public void alterTable(AlterTableRequest request, StreamObserver<AlterTableResponse> responseObserver) {
         Map<String, String> configuration = request.getConfigurationMap();
+        String message;
+        if(request.getDropColumns()) {
+            message = "[AlterTable]: " +
+                    request.getSchemaName() + " | " + request.getTable().getName() + " | " + request.getTable().getColumnsList();
 
-        String message = "[AlterTable]: " +
-                request.getSchemaName() + " | " + request.getTable().getName() + " | " + request.getTable().getColumnsList();
+            // perform alter table with drop columns logic here
+        } else {
+            message = "[AlterTable]: " +
+                    request.getSchemaName() + " | " + request.getTable().getName() + " | " + request.getTable().getColumnsList();
+
+            // perform alter table without drop columns logic here
+        }
+
         logger.info(message);
         tableMap.put(request.getTable().getName(), request.getTable());
         responseObserver.onNext(AlterTableResponse.newBuilder().setSuccess(true).build());
         responseObserver.onCompleted();
+    }
+
+    @Override
+    public void migrate(MigrateRequest request, StreamObserver<MigrateResponse> responseObserver) {
+        Map<String, String> configuration = request.getConfigurationMap(); // to be used while making connection
+        MigrationDetails.OperationCase operationCase = request.getDetails().getOperationCase();
+        MigrationDetails details = request.getDetails();
+        switch (operationCase) {
+            case DROP:
+                DropOperation dropOp = details.getDrop();
+                switch (dropOp.getEntityCase()) {
+                    case DROP_TABLE:
+                        boolean dropTable = dropOp.getDropTable();
+                        if (dropTable) {
+                            // perform operation to drop table
+                        }
+                        break;
+                    case DROP_COLUMN_IN_HISTORY_MODE:
+                        DropColumnInHistoryMode dropColumn = dropOp.getDropColumnInHistoryMode();
+                        // dropColumn.getColumn();
+                        // dropColumn.getOperationTimestamp();
+                        // perform operation to drop column in history mode
+                        break;
+                    case ENTITY_NOT_SET:
+                        // nothing set
+                        break;
+                    case COPY:
+                        CopyOperation copyOp = details.getCopy();
+                        switch (copyOp.getEntityCase()) {
+                            case COPY_TABLE:
+                                CopyTable copyTable = copyOp.getCopyTable();
+                                String fromTable = copyTable.getFromTable();
+                                String toTable = copyTable.getToTable();
+                                // perform operation to copy table
+                                break;
+                            case COPY_COLUMN:
+                                CopyColumn copyColumn = copyOp.getCopyColumn();
+                                String fromColumn = copyColumn.getFromColumn();
+                                String toColumn = copyColumn.getToColumn();
+                                // perform operation to copy column
+                                break;
+                            case COPY_TABLE_TO_HISTORY_MODE:
+                                CopyTableToHistoryMode copyHistory = copyOp.getCopyTableToHistoryMode();
+                                // copyHistory.getFromTable();
+                                // copyHistory.getToTable();
+                                // perform operation to copy table to history mode
+                                break;
+                            case ENTITY_NOT_SET:
+                                // nothing set
+                                break;
+                        }
+                        break;
+                    case RENAME:
+                        RenameOperation renameOp = details.getRename();
+                        switch (renameOp.getEntityCase()) {
+                            case RENAME_TABLE:
+                                RenameTable renameTable = renameOp.getRenameTable();
+                                // renameTable.getOldName();
+                                // renameTable.getNewName();
+                                // perform table rename
+                                break;
+                            case RENAME_COLUMN:
+                                RenameColumn renameColumn = renameOp.getRenameColumn();
+                                // renameColumn.getOldName();
+                                // renameColumn.getNewName();
+                                // perform column rename
+                                break;
+                            case ENTITY_NOT_SET:
+                                // nothing set
+                                break;
+                        }
+                        break;
+                    case ADD:
+                        break;
+                    case UPDATE_COLUMN_VALUE:
+                        break;
+                    case SYNC_MODE_MIGRATION:
+                        break;
+                }
+        }
     }
 
     @Override
