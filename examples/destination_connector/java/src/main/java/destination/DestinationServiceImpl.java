@@ -354,4 +354,168 @@ public class DestinationServiceImpl extends DestinationConnectorGrpc.Destination
         responseObserver.onNext(WriteBatchResponse.newBuilder().setSuccess(true).build());
         responseObserver.onCompleted();
     }
+
+
+    /**
+     * Example implementation of the new Migrate RPC introduced for schema migration support.
+     * This method inspects which migration operation (oneof) was requested and logs / handles it.
+     * For demonstration, all recognized operations return success; unrecognized / NONE return unsupported.
+     */
+    @Override
+    public void migrate(MigrateRequest request, StreamObserver<MigrateResponse> responseObserver) {
+        MigrationDetails details = request.getDetails();
+        String schema = details.getSchema();
+        String table = details.getTable();
+
+        logger.info(String.format("[Migrate] schema=%s table=%s operation=%s",
+                schema, table, details.getOperationCase()));
+
+        MigrateResponse.Builder respBuilder = MigrateResponse.newBuilder();
+
+        switch (details.getOperationCase()) {
+            case DROP:
+                handleDrop(details.getDrop(), schema, table);
+                respBuilder.setSuccess(true);
+                break;
+
+            case COPY:
+                handleCopy(details.getCopy(), schema, table);
+                respBuilder.setSuccess(true);
+                break;
+
+            case RENAME:
+                handleRename(details.getRename(), schema, table);
+                respBuilder.setSuccess(true);
+                break;
+
+            case ADD:
+                handleAdd(details.getAdd(), schema, table);
+                respBuilder.setSuccess(true);
+                break;
+
+            case UPDATE_COLUMN_VALUE:
+                handleUpdateColumnValue(details.getUpdateColumnValue(), schema, table);
+                respBuilder.setSuccess(true);
+                break;
+
+            case TABLE_SYNC_MODE_MIGRATION:
+                handleTableSyncModeMigration(details.getTableSyncModeMigration(), schema, table);
+                respBuilder.setSuccess(true);
+                break;
+
+            case OPERATION_NOT_SET:
+            default:
+                logger.warning("[Migrate] Unsupported or missing operation.");
+                respBuilder.setUnsupported(true);
+                break;
+        }
+
+        // Example: to return a warning instead:
+        // respBuilder.setWarning(Warning.newBuilder().setMessage("Non-critical issue").build());
+
+        // Example: to return a task instead (async pattern):
+        // respBuilder.setTask(Task.newBuilder().setId("background-migration-123").build());
+
+        responseObserver.onNext(respBuilder.build());
+        responseObserver.onCompleted();
+    }
+
+    private void handleDrop(DropOperation dropOp, String schema, String table) {
+        switch (dropOp.getEntityCase()) {
+            case DROP_TABLE:
+                logger.info(String.format("[Migrate:Drop] Dropping table %s.%s", schema, table));
+                tableMap.remove(table);
+                break;
+            case DROP_COLUMN_IN_HISTORY_MODE:
+                DropColumnInHistoryMode dcol = dropOp.getDropColumnInHistoryMode();
+                logger.info(String.format("[Migrate:DropColumnHistory] table=%s.%s column=%s op_ts=%s",
+                        schema, table, dcol.getColumn(), dcol.getOperationTimestamp()));
+                // Example: remove column metadata from tracked Table (not implemented here).
+                break;
+            case ENTITY_NOT_SET:
+            default:
+                logger.warning("[Migrate:Drop] No drop entity specified");
+        }
+    }
+
+    private void handleCopy(CopyOperation copyOp, String schema, String table) {
+        switch (copyOp.getEntityCase()) {
+            case COPY_TABLE:
+                CopyTable ct = copyOp.getCopyTable();
+                logger.info(String.format("[Migrate:CopyTable] from=%s to=%s in schema=%s",
+                        ct.getFromTable(), ct.getToTable(), schema));
+                // Copy metadata / data placeholder.
+                if (tableMap.containsKey(ct.getFromTable())) {
+                    tableMap.put(ct.getToTable(), tableMap.get(ct.getFromTable()));
+                }
+                break;
+            case COPY_COLUMN:
+                CopyColumn cc = copyOp.getCopyColumn();
+                logger.info(String.format("[Migrate:CopyColumn] table=%s.%s from_col=%s to_col=%s",
+                        schema, table, cc.getFromColumn(), cc.getToColumn()));
+                break;
+            case COPY_TABLE_TO_HISTORY_MODE:
+                CopyTableToHistoryMode cth = copyOp.getCopyTableToHistoryMode();
+                logger.info(String.format("[Migrate:CopyTableToHistoryMode] from=%s to=%s soft_deleted_column=%s",
+                        cth.getFromTable(), cth.getToTable(), cth.getSoftDeletedColumn()));
+                break;
+            case ENTITY_NOT_SET:
+            default:
+                logger.warning("[Migrate:Copy] No copy entity specified");
+        }
+    }
+
+    private void handleRename(RenameOperation renameOp, String schema, String table) {
+        switch (renameOp.getEntityCase()) {
+            case RENAME_TABLE:
+                RenameTable rt = renameOp.getRenameTable();
+                logger.info(String.format("[Migrate:RenameTable] from=%s to=%s schema=%s",
+                        rt.getFromTable(), rt.getToTable(), schema));
+                if (tableMap.containsKey(rt.getFromTable())) {
+                    Table tbl = tableMap.remove(rt.getFromTable());
+                    tableMap.put(rt.getToTable(), tbl.toBuilder().setName(rt.getToTable()).build());
+                }
+                break;
+            case RENAME_COLUMN:
+                RenameColumn rc = renameOp.getRenameColumn();
+                logger.info(String.format("[Migrate:RenameColumn] table=%s.%s from_col=%s to_col=%s",
+                        schema, table, rc.getFromColumn(), rc.getToColumn()));
+                // Implement column metadata rename if tracked.
+                break;
+            case ENTITY_NOT_SET:
+            default:
+                logger.warning("[Migrate:Rename] No rename entity specified");
+        }
+    }
+
+    private void handleAdd(AddOperation addOp, String schema, String table) {
+        switch (addOp.getEntityCase()) {
+            case ADD_COLUMN_IN_HISTORY_MODE:
+                AddColumnInHistoryMode ach = addOp.getAddColumnInHistoryMode();
+                logger.info(String.format("[Migrate:AddColumnHistory] table=%s.%s column=%s type=%s default=%s op_ts=%s",
+                        schema, table, ach.getColumn(), ach.getColumnType(), ach.getDefaultValue(), ach.getOperationTimestamp()));
+                break;
+            case ADD_COLUMN_WITH_DEFAULT_VALUE:
+                AddColumnWithDefaultValue acd = addOp.getAddColumnWithDefaultValue();
+                logger.info(String.format("[Migrate:AddColumnDefault] table=%s.%s column=%s type=%s default=%s",
+                        schema, table, acd.getColumn(), acd.getColumnType(), acd.getDefaultValue()));
+                break;
+            case ENTITY_NOT_SET:
+            default:
+                logger.warning("[Migrate:Add] No add entity specified");
+        }
+    }
+
+    private void handleUpdateColumnValue(UpdateColumnValueOperation upd, String schema, String table) {
+        logger.info(String.format("[Migrate:UpdateColumnValue] table=%s.%s column=%s value=%s",
+                schema, table, upd.getColumn(), upd.getValue()));
+        // Placeholder: Update all existing rows' column value.
+    }
+
+    private void handleTableSyncModeMigration(TableSyncModeMigrationOperation op, String schema, String table) {
+        logger.info(String.format("[Migrate:TableSyncModeMigration] table=%s.%s type=%s soft_deleted_column=%s keep_deleted_rows=%s",
+                schema, table, op.getType(), op.hasSoftDeletedColumn() ? op.getSoftDeletedColumn() : "N/A",
+                op.hasKeepDeletedRows() && op.getKeepDeletedRows()));
+        // Placeholder: Adjust table structure to new sync mode semantics.
+    }
 }
