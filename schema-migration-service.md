@@ -143,23 +143,68 @@ WHERE _fivetran_start > :operation_ts;
 
 2. Insert a new row to record the history of the DDL operation
    1. Copy the existing active record (_fivetran_active and max( _fivetran_start)) from the table
+```sql
+INSERT INTO users (
+  id, name, deleted_column, _fivetran_start, _fivetran_end, _fivetran_active
+)
+SELECT
+  id,
+  name,
+  DEFAULT, -- warehouse default value for `deleted_column`
+  :operation_ts,
+  '9999-12-31 23:59:59',
+  TRUE
+FROM users
+WHERE _fivetran_active = TRUE
+  AND _fivetran_start = (SELECT MAX(_fivetran_start) FROM users);
+```
    2. Update the newly added row:
-
       1. Set the deleted column value to the warehouse default 
       2. Set _fivetran_start to the operation timestamp
-   3. Update the previous record fivetran_end to (operation timestamp) - 1ms.
+3. Update the previous record fivetran_end to (operation timestamp) - 1ms.
+
+```sql
+UPDATE users
+SET _fivetran_end = (:operation_ts - INTERVAL '0.001 second')
+WHERE _fivetran_active = TRUE
+  AND _fivetran_start = (SELECT MAX(_fivetran_start) FROM users)
+  AND _fivetran_end = '9999-12-31 23:59:59';
+```
 
 ### Add Column History Mode: 
 Before the migration, if the new column does not exist, we execute the existing ADD_COLUMN migration and follow the following steps to update the history
 1. Check if the table is empty, return if rowCount = 0
 2. Insert a new row to record the history of the DDL operation
-3. Copy the existing active record (_fivetran_active and max( _fivetran_start)) from the table
-4. Update the newly added row:
+```sql
+INSERT INTO users (
+  id, name, new_column, _fivetran_start, _fivetran_end, _fivetran_active
+)
+SELECT
+  id,
+  name,
+  DEFAULT, -- warehouse default value for `new_column`
+  :operation_ts,
+  '9999-12-31 23:59:59',
+  TRUE
+FROM users
+WHERE _fivetran_active = TRUE
+  AND _fivetran_start = (SELECT MAX(_fivetran_start) FROM users);
+```
 
+3. Copy the existing active record (_fivetran_active and max( _fivetran_start)) from the table
+
+4. Update the newly added row:
    1. Set the deleted column value to the warehouse default 
    2. Set _fivetran_start to the operation timestamp 
    3. Update the previous record fivetran_end to (operation timestamp) - 1ms.
 
+```sql
+UPDATE users
+SET _fivetran_end = (:operation_ts - INTERVAL '0.001 second')
+WHERE _fivetran_active = TRUE
+  AND _fivetran_start = (SELECT MAX(_fivetran_start) FROM users)
+  AND _fivetran_end = '9999-12-31 23:59:59';
+```
 
 ### Copy Table To History Mode : 
 Before migration , if new_table name does not already exist.
