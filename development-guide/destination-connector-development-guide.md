@@ -104,6 +104,10 @@ The `WriteHistoryBatchRequest` RPC call provides details about the batch files c
 
 > NOTE: To learn how to handle `earliest_start_files`, `replace_files`, `update_files` and `delete_files` in history mode, follow the [How to Handle History Mode Batch Files](../how-to-handle-history-mode-batch-files.md) guide.
 
+### Migrate method
+The `migrate` method is called the `MigrationDetails` and `MigrationType` objects. The `MigrationDetails` object contains the details of the migration, such as the schema, table to be migrated. The `MigrationType` object contains the type of migration to be performed.
+Partner code will need to check what `MigrationType` is being passed and perform the necessary actions. The `MigrationDetails` object will contain the details of the migration, such as the schema, table to be migrated, and the column to be added or renamed.
+
 ## Examples of data types
 Examples of each [DataType](https://github.com/fivetran/fivetran_sdk/blob/main/common.proto#L73C6-L73C14) as they would appear in CSV batch files are as follows:
 - UNSPECIFIED: This data type never appears in batch files
