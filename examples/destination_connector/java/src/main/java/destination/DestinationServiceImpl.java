@@ -423,14 +423,23 @@ public class DestinationServiceImpl extends DestinationConnectorGrpc.Destination
     private void handleDrop(DropOperation dropOp, String schema, String table) {
         switch (dropOp.getEntityCase()) {
             case DROP_TABLE:
-                logger.info(String.format("[Migrate:Drop] Dropping table %s.%s", schema, table));
                 tableMap.remove(table);
+                logger.info(String.format("[Migrate:Drop] Dropping table %s.%s", schema, table));
                 break;
             case DROP_COLUMN_IN_HISTORY_MODE:
                 DropColumnInHistoryMode dcol = dropOp.getDropColumnInHistoryMode();
+                // Remove column metadata from tracked Table in tableMap
+                Table tableObj = tableMap.get(table);
+                Table.Builder updatedTableBuilder = tableObj.toBuilder();
+                updatedTableBuilder.clearColumns();
+                for (Column col : tableObj.getColumnsList()) {
+                    if (!col.getName().equals(dcol.getColumn())) {
+                        updatedTableBuilder.addColumns(col);
+                    }
+                }
+                tableMap.put(table, updatedTableBuilder.build());
                 logger.info(String.format("[Migrate:DropColumnHistory] table=%s.%s column=%s op_ts=%s",
                         schema, table, dcol.getColumn(), dcol.getOperationTimestamp()));
-                // Example: remove column metadata from tracked Table (not implemented here).
                 break;
             case ENTITY_NOT_SET:
             default:
@@ -442,20 +451,30 @@ public class DestinationServiceImpl extends DestinationConnectorGrpc.Destination
         switch (copyOp.getEntityCase()) {
             case COPY_TABLE:
                 CopyTable ct = copyOp.getCopyTable();
+                // Copy metadata / data placeholder.
+                tableMap.put(ct.getToTable(), tableMap.get(ct.getFromTable()));
                 logger.info(String.format("[Migrate:CopyTable] from=%s to=%s in schema=%s",
                         ct.getFromTable(), ct.getToTable(), schema));
-                // Copy metadata / data placeholder.
-                if (tableMap.containsKey(ct.getFromTable())) {
-                    tableMap.put(ct.getToTable(), tableMap.get(ct.getFromTable()));
-                }
                 break;
             case COPY_COLUMN:
                 CopyColumn cc = copyOp.getCopyColumn();
+                // Copy column metadata in tableMap
+                Table tableObj = tableMap.get(table);
+                for (Column col : tableObj.getColumnsList()) {
+                    if (col.getName().equals(cc.getFromColumn())) {
+                        Column newCol = col.toBuilder().setName(cc.getToColumn()).build();
+                        Table updatedTable = tableObj.toBuilder().addColumns(newCol).build();
+                        tableMap.put(table, updatedTable);
+                        break;
+                    }
+                }
                 logger.info(String.format("[Migrate:CopyColumn] table=%s.%s from_col=%s to_col=%s",
                         schema, table, cc.getFromColumn(), cc.getToColumn()));
                 break;
             case COPY_TABLE_TO_HISTORY_MODE:
                 CopyTableToHistoryMode cth = copyOp.getCopyTableToHistoryMode();
+                // Copy table to history mode in tableMap
+                tableMap.put(cth.getToTable(), tableMap.get(cth.getFromTable()));
                 logger.info(String.format("[Migrate:CopyTableToHistoryMode] from=%s to=%s soft_deleted_column=%s",
                         cth.getFromTable(), cth.getToTable(), cth.getSoftDeletedColumn()));
                 break;
@@ -469,18 +488,27 @@ public class DestinationServiceImpl extends DestinationConnectorGrpc.Destination
         switch (renameOp.getEntityCase()) {
             case RENAME_TABLE:
                 RenameTable rt = renameOp.getRenameTable();
+                Table tbl = tableMap.remove(rt.getFromTable());
+                tableMap.put(rt.getToTable(), tbl.toBuilder().setName(rt.getToTable()).build());
                 logger.info(String.format("[Migrate:RenameTable] from=%s to=%s schema=%s",
                         rt.getFromTable(), rt.getToTable(), schema));
-                if (tableMap.containsKey(rt.getFromTable())) {
-                    Table tbl = tableMap.remove(rt.getFromTable());
-                    tableMap.put(rt.getToTable(), tbl.toBuilder().setName(rt.getToTable()).build());
-                }
                 break;
             case RENAME_COLUMN:
                 RenameColumn rc = renameOp.getRenameColumn();
+                // Rename column metadata in tableMap
+                Table tableObj = tableMap.get(table);
+                Table.Builder updatedTableBuilder = tableObj.toBuilder();
+                updatedTableBuilder.clearColumns();
+                for (Column col : tableObj.getColumnsList()) {
+                    if (col.getName().equals(rc.getFromColumn())) {
+                        updatedTableBuilder.addColumns(col.toBuilder().setName(rc.getToColumn()).build());
+                    } else {
+                        updatedTableBuilder.addColumns(col);
+                    }
+                }
+                tableMap.put(table, updatedTableBuilder.build());
                 logger.info(String.format("[Migrate:RenameColumn] table=%s.%s from_col=%s to_col=%s",
                         schema, table, rc.getFromColumn(), rc.getToColumn()));
-                // Implement column metadata rename if tracked.
                 break;
             case ENTITY_NOT_SET:
             default:
@@ -490,16 +518,34 @@ public class DestinationServiceImpl extends DestinationConnectorGrpc.Destination
 
     private void handleAdd(AddOperation addOp, String schema, String table) {
         switch (addOp.getEntityCase()) {
-            case ADD_COLUMN_IN_HISTORY_MODE:
+            case ADD_COLUMN_IN_HISTORY_MODE: {
                 AddColumnInHistoryMode ach = addOp.getAddColumnInHistoryMode();
+                // Add column metadata to tableMap
+                Column newCol = Column.newBuilder()
+                        .setName(ach.getColumn())
+                        .setType(ach.getColumnType())
+                        .build();
+                Table tableObj = tableMap.get(table);
+                Table updatedTable = tableObj.toBuilder().addColumns(newCol).build();
+                tableMap.put(table, updatedTable);
                 logger.info(String.format("[Migrate:AddColumnHistory] table=%s.%s column=%s type=%s default=%s op_ts=%s",
                         schema, table, ach.getColumn(), ach.getColumnType(), ach.getDefaultValue(), ach.getOperationTimestamp()));
                 break;
-            case ADD_COLUMN_WITH_DEFAULT_VALUE:
+            }
+            case ADD_COLUMN_WITH_DEFAULT_VALUE: {
                 AddColumnWithDefaultValue acd = addOp.getAddColumnWithDefaultValue();
+                // Add column metadata to tableMap
+                Table tableObj = tableMap.get(table);
+                Column newCol = Column.newBuilder()
+                        .setName(acd.getColumn())
+                        .setType(acd.getColumnType())
+                        .build();
+                Table updatedTable = tableObj.toBuilder().addColumns(newCol).build();
+                tableMap.put(table, updatedTable);
                 logger.info(String.format("[Migrate:AddColumnDefault] table=%s.%s column=%s type=%s default=%s",
                         schema, table, acd.getColumn(), acd.getColumnType(), acd.getDefaultValue()));
                 break;
+            }
             case ENTITY_NOT_SET:
             default:
                 logger.warning("[Migrate:Add] No add entity specified");
