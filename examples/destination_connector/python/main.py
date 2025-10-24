@@ -364,87 +364,109 @@ class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
 
         # ----------- Helper handlers for migration operations ----------- #
 
-        def _handle_drop(self, drop_op, schema, table):
-            entity_case = drop_op.WhichOneof("entity")
-            if entity_case == "drop_table":
-                log_message(INFO, f"[Migrate:Drop] Dropping table {schema}.{table}")
-                DestinationImpl.table_map.pop(table, None)
-            elif entity_case == "drop_column_in_history_mode":
-                col = drop_op.drop_column_in_history_mode.column
-                op_ts = drop_op.drop_column_in_history_mode.operation_timestamp
-                log_message(INFO, f"[Migrate:DropColumnHistory] table={schema}.{table} column={col} op_ts={op_ts}")
-                # Implement column removal logic from metadata if needed.
-            else:
-                log_message(WARNING, "[Migrate:Drop] No drop entity specified")
+    def _handle_drop(self, drop_op, schema, table):
+        entity_case = drop_op.WhichOneof("entity")
+        if entity_case == "drop_table":
+            log_message(INFO, f"[Migrate:Drop] Dropping table {schema}.{table}")
+            DestinationImpl.table_map.pop(table, None)
+        elif entity_case == "drop_column_in_history_mode":
+            col = drop_op.drop_column_in_history_mode.column
+            op_ts = drop_op.drop_column_in_history_mode.operation_timestamp
+            table_obj = DestinationImpl.table_map[table]
+            for i, column in enumerate(table_obj.columns):
+                if column.name == col:
+                    table_obj.columns.pop(i)
+                    break
+            log_message(INFO, f"[Migrate:DropColumnHistory] table={schema}.{table} column={col} op_ts={op_ts}")
+        else:
+            log_message(WARNING, "[Migrate:Drop] No drop entity specified")
 
-        def _handle_copy(self, copy_op, schema, table):
-            entity_case = copy_op.WhichOneof("entity")
-            if entity_case == "copy_table":
-                cpy_table = copy_op.copy_table
-                log_message(INFO, f"[Migrate:CopyTable] from={cpy_table.from_table} to={cpy_table.to_table} schema={schema}")
-                # Copy metadata / data placeholder.
-                if frm in DestinationImpl.table_map:
-                    DestinationImpl.table_map[to] = DestinationImpl.table_map[frm]
-            elif entity_case == "copy_column":
-                cpy_col = copy_op.copy_column
-                log_message(INFO, f"[Migrate:CopyColumn] table={schema}.{table} from_col={cpy_col.from_column} to_col={cpy_col.to_column}")
-            elif entity_case == "copy_table_to_history_mode":
-                frm = copy_op.copy_table_to_history_mode.from_table
-                to = copy_op.copy_table_to_history_mode.to_table
-                soft_deleted_col = copy_op.copy_table_to_history_mode.soft_deleted_column
-                log_message(INFO, f"[Migrate:CopyTableToHistoryMode] from={frm} to={to} soft_deleted_column={soft_deleted_col}")
-            else:
-                log_message(WARNING, "[Migrate:Copy] No copy entity specified")
+    def _handle_copy(self, copy_op, schema, table):
+        entity_case = copy_op.WhichOneof("entity")
+        if entity_case == "copy_table":
+            cpy_table = copy_op.copy_table
+            frm = cpy_table.from_table
+            to = cpy_table.to_table
+            if frm in DestinationImpl.table_map:
+                DestinationImpl.table_map[to] = DestinationImpl.table_map[frm]
+            log_message(INFO, f"[Migrate:CopyTable] from={frm} to={to} schema={schema}")
+        elif entity_case == "copy_column":
+            cpy_col = copy_op.copy_column
+            table_obj = DestinationImpl.table_map[table]
+            for col in table_obj.columns:
+                if col.name == cpy_col.from_column:
+                    new_col = type(col)()
+                    new_col.CopyFrom(col)
+                    new_col.name = cpy_col.to_column
+                    table_obj.columns.add().CopyFrom(new_col)
+                    break
+            log_message(INFO, f"[Migrate:CopyColumn] table={schema}.{table} from_col={cpy_col.from_column} to_col={cpy_col.to_column}")
+        elif entity_case == "copy_table_to_history_mode":
+            frm = copy_op.copy_table_to_history_mode.from_table
+            to = copy_op.copy_table_to_history_mode.to_table
+            soft_deleted_col = copy_op.copy_table_to_history_mode.soft_deleted_column
+            if frm in DestinationImpl.table_map:
+                DestinationImpl.table_map[to] = DestinationImpl.table_map[frm]
+            log_message(INFO, f"[Migrate:CopyTableToHistoryMode] from={frm} to={to} soft_deleted_column={soft_deleted_col}")
+        else:
+            log_message(WARNING, "[Migrate:Copy] No copy entity specified")
 
-        def _handle_rename(self, rename_op, schema, table):
-            entity_case = rename_op.WhichOneof("entity")
-            if entity_case == "rename_table":
-                frm = rename_op.rename_table.from_table
-                to = rename_op.rename_table.to_table
-                log_message(INFO, f"[Migrate:RenameTable] from={frm} to={to} schema={schema}")
-                if frm in DestinationImpl.table_map:
-                    tbl_meta = DestinationImpl.table_map.pop(frm)
-                    # Adjust name inside the Table metadata if needed (proto Table likely has 'name' field)
-                    tbl_meta = tbl_meta.__class__.FromString(tbl_meta.SerializeToString())
-                    # If Table has a 'name' field we can rebuild:
-                    if hasattr(tbl_meta, "name"):
-                        tbl_meta.name = to
-                    DestinationImpl.table_map[to] = tbl_meta
-            elif entity_case == "rename_column":
-                frm_col = rename_op.rename_column.from_column
-                to_col = rename_op.rename_column.to_column
-                log_message(INFO, f"[Migrate:RenameColumn] table={schema}.{table} from_col={frm_col} to_col={to_col}")
-                # Adjust column metadata if tracking columns explicitly.
-            else:
-                log_message(WARNING, "[Migrate:Rename] No rename entity specified")
+    def _handle_rename(self, rename_op, schema, table):
+        entity_case = rename_op.WhichOneof("entity")
+        if entity_case == "rename_table":
+            frm = rename_op.rename_table.from_table
+            to = rename_op.rename_table.to_table
+            if frm in DestinationImpl.table_map:
+                tbl_meta = DestinationImpl.table_map.pop(frm)
+                # Adjust name inside the Table metadata if needed (proto Table likely has 'name' field)
+                tbl_meta = tbl_meta.__class__.FromString(tbl_meta.SerializeToString())
+                # If Table has a 'name' field we can rebuild:
+                if hasattr(tbl_meta, "name"):
+                    tbl_meta.name = to
+                DestinationImpl.table_map[to] = tbl_meta
+            log_message(INFO, f"[Migrate:RenameTable] from={frm} to={to} schema={schema}")
+        elif entity_case == "rename_column":
+            frm_col = rename_op.rename_column.from_column
+            to_col = rename_op.rename_column.to_column
+            for col in DestinationImpl.table_map[table].columns:
+                if col.name == frm_col:
+                    col.name = to_col
+                    break
+            log_message(INFO, f"[Migrate:RenameColumn] table={schema}.{table} from_col={frm_col} to_col={to_col}")
+        else:
+            log_message(WARNING, "[Migrate:Rename] No rename entity specified")
 
-        def _handle_add(self, add_op, schema, table):
-            entity_case = add_op.WhichOneof("entity")
-            if entity_case == "add_column_in_history_mode":
-                col = add_op.add_column_in_history_mode.column
-                ctype = add_op.add_column_in_history_mode.column_type
-                default = add_op.add_column_in_history_mode.default_value
-                op_ts = add_op.add_column_in_history_mode.operation_timestamp
-                log_message(INFO, f"[Migrate:AddColumnHistory] table={schema}.{table} column={col} type={ctype} default={default} op_ts={op_ts}")
-            elif entity_case == "add_column_with_default_value":
-                col = add_op.add_column_with_default_value.column
-                ctype = add_op.add_column_with_default_value.column_type
-                default = add_op.add_column_with_default_value.default_value
-                log_message(INFO, f"[Migrate:AddColumnDefault] table={schema}.{table} column={col} type={ctype} default={default}")
-            else:
-                log_message(WARNING, "[Migrate:Add] No add entity specified")
+    def _handle_add(self, add_op, schema, table):
+        entity_case = add_op.WhichOneof("entity")
+        if entity_case == "add_column_in_history_mode":
+            col = add_op.add_column_in_history_mode.column
+            ctype = add_op.add_column_in_history_mode.column_type
+            default = add_op.add_column_in_history_mode.default_value
+            op_ts = add_op.add_column_in_history_mode.operation_timestamp
+            new_col = DestinationImpl.table_map[table].columns.add()
+            new_col.name, new_col.type = col, ctype
+            log_message(INFO, f"[Migrate:AddColumnHistory] table={schema}.{table} column={col} type={ctype} default={default} op_ts={op_ts}")
+        elif entity_case == "add_column_with_default_value":
+            col = add_op.add_column_with_default_value.column
+            ctype = add_op.add_column_with_default_value.column_type
+            default = add_op.add_column_with_default_value.default_value
+            new_col = DestinationImpl.table_map[table].columns.add()
+            new_col.name, new_col.type = col, ctype
+            log_message(INFO, f"[Migrate:AddColumnDefault] table={schema}.{table} column={col} type={ctype} default={default}")
+        else:
+            log_message(WARNING, "[Migrate:Add] No add entity specified")
 
-        def _handle_update_column_value(self, upd, schema, table):
-            col = upd.column
-            value = upd.value
-            log_message(INFO, f"[Migrate:UpdateColumnValue] table={schema}.{table} column={col} value={value}")
-            # Placeholder: Iterate and update rows in storage layer.
+    def _handle_update_column_value(self, upd, schema, table):
+        col = upd.column
+        value = upd.value
+        log_message(INFO, f"[Migrate:UpdateColumnValue] table={schema}.{table} column={col} value={value}")
 
-        def _handle_table_sync_mode_migration(self, op, schema, table):
-            sync_type = op.type
-            soft_deleted_column = op.soft_deleted_column if op.HasField("soft_deleted_column") else "N/A"
-            keep_deleted_rows = op.keep_deleted_rows if op.HasField("keep_deleted_rows") else False
-            log_message(INFO, f"[Migrate:TableSyncModeMigration] table={schema}.{table} type={sync_type} soft_deleted_column={soft_deleted_column} keep_deleted_rows={keep_deleted_rows}")
+    def _handle_table_sync_mode_migration(self, op, schema, table):
+        sync_type = op.type
+        soft_deleted_column = op.soft_deleted_column if op.HasField("soft_deleted_column") else "N/A"
+        keep_deleted_rows = op.keep_deleted_rows if op.HasField("keep_deleted_rows") else False
+        log_message(INFO, f"[Migrate:TableSyncModeMigration] table={schema}.{table} type={sync_type} soft_deleted_column={soft_deleted_column} keep_deleted_rows={keep_deleted_rows}")
+
 def log_message(level, message):
     print(f'{{"level":"{level}", "message": "{message}", "message-origin": "sdk_destination"}}')
 
