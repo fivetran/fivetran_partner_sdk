@@ -1,10 +1,24 @@
 {
-   "create_table" : {
+   "create_table": {
       "transaction": {
          "columns": {
             "id": "INT",
-            "amount" : "DOUBLE",
-            "desc": "STRING"
+            "amount_double": "DOUBLE",
+            "amount_float": "FLOAT",
+            "amount_decimal": {"type": "DECIMAL", "precision": 38, "scale": 10},
+            "flag": "BOOLEAN",
+            "short_val": "SHORT",
+            "long_val": "LONG",
+            "time_val": "NAIVE_TIME",
+            "date_val": "NAIVE_DATE",
+            "datetime_val": "NAIVE_DATETIME",
+            "utc_val": "UTC_DATETIME",
+            "binary_val": "BINARY",
+            "xml_val": "XML",
+            "string_val": "STRING",
+            "json_val": "JSON",
+            "unspecified_val": "UNSPECIFIED",
+            "old_column": "STRING"
          },
          "primary_key": ["id"],
          "history_mode": true
@@ -12,70 +26,155 @@
       "campaign": {
          "columns": {
             "name": "STRING",
-            "num": {"type": "DECIMAL", "precision": 6, "scale": 3}
+            "num_decimal": {"type": "DECIMAL", "precision": 6, "scale": 3},
+            "start_date": "NAIVE_DATE",
+            "end_datetime": "UTC_DATETIME",
+            "is_active": "BOOLEAN"
          },
          "primary_key": []
+      },
+      "composite_table": {
+         "columns": {
+            "pk1": "INT",
+            "pk2": "STRING",
+            "old_pk": "STRING",
+            "value": "STRING"
+         },
+         "primary_key": ["pk1","pk2","old_pk"]
       }
    },
-   "alter_table" : {
+   "alter_table": {
       "transaction": {
          "columns": {
             "id": "INT",
-            "amount" : "FLOAT",
-            "desc": "STRING"
+            "amount_double": "DOUBLE",
+            "amount_float": "FLOAT",
+            "amount_decimal": {"type": "DECIMAL", "precision": 38, "scale": 15},
+            "flag": "BOOLEAN",
+            "short_val": "SHORT",
+            "long_val": "LONG",
+            "time_val": "NAIVE_TIME",
+            "date_val": "NAIVE_DATE",
+            "datetime_val": "NAIVE_DATETIME",
+            "utc_val": "UTC_DATETIME",
+            "binary_val": "BINARY",
+            "xml_val": "XML",
+            "string_val": "STRING",
+            "json_val": "JSON",
+            "unspecified_val": "UNSPECIFIED",
+            "new_column": "STRING"
          },
          "primary_key": ["id"],
          "history_mode": true
+      },
+      "composite_table": {
+         "columns": {
+            "pk1": "INT",
+            "pk2": "STRING",
+            "new_pk": "STRING",
+            "value": "STRING"
+         },
+         "primary_key": ["pk1","pk2","new_pk"]
       }
    },
-   "describe_table" : [
-      "transaction"
-   ],
-   "ops" : [
+   "describe_table": ["transaction", "campaign", "composite_table"],
+   "ops": [
       {
          "upsert": {
             "transaction": [
-               {"id":1, "amount": 100.45, "desc":null, "op_time":"2005-05-23T20:57:00Z"},
-               {"id":2, "amount": 150.33, "desc": "two", "op_time":"2005-05-23T20:57:00Z"},
-               {"id":3, "amount": 150.33, "desc": "two", "op_time":"2005-05-23T20:57:00Z"},
-               {"id":4, "amount": 150.33, "desc": "two", "op_time":"2005-05-23T20:57:00Z"}
+               {
+                  "id":1,
+                  "amount_double":100.123456789,
+                  "amount_float":10.12,
+                  "amount_decimal":12345.6789,
+                  "flag":true,
+                  "short_val":123,
+                  "long_val":1234567890123,
+                  "time_val":"10:15:30",
+                  "date_val":"2023-10-27",
+                  "datetime_val":"2023-10-27T15:00:00",
+                  "utc_val":"2023-10-27T15:00:00.000Z",
+                  "binary_val":"[B@7d4991ad",
+                  "xml_val":"<tag>This is xml</tag>",
+                  "string_val":"Some text",
+                  "json_val":"{\"a\":123}",
+                  "unspecified_val":null,
+                  "new_column":"New data"
+               },
+               {
+                  "id":2,
+                  "amount_double":200.987654321,
+                  "amount_float":20.34,
+                  "amount_decimal":98765.4321,
+                  "flag":false,
+                  "short_val":-123,
+                  "long_val":9876543210123,
+                  "time_val":"11:11:11",
+                  "date_val":"2023-10-28",
+                  "datetime_val":"2023-10-28T11:00:00",
+                  "utc_val":"2023-10-28T11:00:00.000Z",
+                  "binary_val":"[B@7d4991ad",
+                  "xml_val":"<tag>XML test</tag>",
+                  "string_val":"Another text",
+                  "json_val":"{\"b\":456}",
+                  "unspecified_val":null,
+                  "new_column":"New data 1"
+               },
+               {
+                  "id":1,
+                  "amount_double":300.111,
+                  "amount_float":30.22,
+                  "amount_decimal":11111.111,
+                  "flag":true,
+                  "short_val":0,
+                  "long_val":0,
+                  "time_val":"12:12:12",
+                  "date_val":"2023-10-29",
+                  "datetime_val":"2023-10-29T12:00:00",
+                  "utc_val":"2023-10-29T12:00:00.000Z",
+                  "binary_val":"[B@7d4991ad",
+                  "xml_val":"<tag>Duplicate PK</tag>",
+                  "string_val":"Duplicate text",
+                  "json_val":"{\"c\":789}",
+                  "unspecified_val":null,
+                  "new_column":"New data 2"
+               }
             ],
             "campaign": [
-               {"_fivetran_id": "abc-123-xyz", "name": "Christmas", "num": 100.23},
-               {"_fivetran_id": "vbn-543-hjk", "name": "New Year", "num": 200.56}
-            ]
-         }
-      },
-      {
-         "truncate_before": [
-            "campaign"
-         ]
-      },
-      {
-         "update": {
-            "transaction": [
-               {"id":1, "amount": 200 ,"op_time":"2005-05-24T20:58:00Z"},
-               {"id":5, "amount": 200 ,"op_time":"2005-05-24T20:57:00Z"}
-            ]
-         }
-      },
-      {
-         "upsert": {
-            "transaction": [
-               {"id":10, "amount": 200, "desc": "three", "op_time":"2005-05-26T20:57:00Z"},
-               {"id":10, "amount": 100, "desc": "three", "op_time":"2005-05-26T20:58:00Z"},
-               {"id":20, "amount": 50, "desc": "money", "op_time":"2005-05-26T21:57:00Z"}
+               {
+                  "_fivetran_id":"abc-123-xyz",
+                  "name":"Campaign A",
+                  "num_decimal":100.123,
+                  "start_date":"2023-01-01",
+                  "end_datetime":"2023-12-31T23:59:59.000Z",
+                  "is_active":true
+               }
             ],
-            "campaign": [
-               {"_fivetran_id": "dfg-890-lkj", "name": "Christmas 2", "num": 400.32}
+            "composite_table":[
+               {"pk1":1,"pk2":"A","new_pk":"1","value":"Value 1"},
+               {"pk1":1,"pk2":"B","new_pk":"2","value":"Value 2"}
             ]
          }
       },
       {
-         "delete": {
-            "transaction": [
-               {"id":3, "op_time":"2005-05-27T20:57:00Z"},
-               {"id":6, "op_time":"2005-05-27T20:57:00Z"}
+         "truncate_before":["campaign"]
+      },
+      {
+         "soft_truncate_before":["composite_table"]
+      },
+      {
+         "update":{
+            "transaction":[
+               {"id":1,"amount_double":400.555,"flag":false,"op_time":"2023-10-30T15:00:00Z"},
+               {"id":999,"amount_double":0,"flag":false,"op_time":"2023-10-30T15:00:00Z"}
+            ]
+         }
+      },
+      {
+         "delete":{
+            "transaction":[
+               {"id":2,"op_time":"2023-10-30T16:00:00Z"},
+               {"id":1000,"op_time":"2023-10-30T16:00:00Z"}
             ],
             "campaign": [
                {"_fivetran_id": "abc-123-xyz"}
@@ -83,13 +182,10 @@
          }
       },
       {
-         "soft_delete": {
-            "transaction": [
-               {"id":4, "op_time":"2005-05-27T20:57:00Z"},
-               {"id":5, "op_time":"2005-05-27T20:57:00Z"}
-            ],
-            "campaign": [
-               {"_fivetran_id": "dfg-890-lkj"}
+         "soft_delete":{
+            "transaction":[{"id":1,"op_time":"2023-10-30T16:30:00Z"}],
+            "campaign":[
+               {"_fivetran_id":"abc-123-xyz"}
             ]
          }
       }
