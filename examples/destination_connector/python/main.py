@@ -14,6 +14,11 @@ INFO = "INFO"
 WARNING = "WARNING"
 SEVERE = "SEVERE"
 
+# Constants for system columns
+FIVETRAN_START = "_fivetran_start"
+FIVETRAN_END = "_fivetran_end"
+FIVETRAN_ACTIVE = "_fivetran_active"
+
 class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
     table_map = {}
 
@@ -291,181 +296,332 @@ class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
             return destination_sdk_pb2.DescribeTableResponse(not_found=False, table=DestinationImpl.table_map[request.table_name])
 
     def Migrate(self, request, context):
-            """
-            Handles schema migration operations introduced in the updated proto.
+        """
+        Example implementation of the new Migrate RPC introduced for schema migration support.
+        This method inspects which migration operation (oneof) was requested and logs / handles it.
+        For demonstration, all recognized operations return success.
 
-            MigrationDetails oneof operation cases:
-              - drop
-              - copy
-              - rename
-              - add
-              - update_column_value
-              - table_sync_mode_migration
+        :param request: The migration request containing details of the operation.
+        :param context: gRPC context
 
-            Each of these may itself contain a nested oneof (e.g. drop.entity, copy.entity, etc.)
-            This implementation logs and performs simple in-memory metadata adjustments on table_map.
-            Extend with real DDL / data operations for production use.
+        Note: This is just for demonstration, so no logic for migration is implemented
+              rather different migration methods are just manipulating table_map to simulate
+              the migration operations.
+        """
+        details = request.details
+        schema = details.schema
+        table = details.table
 
-            The MigrateResponse has oneof 'response':
-              success | unsupported | warning | task
-            Here we demonstrate success/unsupported flows.
-            """
-            details = request.details
-            schema = details.schema
-            table = details.table
+        operation_case = details.WhichOneof("operation")
+        log_message(INFO, f"[Migrate] schema={schema} table={table} operation={operation_case}")
 
-            operation_case = details.WhichOneof("operation")
-            log_message(INFO, f"[Migrate] schema={schema} table={table} operation={operation_case}")
+        response = None
 
-            # Default builder logic: we'll decide which field to set
-            # The Python generated class will treat setting multiple oneof
-            # members as overwriting previous, so set exactly one.
-            response = None
+        if operation_case == "drop":
+            response = self._handle_drop(details.drop, schema, table)
 
-            if operation_case == "drop":
-                self._handle_drop(details.drop, schema, table)
-                response = destination_sdk_pb2.MigrateResponse(success=True)
+        elif operation_case == "copy":
+            response = self._handle_copy(details.copy, schema, table)
 
-            elif operation_case == "copy":
-                self._handle_copy(details.copy, schema, table)
-                response = destination_sdk_pb2.MigrateResponse(success=True)
+        elif operation_case == "rename":
+            response = self._handle_rename(details.rename, schema, table)
 
-            elif operation_case == "rename":
-                self._handle_rename(details.rename, schema, table)
-                response = destination_sdk_pb2.MigrateResponse(success=True)
+        elif operation_case == "add":
+            response = self._handle_add(details.add, schema, table)
 
-            elif operation_case == "add":
-                self._handle_add(details.add, schema, table)
-                response = destination_sdk_pb2.MigrateResponse(success=True)
+        elif operation_case == "update_column_value":
+            response = self._handle_update_column_value(details.update_column_value, schema, table)
 
-            elif operation_case == "update_column_value":
-                self._handle_update_column_value(details.update_column_value, schema, table)
-                response = destination_sdk_pb2.MigrateResponse(success=True)
+        elif operation_case == "table_sync_mode_migration":
+            response = self._handle_table_sync_mode_migration(details.table_sync_mode_migration, schema, table)
 
-            elif operation_case == "table_sync_mode_migration":
-                self._handle_table_sync_mode_migration(details.table_sync_mode_migration, schema, table)
-                response = destination_sdk_pb2.MigrateResponse(success=True)
+        else:
+            log_message(WARNING, "[Migrate] Unsupported or missing operation")
+            response = destination_sdk_pb2.MigrateResponse(unsupported=True)
 
-            else:
-                log_message(WARNING, "[Migrate] Unsupported or missing operation")
-                response = destination_sdk_pb2.MigrateResponse(unsupported=True)
+        # Example: to return a warning instead:
+        # response = destination_sdk_pb2.MigrateResponse(
+        #     warning=common_pb2.Warning(message="Non-critical issue")
+        # )
 
-            # Example to return a warning instead:
-            # response = destination_sdk_pb2.MigrateResponse(
-            #     warning=common_pb2.Warning(message="Non-critical migration issue")
-            # )
+        # Example: to return a task instead (async pattern):
+        # response = destination_sdk_pb2.MigrateResponse(
+        #     task=common_pb2.Task(id="background-migration-123")
+        # )
 
-            # Example to return a task for async processing:
-            # response = destination_sdk_pb2.MigrateResponse(
-            #     task=common_pb2.Task(id="background-migration-123")
-            # )
+        # Example to return UNSUPPORTED status:
+        # response = destination_sdk_pb2.MigrateResponse(unsupported=True)
 
-            return response
+        return response
 
-        # ----------- Helper handlers for migration operations ----------- #
+    # ----------- Helper handlers for migration operations ----------- #
 
     def _handle_drop(self, drop_op, schema, table):
+        """Handles drop operations (drop table, drop column in history mode)."""
         entity_case = drop_op.WhichOneof("entity")
+
         if entity_case == "drop_table":
-            log_message(INFO, f"[Migrate:Drop] Dropping table {schema}.{table}")
+            # table-map manipulation to simulate drop, replace with actual logic.
             DestinationImpl.table_map.pop(table, None)
+
+            log_message(INFO, f"[Migrate:Drop] Dropping table {schema}.{table}")
+            return destination_sdk_pb2.MigrateResponse(success=True)
+
         elif entity_case == "drop_column_in_history_mode":
-            col = drop_op.drop_column_in_history_mode.column
-            op_ts = drop_op.drop_column_in_history_mode.operation_timestamp
-            table_obj = DestinationImpl.table_map[table]
-            for i, column in enumerate(table_obj.columns):
-                if column.name == col:
-                    table_obj.columns.pop(i)
-                    break
-            log_message(INFO, f"[Migrate:DropColumnHistory] table={schema}.{table} column={col} op_ts={op_ts}")
+            # table-map manipulation to simulate drop column in history mode, replace with actual logic.
+            dcol = drop_op.drop_column_in_history_mode
+            table_obj = DestinationImpl.table_map.get(table)
+            if table_obj:
+                # Remove the specified column from the table
+                columns_to_keep = [col for col in table_obj.columns if col.name != dcol.column]
+                del table_obj.columns[:]
+                table_obj.columns.extend(columns_to_keep)
+
+            log_message(INFO, f"[Migrate:DropColumnHistory] table={schema}.{table} column={dcol.column} op_ts={dcol.operation_timestamp}")
+            return destination_sdk_pb2.MigrateResponse(success=True)
+
         else:
             log_message(WARNING, "[Migrate:Drop] No drop entity specified")
+            return destination_sdk_pb2.MigrateResponse(unsupported=True)
 
     def _handle_copy(self, copy_op, schema, table):
+        """Handles copy operations (copy table, copy column, copy table to history mode)."""
         entity_case = copy_op.WhichOneof("entity")
+
         if entity_case == "copy_table":
-            cpy_table = copy_op.copy_table
-            frm = cpy_table.from_table
-            to = cpy_table.to_table
-            if frm in DestinationImpl.table_map:
-                DestinationImpl.table_map[to] = DestinationImpl.table_map[frm]
-            log_message(INFO, f"[Migrate:CopyTable] from={frm} to={to} schema={schema}")
+            # table-map manipulation to simulate copy, replace with actual logic.
+            ct = copy_op.copy_table
+            if ct.from_table in DestinationImpl.table_map:
+                DestinationImpl.table_map[ct.to_table] = DestinationImpl.table_map[ct.from_table]
+
+            log_message(INFO, f"[Migrate:CopyTable] from={ct.from_table} to={ct.to_table} in schema={schema}")
+            return destination_sdk_pb2.MigrateResponse(success=True)
+
         elif entity_case == "copy_column":
-            cpy_col = copy_op.copy_column
-            table_obj = DestinationImpl.table_map[table]
-            for col in table_obj.columns:
-                if col.name == cpy_col.from_column:
-                    new_col = type(col)()
-                    new_col.CopyFrom(col)
-                    new_col.name = cpy_col.to_column
-                    table_obj.columns.add().CopyFrom(new_col)
-                    break
-            log_message(INFO, f"[Migrate:CopyColumn] table={schema}.{table} from_col={cpy_col.from_column} to_col={cpy_col.to_column}")
+            # table-map manipulation to simulate copy column, replace with actual logic.
+            cc = copy_op.copy_column
+            table_obj = DestinationImpl.table_map.get(table)
+            if table_obj:
+                for col in table_obj.columns:
+                    if col.name == cc.from_column:
+                        new_col = type(col)()
+                        new_col.CopyFrom(col)
+                        new_col.name = cc.to_column
+                        table_obj.columns.add().CopyFrom(new_col)
+                        break
+
+            log_message(INFO, f"[Migrate:CopyColumn] table={schema}.{table} from_col={cc.from_column} to_col={cc.to_column}")
+            return destination_sdk_pb2.MigrateResponse(success=True)
+
         elif entity_case == "copy_table_to_history_mode":
-            frm = copy_op.copy_table_to_history_mode.from_table
-            to = copy_op.copy_table_to_history_mode.to_table
-            soft_deleted_col = copy_op.copy_table_to_history_mode.soft_deleted_column
-            if frm in DestinationImpl.table_map:
-                DestinationImpl.table_map[to] = DestinationImpl.table_map[frm]
-            log_message(INFO, f"[Migrate:CopyTableToHistoryMode] from={frm} to={to} soft_deleted_column={soft_deleted_col}")
+            # table-map manipulation to simulate copy table to history mode, replace with actual logic.
+            cth = copy_op.copy_table_to_history_mode
+            if cth.from_table in DestinationImpl.table_map:
+                from_table_obj = DestinationImpl.table_map[cth.from_table]
+                new_table = self._create_table_copy(from_table_obj, cth.to_table)
+                self._remove_column_from_table(new_table, cth.soft_deleted_column)
+                self._add_history_mode_columns(new_table)
+                DestinationImpl.table_map[cth.to_table] = new_table
+
+            log_message(INFO, f"[Migrate:CopyTableToHistoryMode] from={cth.from_table} to={cth.to_table} soft_deleted_column={cth.soft_deleted_column}")
+            return destination_sdk_pb2.MigrateResponse(success=True)
+
         else:
             log_message(WARNING, "[Migrate:Copy] No copy entity specified")
+            return destination_sdk_pb2.MigrateResponse(unsupported=True)
 
     def _handle_rename(self, rename_op, schema, table):
+        """Handles rename operations (rename table, rename column)."""
         entity_case = rename_op.WhichOneof("entity")
+
         if entity_case == "rename_table":
-            frm = rename_op.rename_table.from_table
-            to = rename_op.rename_table.to_table
-            if frm in DestinationImpl.table_map:
-                tbl_meta = DestinationImpl.table_map.pop(frm)
-                # Adjust name inside the Table metadata if needed (proto Table likely has 'name' field)
-                tbl_meta = tbl_meta.__class__.FromString(tbl_meta.SerializeToString())
-                # If Table has a 'name' field we can rebuild:
-                if hasattr(tbl_meta, "name"):
-                    tbl_meta.name = to
-                DestinationImpl.table_map[to] = tbl_meta
-            log_message(INFO, f"[Migrate:RenameTable] from={frm} to={to} schema={schema}")
+            # table-map manipulation to simulate rename, replace with actual logic.
+            rt = rename_op.rename_table
+            if rt.from_table in DestinationImpl.table_map:
+                tbl = DestinationImpl.table_map.pop(rt.from_table)
+                # Adjust name inside the Table metadata if needed
+                tbl_copy = tbl.__class__.FromString(tbl.SerializeToString())
+                if hasattr(tbl_copy, "name"):
+                    tbl_copy.name = rt.to_table
+                DestinationImpl.table_map[rt.to_table] = tbl_copy
+
+            log_message(INFO, f"[Migrate:RenameTable] from={rt.from_table} to={rt.to_table} schema={schema}")
+            return destination_sdk_pb2.MigrateResponse(success=True)
+
         elif entity_case == "rename_column":
-            frm_col = rename_op.rename_column.from_column
-            to_col = rename_op.rename_column.to_column
-            for col in DestinationImpl.table_map[table].columns:
-                if col.name == frm_col:
-                    col.name = to_col
-                    break
-            log_message(INFO, f"[Migrate:RenameColumn] table={schema}.{table} from_col={frm_col} to_col={to_col}")
+            # table-map manipulation to simulate rename column, replace with actual logic.
+            rc = rename_op.rename_column
+            table_obj = DestinationImpl.table_map.get(table)
+            if table_obj:
+                # Rename the column
+                for col in table_obj.columns:
+                    if col.name == rc.from_column:
+                        col.name = rc.to_column
+                        break
+
+            log_message(INFO, f"[Migrate:RenameColumn] table={schema}.{table} from_col={rc.from_column} to_col={rc.to_column}")
+            return destination_sdk_pb2.MigrateResponse(success=True)
+
         else:
             log_message(WARNING, "[Migrate:Rename] No rename entity specified")
+            return destination_sdk_pb2.MigrateResponse(unsupported=True)
 
     def _handle_add(self, add_op, schema, table):
+        """Handles add operations (add column in history mode, add column with default value)."""
         entity_case = add_op.WhichOneof("entity")
+
         if entity_case == "add_column_in_history_mode":
-            col = add_op.add_column_in_history_mode.column
-            ctype = add_op.add_column_in_history_mode.column_type
-            default = add_op.add_column_in_history_mode.default_value
-            op_ts = add_op.add_column_in_history_mode.operation_timestamp
-            new_col = DestinationImpl.table_map[table].columns.add()
-            new_col.name, new_col.type = col, ctype
-            log_message(INFO, f"[Migrate:AddColumnHistory] table={schema}.{table} column={col} type={ctype} default={default} op_ts={op_ts}")
+            # table-map manipulation to simulate add column in history mode, replace with actual logic.
+            ach = add_op.add_column_in_history_mode
+            table_obj = DestinationImpl.table_map.get(table)
+            if table_obj:
+                new_col = table_obj.columns.add()
+                new_col.name = ach.column
+                new_col.type = ach.column_type
+
+            log_message(INFO, f"[Migrate:AddColumnHistory] table={schema}.{table} column={ach.column} type={ach.column_type} default={ach.default_value} op_ts={ach.operation_timestamp}")
+            return destination_sdk_pb2.MigrateResponse(success=True)
+
         elif entity_case == "add_column_with_default_value":
-            col = add_op.add_column_with_default_value.column
-            ctype = add_op.add_column_with_default_value.column_type
-            default = add_op.add_column_with_default_value.default_value
-            new_col = DestinationImpl.table_map[table].columns.add()
-            new_col.name, new_col.type = col, ctype
-            log_message(INFO, f"[Migrate:AddColumnDefault] table={schema}.{table} column={col} type={ctype} default={default}")
+            # table-map manipulation to simulate add column with default value, replace with actual logic.
+            acd = add_op.add_column_with_default_value
+            table_obj = DestinationImpl.table_map.get(table)
+            if table_obj:
+                new_col = table_obj.columns.add()
+                new_col.name = acd.column
+                new_col.type = acd.column_type
+
+            log_message(INFO, f"[Migrate:AddColumnDefault] table={schema}.{table} column={acd.column} type={acd.column_type} default={acd.default_value}")
+            return destination_sdk_pb2.MigrateResponse(success=True)
+
         else:
             log_message(WARNING, "[Migrate:Add] No add entity specified")
+            return destination_sdk_pb2.MigrateResponse(unsupported=True)
 
     def _handle_update_column_value(self, upd, schema, table):
-        col = upd.column
-        value = upd.value
-        log_message(INFO, f"[Migrate:UpdateColumnValue] table={schema}.{table} column={col} value={value}")
+        """Handles update column value operation."""
+        # Placeholder: Update all existing rows' column value.
+
+        log_message(INFO, f"[Migrate:UpdateColumnValue] table={schema}.{table} column={upd.column} value={upd.value}")
+        return destination_sdk_pb2.MigrateResponse(success=True)
 
     def _handle_table_sync_mode_migration(self, op, schema, table):
-        sync_type = op.type
-        soft_deleted_column = op.soft_deleted_column if op.HasField("soft_deleted_column") else "N/A"
+        """Handles table sync mode migration operations."""
+        table_obj = DestinationImpl.table_map.get(table)
+
         keep_deleted_rows = op.keep_deleted_rows if op.HasField("keep_deleted_rows") else False
-        log_message(INFO, f"[Migrate:TableSyncModeMigration] table={schema}.{table} type={sync_type} soft_deleted_column={soft_deleted_column} keep_deleted_rows={keep_deleted_rows}")
+        soft_deleted_column = op.soft_deleted_column if op.HasField("soft_deleted_column") else None
+
+        # Determine the migration type and handle accordingly
+        if op.type == destination_sdk_pb2.TableSyncModeMigrationType.SOFT_DELETE_TO_LIVE:
+            # table-map manipulation to simulate soft delete to live, replace with actual logic.
+            table_copy = self._create_table_copy(table_obj, table_obj.name)
+            self._remove_column_from_table(table_copy, soft_deleted_column)
+            DestinationImpl.table_map[table] = table_copy
+
+            log_message(INFO, f"[Migrate:TableSyncModeMigration] Migrating table={schema}.{table} from SOFT_DELETE to LIVE")
+            return destination_sdk_pb2.MigrateResponse(success=True)
+
+        elif op.type == destination_sdk_pb2.TableSyncModeMigrationType.SOFT_DELETE_TO_HISTORY:
+            # table-map manipulation to simulate soft delete to history, replace with actual logic.
+            table_copy = self._create_table_copy(table_obj, table_obj.name)
+            self._remove_column_from_table(table_copy, soft_deleted_column)
+            self._add_history_mode_columns(table_copy)
+            DestinationImpl.table_map[table] = table_copy
+
+            log_message(INFO, f"[Migrate:TableSyncModeMigration] Migrating table={schema}.{table} from SOFT_DELETE to HISTORY")
+            return destination_sdk_pb2.MigrateResponse(success=True)
+
+        elif op.type == destination_sdk_pb2.TableSyncModeMigrationType.HISTORY_TO_SOFT_DELETE:
+            # table-map manipulation to simulate history to soft delete, replace with actual logic.
+            table_copy = self._create_table_copy(table_obj, table_obj.name)
+            self._remove_history_mode_columns(table_copy)
+            self._add_soft_delete_column(table_copy, soft_deleted_column)
+            DestinationImpl.table_map[table] = table_copy
+
+            log_message(INFO, f"[Migrate:TableSyncModeMigration] Migrating table={schema}.{table} from HISTORY to SOFT_DELETE")
+            return destination_sdk_pb2.MigrateResponse(success=True)
+
+        elif op.type == destination_sdk_pb2.TableSyncModeMigrationType.HISTORY_TO_LIVE:
+            # table-map manipulation to simulate history to live, replace with actual logic.
+            table_copy = self._create_table_copy(table_obj, table_obj.name)
+            self._remove_history_mode_columns(table_copy)
+            DestinationImpl.table_map[table] = table_copy
+
+            log_message(INFO, f"[Migrate:TableSyncModeMigration] Migrating table={schema}.{table} from HISTORY to LIVE")
+            return destination_sdk_pb2.MigrateResponse(success=True)
+
+        elif op.type == destination_sdk_pb2.TableSyncModeMigrationType.LIVE_TO_SOFT_DELETE:
+            # table-map manipulation to simulate live to soft delete, replace with actual logic.
+            table_copy = self._create_table_copy(table_obj, table_obj.name)
+            self._add_soft_delete_column(table_copy, soft_deleted_column)
+            DestinationImpl.table_map[table] = table_copy
+
+            log_message(INFO, f"[Migrate:TableSyncModeMigration] Migrating table={schema}.{table} from LIVE to SOFT_DELETE")
+            return destination_sdk_pb2.MigrateResponse(success=True)
+
+        elif op.type == destination_sdk_pb2.TableSyncModeMigrationType.LIVE_TO_HISTORY:
+            # table-map manipulation to simulate live to history, replace with actual logic.
+            table_copy = self._create_table_copy(table_obj, table_obj.name)
+            self._add_history_mode_columns(table_copy)
+            DestinationImpl.table_map[table] = table_copy
+
+            log_message(INFO, f"[Migrate:TableSyncModeMigration] Migrating table={schema}.{table} from LIVE to HISTORY")
+            return destination_sdk_pb2.MigrateResponse(success=True)
+
+        else:
+            log_message(WARNING, f"[Migrate:TableSyncModeMigration] Unknown migration type for table={schema}.{table}")
+            return destination_sdk_pb2.MigrateResponse(unsupported=True)
+
+    # ----------- Helper methods for table metadata operations ----------- #
+
+    def _create_table_copy(self, table_obj, new_name):
+        """Creates a copy of a table."""
+        table_copy = table_obj.__class__.FromString(table_obj.SerializeToString())
+        if hasattr(table_copy, "name"):
+            table_copy.name = new_name
+        return table_copy
+
+    def _remove_column_from_table(self, table_obj, column_name):
+        """Removes a column from a table."""
+        if not column_name or not hasattr(table_obj, 'columns'):
+            return
+        # Create a new list of columns excluding the specified column
+        columns_to_keep = [col for col in table_obj.columns if col.name != column_name]
+        # Clear and repopulate
+        del table_obj.columns[:]
+        table_obj.columns.extend(columns_to_keep)
+
+    def _remove_history_mode_columns(self, table_obj):
+        """Removes history mode columns from a table."""
+        if not hasattr(table_obj, 'columns'):
+            return
+        columns_to_keep = [
+            col for col in table_obj.columns
+            if col.name not in [FIVETRAN_START, FIVETRAN_END, FIVETRAN_ACTIVE]
+        ]
+        del table_obj.columns[:]
+        table_obj.columns.extend(columns_to_keep)
+
+    def _add_history_mode_columns(self, table_obj):
+        """Adds history mode columns to a table."""
+        if not hasattr(table_obj, 'columns'):
+            return
+        start_col = table_obj.columns.add()
+        start_col.name = FIVETRAN_START
+
+        end_col = table_obj.columns.add()
+        end_col.name = FIVETRAN_END
+
+        active_col = table_obj.columns.add()
+        active_col.name = FIVETRAN_ACTIVE
+
+    def _add_soft_delete_column(self, table_obj, column_name):
+        """Adds a soft delete column to a table."""
+        if not column_name or not hasattr(table_obj, 'columns'):
+            return
+        soft_del_col = table_obj.columns.add()
+        soft_del_col.name = column_name
 
 def log_message(level, message):
     print(f'{{"level":"{level}", "message": "{message}", "message-origin": "sdk_destination"}}')
