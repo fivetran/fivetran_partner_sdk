@@ -1,0 +1,53 @@
+{
+  "create_table" : {
+    "transaction": {
+      "columns": {
+        "id": "INT",
+        "amount": "DOUBLE",
+        "desc": "STRING"
+      },
+      "primary_key": ["id"]
+    }
+  },
+  "ops" : [
+    {
+      "upsert": {
+        "transaction": [
+          {"id":1, "amount": 100.45, "desc": null},
+          {"id":2, "amount": 150.33, "desc": "two"},
+          {"id":3, "amount": 150.33, "desc": "two"},
+          {"id":4, "amount": 150.33, "desc": "two"},
+          {"id":10, "amount": 200, "desc": "three"},
+          {"id":20, "amount": 50, "desc": "money"}
+        ]
+      }
+    }
+  ],
+  "schema_migration" : [
+    {
+      "add_column": [
+        {
+          "table": "transaction",
+          "column": "operation_time",
+          "data_type": "UTC_DATETIME"
+        }
+      ],
+      "change_column_data_type": [
+        {
+          "table": "transaction",
+          "column": "amount",
+          "data_type": "FLOAT"
+        }
+      ],
+      "drop_column": [
+        {
+          "table": "transaction",
+          "column": "desc"
+        }
+      ]
+    }
+  ],
+  "describe_table" : [
+    "transaction"
+  ]
+}

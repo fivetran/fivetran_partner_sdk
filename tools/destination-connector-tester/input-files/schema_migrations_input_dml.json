@@ -1,0 +1,100 @@
+{
+   "create_table" : {
+      "transaction": {
+         "columns": {
+            "id": "INT",
+            "amount" : "DOUBLE",
+            "desc": "STRING"
+         },
+         "primary_key": ["id"]
+      },
+      "transaction_drop": {
+         "columns": {
+            "id": "INT",
+            "amount" : "DOUBLE",
+            "desc": "STRING"
+         },
+         "primary_key": ["id"]
+      }
+   },
+   "ops" : [
+      {
+         "upsert": {
+            "transaction": [
+               {"id":1, "amount": 100.45, "desc":null},
+               {"id":2, "amount": 150.33, "desc": "two"},
+               {"id":3, "amount": 150.33, "desc": "two"},
+               {"id":4, "amount": 150.33, "desc": "two"},
+               {"id":10, "amount": 200, "desc": "three"},
+               {"id":20, "amount": 50, "desc": "money"}
+            ],
+            "transaction_drop": [
+               {"id":1, "amount": 100.45, "desc":null},
+               {"id":2, "amount": 150.33, "desc": "two"}
+            ]
+         }
+      }
+   ],
+   "schema_migration" : [
+      {
+         "copy_column": [
+            {
+               "table": "transaction",
+               "from_column": "desc",
+               "to_column": "desc_detailed"
+            }
+         ],
+         "update_column_value": [
+            {
+               "table": "transaction",
+               "column": "amount",
+               "value": "202.57"
+            }
+         ],
+         "add_column_with_default_value": [
+            {
+               "table": "transaction",
+               "column": "operation_time",
+               "data_type": "UTC_DATETIME",
+               "default_value": "2005-05-23T20:57:00Z"
+            }
+         ],
+         "set_column_to_null": [
+            {
+               "table": "transaction",
+               "column": "desc"
+            }
+         ],
+         "copy_table": [
+            {
+               "from_table": "transaction",
+               "to_table": "transaction_new"
+            }
+         ],
+         "rename_column": [
+            {
+               "table": "transaction",
+               "from_column": "amount",
+               "to_column": "amount_renamed"
+            }
+         ],
+         "rename_table": [
+            {
+               "from_table": "transaction_new",
+               "to_table": "transaction_renamed"
+            }
+         ],
+         "drop_table": [
+            {
+               "table": "transaction_drop"
+            }
+         ]
+      }
+   ],
+   "describe_table" : [
+      "transaction",
+      "transaction_drop",
+      "transaction_new",
+      "transaction_renamed"
+   ]
+}

@@ -1,0 +1,97 @@
+{
+   "create_table" : {
+      "transaction": {
+         "columns": {
+            "id": "INT",
+            "amount" : "DOUBLE",
+            "desc": "STRING"
+         },
+         "primary_key": ["id"],
+         "history_mode": true
+      },
+      "campaign": {
+         "columns": {
+            "name": "STRING",
+            "num": {"type": "DECIMAL", "precision": 6, "scale": 3}
+         },
+         "primary_key": []
+      }
+   },
+   "alter_table" : {
+      "transaction": {
+         "columns": {
+            "id": "INT",
+            "amount" : "FLOAT",
+            "desc": "STRING"
+         },
+         "primary_key": ["id"],
+         "history_mode": true
+      }
+   },
+   "describe_table" : [
+      "transaction"
+   ],
+   "ops" : [
+      {
+         "upsert": {
+            "transaction": [
+               {"id":1, "amount": 100.45, "desc":null, "op_time":"2005-05-23T20:57:00Z"},
+               {"id":2, "amount": 150.33, "desc": "two", "op_time":"2005-05-23T20:57:00Z"},
+               {"id":3, "amount": 150.33, "desc": "two", "op_time":"2005-05-23T20:57:00Z"},
+               {"id":4, "amount": 150.33, "desc": "two", "op_time":"2005-05-23T20:57:00Z"}
+            ],
+            "campaign": [
+               {"_fivetran_id": "abc-123-xyz", "name": "Christmas", "num": 100.23},
+               {"_fivetran_id": "vbn-543-hjk", "name": "New Year", "num": 200.56}
+            ]
+         }
+      },
+      {
+         "truncate_before": [
+            "campaign"
+         ]
+      },
+      {
+         "update": {
+            "transaction": [
+               {"id":1, "amount": 200 ,"op_time":"2005-05-24T20:58:00Z"},
+               {"id":5, "amount": 200 ,"op_time":"2005-05-24T20:57:00Z"}
+            ]
+         }
+      },
+      {
+         "upsert": {
+            "transaction": [
+               {"id":10, "amount": 200, "desc": "three", "op_time":"2005-05-26T20:57:00Z"},
+               {"id":10, "amount": 100, "desc": "thee", "op_time":"2005-05-26T20:58:00Z"},
+               {"id":20, "amount": 50, "desc": "mone", "op_time":"2005-05-26T21:57:00Z"}
+            ],
+            "campaign": [
+               {"_fivetran_id": "dfg-890-lkj", "name": "Christmas 2", "num": 400.32}
+            ]
+         }
+      },
+      {
+         "delete": {
+            "transaction": [
+               {"id":3, "op_time":"2005-05-27T20:57:00Z"},
+               {"id":6, "op_time":"2005-05-27T20:57:00Z"}
+            ],
+            "campaign": [
+               {"_fivetran_id": "abc-123-xyz"}
+            ]
+         }
+      },
+      {
+         "soft_delete": {
+            "transaction": [
+               {"id":4, "op_time":"2005-05-27T20:57:00Z"},
+               {"id":5, "op_time":"2005-05-27T20:57:00Z"}
+            ],
+            "campaign": [
+               {"_fivetran_id": "dfg-890-lkj"}
+            ]
+         }
+      }
+   ]
+}
