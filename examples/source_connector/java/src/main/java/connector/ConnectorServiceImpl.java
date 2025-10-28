@@ -219,7 +219,6 @@ public class ConnectorServiceImpl extends SourceConnectorGrpc.SourceConnectorImp
 
         FormField descriptiveDropDownField = getDescriptiveDropDownFields();
 
-
         return ConfigurationFormResponse.newBuilder()
                 .setSchemaSelectionSupported(true)
                 .setTableSelectionSupported(true)

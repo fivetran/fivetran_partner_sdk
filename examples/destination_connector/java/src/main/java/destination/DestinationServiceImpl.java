@@ -206,6 +206,8 @@ public class DestinationServiceImpl extends DestinationConnectorGrpc.Destination
                                 .build())
                 .build();
 
+        FormField descriptiveDropDownField = getDescriptiveDropDownFields();
+
         return ConfigurationFormResponse.newBuilder()
                 .setSchemaSelectionSupported(true)
                 .setTableSelectionSupported(true)
@@ -215,11 +217,47 @@ public class DestinationServiceImpl extends DestinationConnectorGrpc.Destination
                                 conditionalFieldForFile,
                                 conditionalFieldForCloud,
                                 conditionalFieldForDatabase,
+                                descriptiveDropDownField,
                                 enableEncryption))
                 .addAllTests(
                         Arrays.asList(
                                 ConfigurationTest.newBuilder().setName("connect").setLabel("Tests connection").build(),
                                 ConfigurationTest.newBuilder().setName("select").setLabel("Tests selection").build()))
+                .build();
+    }
+
+    private static FormField getDescriptiveDropDownFields() {
+        DescriptiveDropDownField basicPooling = DescriptiveDropDownField.newBuilder()
+                .setLabel("Basic connection pooling")
+                .setValue("basic")
+                .setDescription("Maintain a small pool of database connections (5-10). Suitable for low to moderate traffic applications.")
+                .build();
+
+        DescriptiveDropDownField standardPooling = DescriptiveDropDownField.newBuilder()
+                .setLabel("Standard connection pooling")
+                .setValue("standard")
+                .setDescription("Maintain a moderate pool of database connections (10-50). Balanced approach for most production workloads.")
+                .build();
+
+        DescriptiveDropDownField advancedPooling = DescriptiveDropDownField.newBuilder()
+                .setLabel("Advanced connection pooling")
+                .setValue("advanced")
+                .setDescription("Maintain a large pool with auto-scaling (50-200). For high-traffic applications with variable load patterns.")
+                .build();
+
+        DescriptiveDropDownFields allDropdownOptions = DescriptiveDropDownFields.newBuilder()
+                .addDescriptiveDropdownField(basicPooling)
+                .addDescriptiveDropdownField(standardPooling)
+                .addDescriptiveDropdownField(advancedPooling)
+                .build();
+
+        return FormField.newBuilder()
+                .setName("connectionPooling")
+                .setLabel("Connection Pooling Strategy")
+                .setDescription("Select the database connection pooling strategy based on your application's traffic patterns.")
+                .setRequired(true)
+                .setDescriptiveDropdownFields(allDropdownOptions)
+                .setDefaultValue("standard")
                 .build();
     }
 
