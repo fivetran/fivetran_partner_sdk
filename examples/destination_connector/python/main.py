@@ -8,7 +8,7 @@ sys.path.append('sdk_pb2')
 from sdk_pb2 import destination_sdk_pb2
 from sdk_pb2 import common_pb2
 from sdk_pb2 import destination_sdk_pb2_grpc
-from migration_helper import MigrationHelper
+from schema_migration_helper import SchemaMigrationHelper
 
 
 INFO = "INFO"
@@ -20,7 +20,7 @@ class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
 
     def __init__(self):
         super().__init__()
-        self.migration_helper = MigrationHelper(DestinationImpl.table_map)
+        self.migration_helper = SchemaMigrationHelper(DestinationImpl.table_map)
 
     def ConfigurationForm(self, request, context):
         log_message(INFO, "Fetching Configuration form")

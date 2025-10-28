@@ -13,7 +13,7 @@ INFO = "INFO"
 WARNING = "WARNING"
 
 
-class MigrationHelper:
+class SchemaMigrationHelper:
     """Helper class for handling migration operations"""
 
     def __init__(self, table_map):
