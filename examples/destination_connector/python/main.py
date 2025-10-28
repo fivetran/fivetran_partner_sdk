@@ -346,7 +346,7 @@ class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
 
         # Example: to return a task instead (async pattern):
         # response = destination_sdk_pb2.MigrateResponse(
-        #     task=common_pb2.Task(id="background-migration-123")
+        #             task=common_pb2.Task(message="error-message")
         # )
 
         # Example to return UNSUPPORTED status:
@@ -369,15 +369,15 @@ class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
 
         elif entity_case == "drop_column_in_history_mode":
             # table-map manipulation to simulate drop column in history mode, replace with actual logic.
-            dcol = drop_op.drop_column_in_history_mode
+            drop_column = drop_op.drop_column_in_history_mode
             table_obj = DestinationImpl.table_map.get(table)
             if table_obj:
                 # Remove the specified column from the table
-                columns_to_keep = [col for col in table_obj.columns if col.name != dcol.column]
+                columns_to_keep = [col for col in table_obj.columns if col.name != drop_column.column]
                 del table_obj.columns[:]
                 table_obj.columns.extend(columns_to_keep)
 
-            log_message(INFO, f"[Migrate:DropColumnHistory] table={schema}.{table} column={dcol.column} op_ts={dcol.operation_timestamp}")
+            log_message(INFO, f"[Migrate:DropColumnHistory] table={schema}.{table} column={drop_column.column} op_ts={dcol.operation_timestamp}")
             return destination_sdk_pb2.MigrateResponse(success=True)
 
         else:
@@ -390,40 +390,40 @@ class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
 
         if entity_case == "copy_table":
             # table-map manipulation to simulate copy, replace with actual logic.
-            ct = copy_op.copy_table
-            if ct.from_table in DestinationImpl.table_map:
-                DestinationImpl.table_map[ct.to_table] = DestinationImpl.table_map[ct.from_table]
+            copy_table = copy_op.copy_table
+            if copy_table.from_table in DestinationImpl.table_map:
+                DestinationImpl.table_map[copy_table.to_table] = DestinationImpl.table_map[copy_table.from_table]
 
-            log_message(INFO, f"[Migrate:CopyTable] from={ct.from_table} to={ct.to_table} in schema={schema}")
+            log_message(INFO, f"[Migrate:CopyTable] from={copy_table.from_table} to={copy_table.to_table} in schema={schema}")
             return destination_sdk_pb2.MigrateResponse(success=True)
 
         elif entity_case == "copy_column":
             # table-map manipulation to simulate copy column, replace with actual logic.
-            cc = copy_op.copy_column
+            copy_column = copy_op.copy_column
             table_obj = DestinationImpl.table_map.get(table)
             if table_obj:
                 for col in table_obj.columns:
-                    if col.name == cc.from_column:
+                    if col.name == copy_column.from_column:
                         new_col = type(col)()
                         new_col.CopyFrom(col)
-                        new_col.name = cc.to_column
+                        new_col.name = copy_column.to_column
                         table_obj.columns.add().CopyFrom(new_col)
                         break
 
-            log_message(INFO, f"[Migrate:CopyColumn] table={schema}.{table} from_col={cc.from_column} to_col={cc.to_column}")
+            log_message(INFO, f"[Migrate:CopyColumn] table={schema}.{table} from_col={copy_column.from_column} to_col={copy_column.to_column}")
             return destination_sdk_pb2.MigrateResponse(success=True)
 
         elif entity_case == "copy_table_to_history_mode":
             # table-map manipulation to simulate copy table to history mode, replace with actual logic.
-            cth = copy_op.copy_table_to_history_mode
-            if cth.from_table in DestinationImpl.table_map:
-                from_table_obj = DestinationImpl.table_map[cth.from_table]
-                new_table = self._create_table_copy(from_table_obj, cth.to_table)
-                self._remove_column_from_table(new_table, cth.soft_deleted_column)
+            copy_table_history_mode = copy_op.copy_table_to_history_mode
+            if copy_table_history_mode.from_table in DestinationImpl.table_map:
+                from_table_obj = DestinationImpl.table_map[copy_table_history_mode.from_table]
+                new_table = self._create_table_copy(from_table_obj, copy_table_history_mode.to_table)
+                self._remove_column_from_table(new_table, copy_table_history_mode.soft_deleted_column)
                 self._add_history_mode_columns(new_table)
-                DestinationImpl.table_map[cth.to_table] = new_table
+                DestinationImpl.table_map[copy_table_history_mode.to_table] = new_table
 
-            log_message(INFO, f"[Migrate:CopyTableToHistoryMode] from={cth.from_table} to={cth.to_table} soft_deleted_column={cth.soft_deleted_column}")
+            log_message(INFO, f"[Migrate:CopyTableToHistoryMode] from={copy_table_history_mode.from_table} to={copy_table_history_mode.to_table} soft_deleted_column={copy_table_history_mode.soft_deleted_column}")
             return destination_sdk_pb2.MigrateResponse(success=True)
 
         else:
@@ -450,16 +450,16 @@ class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
 
         elif entity_case == "rename_column":
             # table-map manipulation to simulate rename column, replace with actual logic.
-            rc = rename_op.rename_column
+            rename_column = rename_op.rename_column
             table_obj = DestinationImpl.table_map.get(table)
             if table_obj:
                 # Rename the column
                 for col in table_obj.columns:
-                    if col.name == rc.from_column:
-                        col.name = rc.to_column
+                    if col.name == rename_column.from_column:
+                        col.name = rename_column.to_column
                         break
 
-            log_message(INFO, f"[Migrate:RenameColumn] table={schema}.{table} from_col={rc.from_column} to_col={rc.to_column}")
+            log_message(INFO, f"[Migrate:RenameColumn] table={schema}.{table} from_col={rename_column.from_column} to_col={rename_column.to_column}")
             return destination_sdk_pb2.MigrateResponse(success=True)
 
         else:
@@ -472,26 +472,26 @@ class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
 
         if entity_case == "add_column_in_history_mode":
             # table-map manipulation to simulate add column in history mode, replace with actual logic.
-            ach = add_op.add_column_in_history_mode
+            add_col_history_mode = add_op.add_column_in_history_mode
             table_obj = DestinationImpl.table_map.get(table)
             if table_obj:
                 new_col = table_obj.columns.add()
-                new_col.name = ach.column
-                new_col.type = ach.column_type
+                new_col.name = add_col_history_mode.column
+                new_col.type = add_col_history_mode.column_type
 
-            log_message(INFO, f"[Migrate:AddColumnHistory] table={schema}.{table} column={ach.column} type={ach.column_type} default={ach.default_value} op_ts={ach.operation_timestamp}")
+            log_message(INFO, f"[Migrate:AddColumnHistory] table={schema}.{table} column={add_col_history_mode.column} type={add_col_history_mode.column_type} default={add_col_history_mode.default_value} op_ts={add_col_history_mode.operation_timestamp}")
             return destination_sdk_pb2.MigrateResponse(success=True)
 
         elif entity_case == "add_column_with_default_value":
             # table-map manipulation to simulate add column with default value, replace with actual logic.
-            acd = add_op.add_column_with_default_value
+            add_col_default_with_value = add_op.add_column_with_default_value
             table_obj = DestinationImpl.table_map.get(table)
             if table_obj:
                 new_col = table_obj.columns.add()
-                new_col.name = acd.column
-                new_col.type = acd.column_type
+                new_col.name = add_col_default_with_value.column
+                new_col.type = add_col_default_with_value.column_type
 
-            log_message(INFO, f"[Migrate:AddColumnDefault] table={schema}.{table} column={acd.column} type={acd.column_type} default={acd.default_value}")
+            log_message(INFO, f"[Migrate:AddColumnDefault] table={schema}.{table} column={add_col_default_with_value.column} type={add_col_default_with_value.column_type} default={add_col_default_with_value.default_value}")
             return destination_sdk_pb2.MigrateResponse(success=True)
 
         else:
@@ -509,7 +509,6 @@ class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
         """Handles table sync mode migration operations."""
         table_obj = DestinationImpl.table_map.get(table)
 
-        keep_deleted_rows = op.keep_deleted_rows if op.HasField("keep_deleted_rows") else False
         soft_deleted_column = op.soft_deleted_column if op.HasField("soft_deleted_column") else None
 
         # Determine the migration type and handle accordingly
