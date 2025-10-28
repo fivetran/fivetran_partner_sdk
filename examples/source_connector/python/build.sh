@@ -1,18 +1,28 @@
 #!/bin/bash
-# Creates virtual environment to install the packages and to run the connector.
-python3 -m venv connector_run
-source connector_run/bin/activate
-# install the added packages
-pip install -r requirements.txt
+set -e  # Exit immediately on error
 
-# copying protos present in the root of directory to `protos` folder
+# Use Python 3.11 for venv
+python3.11 -m venv connector_run
+source connector_run/bin/activate
+
+# Upgrade base tools
+python -m pip install --upgrade pip setuptools wheel
+
+# Install dependencies
+python -m pip install -r requirements.txt
+
+# Copy protos
 mkdir -p protos
 cp ../../../*.proto protos/
-# Generates the required gRPC Python files using protos into `sdk_pb2` folder
+
+# Generate gRPC stubs
 mkdir -p sdk_pb2
-python -m grpc_tools.protoc \
-       --proto_path=./protos/ \
-       --python_out=sdk_pb2 \
-       --pyi_out=sdk_pb2 \
-       --grpc_python_out=sdk_pb2 protos/*.proto
-deactivate
+
+# Use the exact venv Python binary to run grpc_tools
+./connector_run/bin/python -m grpc_tools.protoc \
+    --proto_path=./protos/ \
+    --python_out=sdk_pb2 \
+    --pyi_out=sdk_pb2 \
+    --grpc_python_out=sdk_pb2 protos/*.proto
+
+#deactivate
