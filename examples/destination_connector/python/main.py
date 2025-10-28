@@ -108,7 +108,7 @@ class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
             toggle_field=common_pb2.ToggleField()
         )
 
-        # 🟨 Add Descriptive Dropdown Field (Pooling Field)
+        # Add Descriptive Dropdown Field (Pooling Field)
         pooling_field = common_pb2.FormField(
             name="poolingStrategy",
             label="Connection Pooling Strategy",
