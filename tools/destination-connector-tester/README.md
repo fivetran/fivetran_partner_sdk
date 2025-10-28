@@ -61,12 +61,12 @@ For basic table and record operations, refer to [input.json](input-files/input.j
 #### Schema Migration Operations
 For testing schema migration operations, the following input files are available:
 
-1. **[schema_migrations_input_ddl.json](input-files/schema_migrations_input_ddl.json)** - DDL schema migrations including:
+1. **[schema_migrations_input_ddl.json](input-files/schema_migrations_input_ddl.json)** - DDL schema migration operations including:
    - add_column
    - change_column_data_type
    - drop_column
 
-2. **[schema_migrations_input_dml.json](input-files/schema_migrations_input_dml.json)** - DML schema migrations including:
+2. **[schema_migrations_input_dml.json](input-files/schema_migrations_input_dml.json)** - DML schema migration operations including:
    - copy_column
    - update_column_value
    - add_column_with_default_value
@@ -76,7 +76,7 @@ For testing schema migration operations, the following input files are available
    - rename_table
    - drop_table
 
-3. **[schema_migrations_input_sync_modes.json](input-files/schema_migrations_input_sync_modes.json)** - Sync mode migrations including:
+3. **[schema_migrations_input_sync_modes.json](input-files/schema_migrations_input_sync_modes.json)** - Sync mode schema migration operations including:
    - add_column_in_history_mode
    - drop_column_in_history_mode
    - copy_table_to_history_mode
