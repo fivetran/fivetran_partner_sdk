@@ -611,7 +611,7 @@ public class DestinationServiceImpl extends DestinationConnectorGrpc.Destination
 
         Table tableObj = tableMap.get(table);
         String softDeletedColumn = op.hasSoftDeletedColumn() ? op.getSoftDeletedColumn() : null;
-        String keepHistoryColumn = op.hasKeepHistoryColumn() ? op.getKeepHistoryColumn() : null;
+        boolean keepDeletedColumns = op.hasKeepDeletedRows() ? op.getKeepDeletedRows() : false;
         Table.Builder builder = tableObj.toBuilder();
 
         switch (op.getType()) {
