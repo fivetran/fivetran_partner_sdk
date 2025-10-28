@@ -12,13 +12,13 @@ import java.util.logging.*;
 
 public class DestinationServiceImpl extends DestinationConnectorGrpc.DestinationConnectorImplBase {
 
-    // Constants for system columns
-    private static final String FIVETRAN_START = "_fivetran_start";
-    private static final String FIVETRAN_END = "_fivetran_end";
-    private static final String FIVETRAN_ACTIVE = "_fivetran_active";
-
     private static final Logger logger = getLogger();
     private static final Map<String, Table> tableMap = new HashMap<>();
+    private final SchemaMigrationHelper migrationHelper;
+
+    public DestinationServiceImpl() {
+        this.migrationHelper = new SchemaMigrationHelper(tableMap);
+    }
 
     // Get the configured logger
     private static Logger getLogger() {
@@ -386,27 +386,27 @@ public class DestinationServiceImpl extends DestinationConnectorGrpc.Destination
 
         switch (details.getOperationCase()) {
             case DROP:
-                respBuilder = handleDrop(details.getDrop(), schema, table);
+                respBuilder = migrationHelper.handleDrop(details.getDrop(), schema, table);
                 break;
 
             case COPY:
-                respBuilder = handleCopy(details.getCopy(), schema, table);
+                respBuilder = migrationHelper.handleCopy(details.getCopy(), schema, table);
                 break;
 
             case RENAME:
-                respBuilder = handleRename(details.getRename(), schema, table);
+                respBuilder = migrationHelper.handleRename(details.getRename(), schema, table);
                 break;
 
             case ADD:
-                respBuilder = handleAdd(details.getAdd(), schema, table);
+                respBuilder = migrationHelper.handleAdd(details.getAdd(), schema, table);
                 break;
 
             case UPDATE_COLUMN_VALUE:
-                respBuilder = handleUpdateColumnValue(details.getUpdateColumnValue(), schema, table);
+                respBuilder = migrationHelper.handleUpdateColumnValue(details.getUpdateColumnValue(), schema, table);
                 break;
 
             case TABLE_SYNC_MODE_MIGRATION:
-                respBuilder = handleTableSyncModeMigration(details.getTableSyncModeMigration(), schema, table);
+                respBuilder = migrationHelper.handleTableSyncModeMigration(details.getTableSyncModeMigration(), schema, table);
                 break;
 
             case OPERATION_NOT_SET:
@@ -427,310 +427,5 @@ public class DestinationServiceImpl extends DestinationConnectorGrpc.Destination
 
         responseObserver.onNext(respBuilder.build());
         responseObserver.onCompleted();
-    }
-
-    private MigrateResponse.Builder handleDrop(DropOperation dropOp, String schema, String table) {
-        MigrateResponse.Builder respBuilder = MigrateResponse.newBuilder();
-
-        switch (dropOp.getEntityCase()) {
-            case DROP_TABLE:
-                // table-map manipulation to simulate drop ,replace with actual logic.
-                tableMap.remove(table);
-
-                logger.info(String.format("[Migrate:Drop] Dropping table %s.%s", schema, table));
-                respBuilder.setSuccess(true);
-                break;
-            case DROP_COLUMN_IN_HISTORY_MODE:
-                // table-map manipulation to simulate drop column in history mode, replace with actual logic.
-                DropColumnInHistoryMode dropColumn = dropOp.getDropColumnInHistoryMode();
-                Table tableObj = tableMap.get(table);
-                Table.Builder updatedTableBuilder = rebuildTableWithoutColumn(tableObj, dropColumn.getColumn());
-                updateTableWithModifiedColumns(table, updatedTableBuilder);
-
-                logger.info(String.format("[Migrate:DropColumnHistory] table=%s.%s column=%s op_ts=%s",
-                        schema, table, dropColumn.getColumn(), dropColumn.getOperationTimestamp()));
-                respBuilder.setSuccess(true);
-                break;
-            case ENTITY_NOT_SET:
-            default:
-                logger.warning("[Migrate:Drop] No drop entity specified");
-                respBuilder.setUnsupported(true);
-        }
-        return respBuilder;
-    }
-
-    private MigrateResponse.Builder handleCopy(CopyOperation copyOp, String schema, String table) {
-        MigrateResponse.Builder respBuilder = MigrateResponse.newBuilder();
-
-        switch (copyOp.getEntityCase()) {
-            case COPY_TABLE:
-                // table-map manipulation to simulate copy, replace with actual logic.
-                CopyTable copyTable = copyOp.getCopyTable();
-                tableMap.put(copyTable.getToTable(), tableMap.get(copyTable.getFromTable()));
-
-                logger.info(String.format("[Migrate:CopyTable] from=%s to=%s in schema=%s",
-                        copyTable.getFromTable(), copyTable.getToTable(), schema));
-                respBuilder.setSuccess(true);
-                break;
-            case COPY_COLUMN:
-                // table-map manipulation to simulate copy column, replace with actual logic.
-                CopyColumn copyColumn = copyOp.getCopyColumn();
-                Table tableObj = tableMap.get(table);
-                for (Column col : tableObj.getColumnsList()) {
-                    if (col.getName().equals(copyColumn.getFromColumn())) {
-                        Column newCol = col.toBuilder().setName(copyColumn.getToColumn()).build();
-                        Table updatedTable = tableObj.toBuilder().addColumns(newCol).build();
-                        tableMap.put(table, updatedTable);
-                        break;
-                    }
-                }
-
-                logger.info(String.format("[Migrate:CopyColumn] table=%s.%s from_col=%s to_col=%s",
-                        schema, table, copyColumn.getFromColumn(), copyColumn.getToColumn()));
-                respBuilder.setSuccess(true);
-                break;
-            case COPY_TABLE_TO_HISTORY_MODE:
-                // table-map manipulation to simulate copy table to history mode, replace with actual logic.
-                CopyTableToHistoryMode copyTableToHistoryMode = copyOp.getCopyTableToHistoryMode();
-                String softDeletedColumn = copyTableToHistoryMode.getSoftDeletedColumn();
-                String toTable = copyTableToHistoryMode.getToTable();
-                String fromTable = copyTableToHistoryMode.getFromTable();
-                Table.Builder newTable = Table.newBuilder()
-                        .setName(toTable)
-                        .addAllColumns(tableMap.get(fromTable).getColumnsList());
-                removeColumnFromBuilder(newTable, tableMap.get(fromTable), softDeletedColumn);
-                addHistoryModeColumns(newTable);
-                tableMap.put(toTable, newTable.build());
-
-                logger.info(String.format("[Migrate:CopyTableToHistoryMode] from=%s to=%s soft_deleted_column=%s",
-                        copyTableToHistoryMode.getFromTable(), copyTableToHistoryMode.getToTable(), copyTableToHistoryMode.getSoftDeletedColumn()));
-                respBuilder.setSuccess(true);
-                break;
-            case ENTITY_NOT_SET:
-            default:
-                logger.warning("[Migrate:Copy] No copy entity specified");
-                respBuilder.setUnsupported(true);
-        }
-
-        return respBuilder;
-    }
-
-    private MigrateResponse.Builder handleRename(RenameOperation renameOp, String schema, String table) {
-        MigrateResponse.Builder respBuilder = MigrateResponse.newBuilder();
-
-        switch (renameOp.getEntityCase()) {
-            case RENAME_TABLE:
-                // table-map manipulation to simulate rename, replace with actual logic.
-                RenameTable renameTable = renameOp.getRenameTable();
-                Table tbl = tableMap.remove(renameTable.getFromTable());
-                tableMap.put(renameTable.getToTable(), tbl.toBuilder().setName(renameTable.getToTable()).build());
-
-                logger.info(String.format("[Migrate:RenameTable] from=%s to=%s schema=%s",
-                        renameTable.getFromTable(), renameTable.getToTable(), schema));
-                respBuilder.setSuccess(true);
-                break;
-            case RENAME_COLUMN:
-                // table-map manipulation to simulate rename column, replace with actual logic.
-                RenameColumn renameColumn = renameOp.getRenameColumn();
-                Table tableObj = tableMap.get(table);
-                Table.Builder updatedTableBuilder = rebuildTableWithRenamedColumn(tableObj,
-                        renameColumn.getFromColumn(), renameColumn.getToColumn());
-                updateTableWithModifiedColumns(table, updatedTableBuilder);
-
-                logger.info(String.format("[Migrate:RenameColumn] table=%s.%s from_col=%s to_col=%s",
-                        schema, table, renameColumn.getFromColumn(), renameColumn.getToColumn()));
-                respBuilder.setSuccess(true);
-                break;
-            case ENTITY_NOT_SET:
-            default:
-                logger.warning("[Migrate:Rename] No rename entity specified");
-                respBuilder.setUnsupported(true);
-        }
-
-        return respBuilder;
-    }
-
-    private MigrateResponse.Builder handleAdd(AddOperation addOp, String schema, String table) {
-        MigrateResponse.Builder respBuilder = MigrateResponse.newBuilder();
-
-        switch (addOp.getEntityCase()) {
-            case ADD_COLUMN_IN_HISTORY_MODE: {
-                // table-map manipulation to simulate add column in history mode, replace with actual logic.
-                AddColumnInHistoryMode addColumnInHistoryMode = addOp.getAddColumnInHistoryMode();
-                Column newCol = Column.newBuilder()
-                        .setName(addColumnInHistoryMode.getColumn())
-                        .setType(addColumnInHistoryMode.getColumnType())
-                        .build();
-                addColumnToTable(table, newCol);
-
-                logger.info(String.format("[Migrate:AddColumnHistory] table=%s.%s column=%s type=%s default=%s op_ts=%s",
-                        schema, table, addColumnInHistoryMode.getColumn(), addColumnInHistoryMode.getColumnType(), addColumnInHistoryMode.getDefaultValue(), addColumnInHistoryMode.getOperationTimestamp()));
-                respBuilder.setSuccess(true);
-                break;
-            }
-            case ADD_COLUMN_WITH_DEFAULT_VALUE: {
-                // table-map manipulation to simulate add column with default value, replace with actual logic.
-                AddColumnWithDefaultValue addColumnWithDefaultValue = addOp.getAddColumnWithDefaultValue();
-                Column newCol = Column.newBuilder()
-                        .setName(addColumnWithDefaultValue.getColumn())
-                        .setType(addColumnWithDefaultValue.getColumnType())
-                        .build();
-                addColumnToTable(table, newCol);
-
-                logger.info(String.format("[Migrate:AddColumnDefault] table=%s.%s column=%s type=%s default=%s",
-                        schema, table, addColumnWithDefaultValue.getColumn(), addColumnWithDefaultValue.getColumnType(), addColumnWithDefaultValue.getDefaultValue()));
-                respBuilder.setSuccess(true);
-                break;
-            }
-            case ENTITY_NOT_SET:
-            default:
-                logger.warning("[Migrate:Add] No add entity specified");
-                respBuilder.setUnsupported(true);
-        }
-
-        return respBuilder;
-    }
-
-    private MigrateResponse.Builder handleUpdateColumnValue(UpdateColumnValueOperation upd, String schema, String table) {
-        MigrateResponse.Builder respBuilder = MigrateResponse.newBuilder();
-        // Placeholder: Update all existing rows' column value.
-
-        logger.info(String.format("[Migrate:UpdateColumnValue] table=%s.%s column=%s value=%s",
-                schema, table, upd.getColumn(), upd.getValue()));
-        respBuilder.setSuccess(true);
-
-        return respBuilder;
-    }
-
-    private MigrateResponse.Builder handleTableSyncModeMigration(TableSyncModeMigrationOperation op, String schema, String table) {
-        MigrateResponse.Builder respBuilder = MigrateResponse.newBuilder();
-
-        Table tableObj = tableMap.get(table);
-        String softDeletedColumn = op.hasSoftDeletedColumn() ? op.getSoftDeletedColumn() : null;
-        Table.Builder builder = tableObj.toBuilder();
-
-        switch (op.getType()) {
-            case SOFT_DELETE_TO_LIVE:
-                // table-map manipulation to simulate soft delete to live, replace with actual logic.
-                removeColumnFromBuilder(builder, tableObj, softDeletedColumn);
-
-                logger.info(String.format("[Migrate:TableSyncModeMigration] Migrating table=%s.%s from SOFT_DELETE to LIVE", schema, table));
-                respBuilder.setSuccess(true);
-                break;
-            case SOFT_DELETE_TO_HISTORY:
-                // table-map manipulation to simulate soft delete to history, replace with actual logic.
-                removeColumnFromBuilder(builder, tableObj, softDeletedColumn);
-                addHistoryModeColumns(builder);
-
-                logger.info(String.format("[Migrate:TableSyncModeMigration] Migrating table=%s.%s from SOFT_DELETE to HISTORY", schema, table));
-                respBuilder.setSuccess(true);
-                break;
-            case HISTORY_TO_SOFT_DELETE:
-                // table-map manipulation to simulate history to soft delete, replace with actual logic.
-                removeHistoryModeColumns(builder, tableObj);
-                addSoftDeleteColumn(builder, softDeletedColumn);
-
-                logger.info(String.format("[Migrate:TableSyncModeMigration] Migrating table=%s.%s from HISTORY to SOFT_DELETE", schema, table));
-                respBuilder.setSuccess(true);
-                break;
-            case HISTORY_TO_LIVE:
-                // table-map manipulation to simulate history to live, replace with actual logic.
-                removeHistoryModeColumns(builder, tableObj);
-
-                logger.info(String.format("[Migrate:TableSyncModeMigration] Migrating table=%s.%s from HISTORY to LIVE", schema, table));
-                respBuilder.setSuccess(true);
-                break;
-            case LIVE_TO_SOFT_DELETE:
-                //  table-map manipulation to simulate live to soft delete, replace with actual logic.
-                addSoftDeleteColumn(builder, softDeletedColumn);
-
-                logger.info(String.format("[Migrate:TableSyncModeMigration] Migrating table=%s.%s from LIVE to SOFT_DELETE", schema, table));
-                respBuilder.setSuccess(true);
-                break;
-            case LIVE_TO_HISTORY:
-                //  table-map manipulation to simulate live to history, replace with actual logic.
-                addHistoryModeColumns(builder);
-
-                logger.info(String.format("[Migrate:TableSyncModeMigration] Migrating table=%s.%s from LIVE to HISTORY", schema, table));
-                respBuilder.setSuccess(true);
-                break;
-            default:
-                logger.warning(String.format("[Migrate:TableSyncModeMigration] Unknown migration type for table=%s.%s", schema, table));
-                respBuilder.setUnsupported(true);
-                return respBuilder;
-        }
-
-        tableMap.put(table, builder.build());
-        return respBuilder;
-    }
-
-
-    // Helper methods for table metadata operations
-    private void removeColumnFromBuilder(Table.Builder builder, Table tableObj, String columnName) {
-        if (columnName == null) return;
-        builder.clearColumns();
-        for (Column col : tableObj.getColumnsList()) {
-            if (!col.getName().equals(columnName)) {
-                builder.addColumns(col);
-            }
-        }
-    }
-
-    private void removeHistoryModeColumns(Table.Builder builder, Table tableObj) {
-        builder.clearColumns();
-        for (Column col : tableObj.getColumnsList()) {
-            String name = col.getName();
-            if (!name.equals(FIVETRAN_START) && !name.equals(FIVETRAN_END) && !name.equals(FIVETRAN_ACTIVE)) {
-                builder.addColumns(col);
-            }
-        }
-    }
-
-    private void addHistoryModeColumns(Table.Builder builder) {
-        builder.addColumns(Column.newBuilder().setName(FIVETRAN_START).setType(DataType.NAIVE_DATETIME).build());
-        builder.addColumns(Column.newBuilder().setName(FIVETRAN_END).setType(DataType.NAIVE_DATETIME).build());
-        builder.addColumns(Column.newBuilder().setName(FIVETRAN_ACTIVE).setType(DataType.BOOLEAN).build());
-    }
-
-    private void addSoftDeleteColumn(Table.Builder builder, String columnName) {
-        if (columnName != null) {
-            builder.addColumns(Column.newBuilder().setName(columnName).setType(DataType.BOOLEAN).build());
-        }
-    }
-
-    private void updateTableWithModifiedColumns(String tableName, Table.Builder updatedTableBuilder) {
-        tableMap.put(tableName, updatedTableBuilder.build());
-    }
-
-    private Table.Builder rebuildTableWithoutColumn(Table tableObj, String columnName) {
-        Table.Builder updatedTableBuilder = tableObj.toBuilder();
-        updatedTableBuilder.clearColumns();
-        for (Column col : tableObj.getColumnsList()) {
-            if (!col.getName().equals(columnName)) {
-                updatedTableBuilder.addColumns(col);
-            }
-        }
-        return updatedTableBuilder;
-    }
-
-    private Table.Builder rebuildTableWithRenamedColumn(Table tableObj, String fromColumn, String toColumn) {
-        Table.Builder updatedTableBuilder = tableObj.toBuilder();
-        updatedTableBuilder.clearColumns();
-        for (Column col : tableObj.getColumnsList()) {
-            if (col.getName().equals(fromColumn)) {
-                updatedTableBuilder.addColumns(col.toBuilder().setName(toColumn).build());
-            } else {
-                updatedTableBuilder.addColumns(col);
-            }
-        }
-        return updatedTableBuilder;
-    }
-
-    private void addColumnToTable(String tableName, Column column) {
-        Table tableObj = tableMap.get(tableName);
-        if (tableObj != null) {
-            Table updatedTable = tableObj.toBuilder().addColumns(column).build();
-            tableMap.put(tableName, updatedTable);
-        }
     }
 }
