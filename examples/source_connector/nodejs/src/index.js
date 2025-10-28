@@ -67,37 +67,35 @@ const configurationForm = (call, callback) => {
               }]
           }
         },
+        {
+          name: "appendFileOption",
+          label: "Primary Key used for file process and load",
+          description: "Select the primary key strategy to use when processing and loading files.",
+          required: true,
+          descriptive_dropdown_fields: {
+            descriptive_dropdown_field: [
               {
-                name: "authenticationMethodDescriptive",
-                label: "Authentication Method (Descriptive)",
-                description: "Choose the preferred authentication method with details",
-                required: true,
-                descriptive_dropdown_fields: {
-                  descriptive_dropdown_field: [
-                    {
-                      label: "OAuth2.0",
-                      value: "oauth",
-                      description: "Use OAuth2.0 for secure delegated access"
-                    },
-                    {
-                      label: "API Key",
-                      value: "api_key",
-                      description: "Authenticate using a static API key"
-                    },
-                    {
-                      label: "Basic Auth",
-                      value: "basic_auth",
-                      description: "Use username and password for authentication"
-                    },
-                    {
-                      label: "None",
-                      value: "none",
-                      description: "No authentication required"
-                    }
-                  ]
-                },
-                default_value: "none"
+                label: "Upsert file using file name and line number",
+                value: "upsert_file",
+                description:
+                  "Your files have unique names and always contain net-new data. We will upsert data using surrogate primary keys '_file' and '_line'."
               },
+              {
+                label: "Append file using file modified time",
+                value: "append_file",
+                description:
+                  "Your files contain a mix of old and new data or are updated periodically. You want to track the full history of a file or set of files. We will upsert your files using surrogate primary keys '_file', '_line', and '_modified'."
+              },
+              {
+                label: "Upsert file using custom primary key",
+                value: "upsert_file_with_primary_keys",
+                description:
+                  "Your files contain a mix of old and new data or are updated periodically. You only want to keep the most recent version of every record. You will choose which primary key you use after you save and test."
+              }
+            ]
+          },
+          default_value: "upsert_file"
+        },
         {
           name: "doesNotMatter",
           label: "It won't be used",
