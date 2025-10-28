@@ -150,6 +150,16 @@ public class ConnectorServiceImpl extends SourceConnectorGrpc.SourceConnectorImp
                 .setToggleField(ToggleField.newBuilder().build())
                 .build();
 
+        FormField uploadFile = FormField.newBuilder()
+                .setName("uploadFile")
+                .setLabel("Upload Configuration File")
+                .setDescription("Upload a configuration file (e.g., JSON, YAML, or certificate)")
+                .setUploadField(UploadField.newBuilder()
+                        .addAllAllowedFileType(Arrays.asList(".json", ".yaml", ".yml", ".pem", ".crt"))
+                        .setMaxFileSizeBytes(1048576) // 1 MB
+                        .build())
+                .build();
+
 
         // Conditional Field for OAuth
         VisibilityCondition visibilityCondition1 = VisibilityCondition.newBuilder()
@@ -210,7 +220,8 @@ public class ConnectorServiceImpl extends SourceConnectorGrpc.SourceConnectorImp
                                 conditionalField2,
                                 conditionalField3,
                                 apiVersions,
-                                addMetrics))
+                                addMetrics,
+                                uploadFile))
                 .addAllTests(
                         Arrays.asList(
                                 ConfigurationTest.newBuilder().setName("connect").setLabel("Tests connection").build(),

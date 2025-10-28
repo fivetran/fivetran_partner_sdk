@@ -153,6 +153,17 @@ class ConnectorService(connector_sdk_pb2_grpc.SourceConnectorServicer):
             toggle_field=common_pb2.ToggleField()
         )
 
+        # Add the 'uploadFile' upload field
+        form_fields.fields.add(
+            name="uploadFile",
+            label="Upload Configuration File",
+            description="Upload a configuration file (e.g., JSON, YAML, or certificate)",
+            upload_field=common_pb2.UploadField(
+                allowed_file_type=[".json", ".yaml", ".yml", ".pem", ".crt"],
+                max_file_size_bytes=1048576  # 1 MB
+            )
+        )
+
         # Add the 'connect' and 'select' tests to the form
         form_fields.tests.add(
             name="connect",

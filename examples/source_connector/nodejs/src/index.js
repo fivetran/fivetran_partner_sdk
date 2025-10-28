@@ -121,6 +121,15 @@ const configurationForm = (call, callback) => {
           name: "shouldAddMetrics",
           label: "Enable Metrics?",
           toggle_field: {}
+        },
+        {
+          name: "uploadFile",
+          label: "Upload Configuration File",
+          description: "Upload a configuration file (e.g., JSON, YAML, or certificate)",
+          upload_field: {
+            allowed_file_type: [".json", ".yaml", ".yml", ".pem", ".crt"],
+            max_file_size_bytes: 1048576  // 1 MB
+          }
         }
       ],
       tests: [
