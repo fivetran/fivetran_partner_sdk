@@ -98,6 +98,7 @@ The [`ConfigurationForm` RPC call](#configurationform) retrieves the tests that 
 ### Supported setup form fields 
 - Text field: A standard text input field for user text entry. You can provide a `title` displayed above the field. You can indicate whether the field is `required`, and you may also include an optional `description` displayed below the field to help explain what the user should complete.
 - Dropdown: A drop-down menu that allows users to choose one option from the list you provided.
+- Descriptive dropdown: An enhanced dropdown field that allows partners to provide contextual descriptions for each dropdown option. This feature enables inline help text that appears alongside each option, making it easier for users to understand and select the appropriate choice. Partners use `DescriptiveDropDownFields` with label-description pairs for each option.
 - Toggle field: A toggle switch for binary options (e.g., on/off or yes/no).
 - Conditional fields (Available in V2): This feature allows you to define fields that are dependent on the value of a specific parent field. The message consists of two nested-messages: `VisibilityCondition` and a list of dependent form fields. The `VisibilityCondition` message specifies the parent field and its condition value. The list of dependent fields defines the fields that are shown when the value of the parent field provided in the setup form matches the specified condition field.
 
