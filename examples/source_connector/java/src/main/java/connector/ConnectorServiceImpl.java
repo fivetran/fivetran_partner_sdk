@@ -11,7 +11,25 @@ import java.util.logging.*;
 import java.util.logging.Formatter;
 
 public class ConnectorServiceImpl extends SourceConnectorGrpc.SourceConnectorImplBase {
+    private static final String UPSERT_FILE_LABEL = "Upsert file using file name and line number";
+    private static final String UPSERT_FILE_VALUE = "upsert_file";
+    private static final String UPSERT_FILE_DESC =
+            "Your files have unique names and always contain net-new data. We will upsert data using surrogate primary"
+                    + " keys \"_file\" and \"_line\".";
 
+    private static final String APPEND_FILE_LABEL = "Append file using file modified time";
+    private static final String APPEND_FILE_VALUE = "append_file";
+    private static final String APPEND_FILE_DESC =
+            "Your files contain a mix of old and new data or are updated periodically. You want to track the full"
+                    + " history of a file or set of files. We will upsert your files using surrogate primary keys"
+                    + " \"_file\" and \"_line\" and \"_modified\"";
+
+    private static final String CUSTOM_PRIMARY_KEY_LABEL = "Upsert file using custom primary key";
+    private static final String CUSTOM_PRIMARY_KEY_VALUE = "upsert_file_with_primary_keys";
+    private static final String CUSTOM_PRIMARY_KEY_DESC =
+            "Your files contain a mix of old and new data or are updated periodically. You only want to keep the most"
+                    + " recent version of every record. You will choose which primary key you use after you save and"
+                    + " test.";
     private static final Logger logger = getLogger();
 
     // Get the configured logger
