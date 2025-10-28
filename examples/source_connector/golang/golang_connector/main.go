@@ -287,32 +287,28 @@ func (s *server) ConfigurationForm(ctx context.Context, in *pb.ConfigurationForm
 				Type:  &pb.FormField_ToggleField{ToggleField: &pb.ToggleField{}},
 			},
             {
-                Name:        "authenticationMethodDescriptive",
-                Label:       "Authentication Method (Descriptive)",
-                Description: proto.String("Choose the preferred authentication method with details"),
+                Name:        "appendFileOption",
+                Label:       "Primary Key used for file process and load",
+                Description: proto.String("Select the primary key strategy to use when processing and loading files."),
                 Required:    proto.Bool(true),
+                DefaultValue: proto.String("upsert_file"),
                 Type: &pb.FormField_DescriptiveDropdownFields{
                     DescriptiveDropdownFields: &pb.DescriptiveDropDownFields{
                         DescriptiveDropdownField: []*pb.DescriptiveDropDownField{
                             {
-                                Label:       "OAuth2.0",
-                                Value:       "oauth",
-                                Description: "Use OAuth2.0 for secure delegated access",
+                                Label:       "Upsert file using file name and line number",
+                                Value:       "upsert_file",
+                                Description: "Your files have unique names and always contain net-new data. We will upsert data using surrogate primary keys \"_file\" and \"_line\".",
                             },
                             {
-                                Label:       "API Key",
-                                Value:       "api_key",
-                                Description: "Authenticate using a static API key",
+                                Label:       "Append file using file modified time",
+                                Value:       "append_file",
+                                Description: "Your files contain a mix of old and new data or are updated periodically. You want to track the full history of a file or set of files. We will upsert your files using surrogate primary keys \"_file\", \"_line\", and \"_modified\".",
                             },
                             {
-                                Label:       "Basic Auth",
-                                Value:       "basic_auth",
-                                Description: "Use username and password for authentication",
-                            },
-                            {
-                                Label:       "None",
-                                Value:       "none",
-                                Description: "No authentication required",
+                                Label:       "Upsert file using custom primary key",
+                                Value:       "upsert_file_with_primary_keys",
+                                Description: "Your files contain a mix of old and new data or are updated periodically. You only want to keep the most recent version of every record. You will choose which primary key you use after you save and test.",
                             },
                         },
                     },
