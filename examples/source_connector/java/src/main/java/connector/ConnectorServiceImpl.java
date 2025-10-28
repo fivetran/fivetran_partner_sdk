@@ -199,6 +199,9 @@ public class ConnectorServiceImpl extends SourceConnectorGrpc.SourceConnectorImp
                                 .build())
                 .build();
 
+        FormField descriptiveDropDownField = getDescriptiveDropDownFields();
+
+
         return ConfigurationFormResponse.newBuilder()
                 .setSchemaSelectionSupported(true)
                 .setTableSelectionSupported(true)
@@ -210,11 +213,47 @@ public class ConnectorServiceImpl extends SourceConnectorGrpc.SourceConnectorImp
                                 conditionalField2,
                                 conditionalField3,
                                 apiVersions,
+                                descriptiveDropDownField,
                                 addMetrics))
                 .addAllTests(
                         Arrays.asList(
                                 ConfigurationTest.newBuilder().setName("connect").setLabel("Tests connection").build(),
                                 ConfigurationTest.newBuilder().setName("select").setLabel("Tests selection").build()))
+                .build();
+    }
+
+    private static FormField getDescriptiveDropDownFields() {
+        DescriptiveDropDownField upsertFileOption = DescriptiveDropDownField.newBuilder()
+                .setLabel(UPSERT_FILE_LABEL)
+                .setValue(UPSERT_FILE_VALUE)
+                .setDescription(UPSERT_FILE_DESC)
+                .build();
+
+        DescriptiveDropDownField appendFileOption = DescriptiveDropDownField.newBuilder()
+                .setLabel(APPEND_FILE_LABEL)
+                .setValue(APPEND_FILE_VALUE)
+                .setDescription(APPEND_FILE_DESC)
+                .build();
+
+        DescriptiveDropDownField customPrimaryKeyOption = DescriptiveDropDownField.newBuilder()
+                .setLabel(CUSTOM_PRIMARY_KEY_LABEL)
+                .setValue(CUSTOM_PRIMARY_KEY_VALUE)
+                .setDescription(CUSTOM_PRIMARY_KEY_DESC)
+                .build();
+
+        DescriptiveDropDownFields allDropdownOptions = DescriptiveDropDownFields.newBuilder()
+                .addDescriptiveDropdownField(upsertFileOption)
+                .addDescriptiveDropdownField(appendFileOption)
+                .addDescriptiveDropdownField(customPrimaryKeyOption)
+                .build();
+
+        return FormField.newBuilder()
+                .setName("appendFileOption")
+                .setLabel("Primary Key used for file process and load")
+                .setDescription("Select the primary key strategy to use when processing and loading files.")
+                .setRequired(true)
+                .setDescriptiveDropdownFields(allDropdownOptions)
+                .setDefaultValue(UPSERT_FILE_VALUE)
                 .build();
     }
 
