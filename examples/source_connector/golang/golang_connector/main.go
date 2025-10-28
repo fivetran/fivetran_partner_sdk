@@ -286,6 +286,38 @@ func (s *server) ConfigurationForm(ctx context.Context, in *pb.ConfigurationForm
 				Label: "Enable Metrics?",
 				Type:  &pb.FormField_ToggleField{ToggleField: &pb.ToggleField{}},
 			},
+            {
+                Name:        "authenticationMethodDescriptive",
+                Label:       "Authentication Method (Descriptive)",
+                Description: proto.String("Choose the preferred authentication method with details"),
+                Required:    proto.Bool(true),
+                Type: &pb.FormField_DescriptiveDropdownFields{
+                    DescriptiveDropdownFields: &pb.DescriptiveDropDownFields{
+                        DescriptiveDropdownField: []*pb.DescriptiveDropDownField{
+                            {
+                                Label:       "OAuth2.0",
+                                Value:       "oauth",
+                                Description: "Use OAuth2.0 for secure delegated access",
+                            },
+                            {
+                                Label:       "API Key",
+                                Value:       "api_key",
+                                Description: "Authenticate using a static API key",
+                            },
+                            {
+                                Label:       "Basic Auth",
+                                Value:       "basic_auth",
+                                Description: "Use username and password for authentication",
+                            },
+                            {
+                                Label:       "None",
+                                Value:       "none",
+                                Description: "No authentication required",
+                            },
+                        },
+                    },
+                },
+            },
 		},
 		Tests: []*pb.ConfigurationTest{
 			{
