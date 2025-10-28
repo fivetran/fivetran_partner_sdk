@@ -11,7 +11,22 @@ import java.util.Map;
 import java.util.logging.*;
 
 public class DestinationServiceImpl extends DestinationConnectorGrpc.DestinationConnectorImplBase {
+    // Add these constants at the top of the class
+    private static final String POOLING_FIELD_NAME = "connectionPooling";
+    private static final String POOLING_FIELD_LABEL = "Connection Pooling Strategy";
+    private static final String POOLING_FIELD_DESCRIPTION = "Select the database connection pooling strategy based on your application's traffic patterns.";
 
+    private static final String BASIC_POOLING_VALUE = "basic";
+    private static final String BASIC_POOLING_LABEL = "Basic connection pooling";
+    private static final String BASIC_POOLING_DESCRIPTION = "Maintain a small pool of database connections (5-10). Suitable for low to moderate traffic applications.";
+
+    private static final String STANDARD_POOLING_VALUE = "standard";
+    private static final String STANDARD_POOLING_LABEL = "Standard connection pooling";
+    private static final String STANDARD_POOLING_DESCRIPTION = "Maintain a moderate pool of database connections (10-50). Balanced approach for most production workloads.";
+
+    private static final String ADVANCED_POOLING_VALUE = "advanced";
+    private static final String ADVANCED_POOLING_LABEL = "Advanced connection pooling";
+    private static final String ADVANCED_POOLING_DESCRIPTION = "Maintain a large pool with auto-scaling (50-200). For high-traffic applications with variable load patterns.";
     private static final Logger logger = getLogger();
     private static final Map<String, Table> tableMap = new HashMap<>();
 
@@ -228,21 +243,21 @@ public class DestinationServiceImpl extends DestinationConnectorGrpc.Destination
 
     private static FormField getDescriptiveDropDownFields() {
         DescriptiveDropDownField basicPooling = DescriptiveDropDownField.newBuilder()
-                .setLabel("Basic connection pooling")
-                .setValue("basic")
-                .setDescription("Maintain a small pool of database connections (5-10). Suitable for low to moderate traffic applications.")
+                .setLabel(BASIC_POOLING_LABEL)
+                .setValue(BASIC_POOLING_VALUE)
+                .setDescription(BASIC_POOLING_DESCRIPTION)
                 .build();
 
         DescriptiveDropDownField standardPooling = DescriptiveDropDownField.newBuilder()
-                .setLabel("Standard connection pooling")
-                .setValue("standard")
-                .setDescription("Maintain a moderate pool of database connections (10-50). Balanced approach for most production workloads.")
+                .setLabel(STANDARD_POOLING_LABEL)
+                .setValue(STANDARD_POOLING_VALUE)
+                .setDescription(STANDARD_POOLING_DESCRIPTION)
                 .build();
 
         DescriptiveDropDownField advancedPooling = DescriptiveDropDownField.newBuilder()
-                .setLabel("Advanced connection pooling")
-                .setValue("advanced")
-                .setDescription("Maintain a large pool with auto-scaling (50-200). For high-traffic applications with variable load patterns.")
+                .setLabel(ADVANCED_POOLING_LABEL)
+                .setValue(ADVANCED_POOLING_VALUE)
+                .setDescription(ADVANCED_POOLING_DESCRIPTION)
                 .build();
 
         DescriptiveDropDownFields allDropdownOptions = DescriptiveDropDownFields.newBuilder()
@@ -252,12 +267,12 @@ public class DestinationServiceImpl extends DestinationConnectorGrpc.Destination
                 .build();
 
         return FormField.newBuilder()
-                .setName("connectionPooling")
-                .setLabel("Connection Pooling Strategy")
-                .setDescription("Select the database connection pooling strategy based on your application's traffic patterns.")
+                .setName(POOLING_FIELD_NAME)
+                .setLabel(POOLING_FIELD_LABEL)
+                .setDescription(POOLING_FIELD_DESCRIPTION)
                 .setRequired(true)
                 .setDescriptiveDropdownFields(allDropdownOptions)
-                .setDefaultValue("standard")
+                .setDefaultValue(STANDARD_POOLING_VALUE)
                 .build();
     }
 
