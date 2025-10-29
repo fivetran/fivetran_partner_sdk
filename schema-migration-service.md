@@ -127,7 +127,7 @@ The idea is to record the history of the DDL operation (add column with default 
         _fivetran_start = <operation_timestamp>
     WHERE <condition_to_identify_new_row>;
     ```
-4. Update the previous active record's _fivetran_end to (operation timestamp) — 1ms and set _fivetran_active to FALSE:
+4. Update the previous active record's _fivetran_end to (operation timestamp) - 1ms and set _fivetran_active to FALSE:
     ```sql
     UPDATE <schema.table>
     SET _fivetran_end = <operation_timestamp> - INTERVAL '1 millisecond',
@@ -521,7 +521,7 @@ This migration converts a table from soft-delete mode to live mode.
 
 **Implementation:**
 
-1. Drop records where `<soft_deleted_column>`, from the migration request, is false:
+1. Drop records where `<soft_deleted_column>`, from the migration request, is true:
     ```sql
     DELETE FROM <schema.table>
     WHERE <soft_deleted_column> = TRUE;
