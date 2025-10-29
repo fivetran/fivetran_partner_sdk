@@ -7,7 +7,7 @@ The Schema Migration Service is Fivetran's internal framework for performing ope
 There can be multiple reasons for these migrations:
 
 - **DDL Changes or Bug Fixes**: At times, connectors update table or column schemas in ways that necessitate data transformation or restructuring, which may trigger a common bulk fix or address other use cases. It’s important that these schema changes are applied to the destination before any new data for the affected table is processed.
-- **Sync Mode Migrations**: Customers can trigger migrations to convert their existing tables from one sync mode to another (live/soft-delete/history). These migrations require complex data transformations to maintain history and deleted row information.
+- **Sync Mode Migrations**: Customers can trigger migrations to convert their existing tables from one sync mode to another (live mode/soft-delete mode/[history mode](https://fivetran.com/docs/core-concepts/sync-modes/history-mode#switchingmodes)]). These migrations require complex data transformations to maintain history and deleted row information.
 
 > **NOTE**: Basic schema migrations such as adding/dropping columns, changing data types, and modifying primary keys are automatically handled by Fivetran through the `AlterTable` RPC call when implemented correctly. See [Fivetran's schema change handling documentation](https://fivetran.com/docs/core-concepts#changingdatatype) for details. The Schema Migration Helper Service described in this document handles more complex migration scenarios that cannot be achieved through standard `AlterTable` operations alone.
 
@@ -113,11 +113,11 @@ The idea is to record the history of the DDL operation (add column with default 
       SELECT 
         <unchanged_cols>, 
         {default_value}::{column_type} as {column_name}, 
-        {operational_timestamp} as _fivetran_start 
+        {operation_timestamp} as _fivetran_start 
       FROM {schema.table} 
       WHERE 
           _fivetran_active = true
-          AND _fivetran_start < {operational_timestamp}
+          AND _fivetran_start < {operation_timestamp}
     );
     ```
 3. Update the newly added rows with the default value and operation timestamp:
@@ -133,7 +133,7 @@ The idea is to record the history of the DDL operation (add column with default 
     SET _fivetran_end = <operation_timestamp> - INTERVAL '1 millisecond',
         _fivetran_active = FALSE
     WHERE _fivetran_active = TRUE
-      AND _fivetran_start < <operational_timestamp>;
+      AND _fivetran_start < <operation_timestamp>;
     ```
 
 ---
@@ -346,34 +346,35 @@ This migration should drop a column from a table in history mode while maintaini
 
 1. Insert new rows to record the history of the DDL operation:
     ```sql
-    INSERT INTO {schema.table} (<column_list>)(
+    INSERT INTO {schema.table} (<column_list>)
+    (
         SELECT 
           <unchanged_cols>, 
           NULL as {column_name}, 
-          {operational_timestamp} as _fivetran_start 
+          {operation_timestamp} as _fivetran_start 
         FROM {schema.table} 
         WHERE 
             _fivetran_active
             AND {column_name} IS NOT NULL
-            AND _fivetran_start < {operational_timestamp}
+            AND _fivetran_start < {operation_timestamp}
     );
     ```
 2. Update the newly added row with the operation timestamp:
     ```sql
     UPDATE {schema.table} 
     SET {column_name} = NULL
-    WHERE _fivetran_start = {operational_timestamp};
+    WHERE _fivetran_start = {operation_timestamp};
     ```
 3. Update the previous record's _fivetran_end to (operation timestamp) - 1ms and set _fivetran_active to FALSE:
     ```sql
     UPDATE {schema.table} 
        SET 
-         _fivetran_end = {operational_timestamp} - 1, 
+         _fivetran_end = {operation_timestamp} - 1, 
          _fivetran_active = FALSE 
        WHERE 
          _fivetran_active = true AND
          {column} IS NOT NULL AND
-         _fivetran_start < {operational_timestamp};
+         _fivetran_start < {operation_timestamp};
     ```
 
 ---
@@ -409,7 +410,7 @@ This migration converts a table from live mode to history mode.
     ```sql
     UPDATE <schema.table>
     SET _fivetran_start = NOW(),
-        _fivetran_end = `9999-12-31 23:59:59`,
+        _fivetran_end = '9999-12-31 23:59:59',
         _fivetran_active = TRUE;
     ```
 
@@ -523,7 +524,7 @@ This migration converts a table from soft-delete mode to live mode.
 1. Drop records where `<soft_deleted_column>`, from the migration request, is false:
     ```sql
     DELETE FROM <schema.table>
-    WHERE <soft_deleted_column> = FALSE;
+    WHERE <soft_deleted_column> = TRUE;
     ```
 2. Drop the <soft_deleted_column> column if it exists:
     ```sql
@@ -540,7 +541,7 @@ This migration converts a table from live mode to soft-delete mode.
 
 1. Add the `<soft_deleted_column>` column if it does not exist:
     ```sql
-    ALTER TABLE <schema.table> ADD COLUMN _fivetran_deleted BOOLEAN DEFAULT TRUE;
+    ALTER TABLE <schema.table> ADD COLUMN _fivetran_deleted BOOLEAN;
     ```
 2. Update `<soft_deleted_column>`:
     ```sql
