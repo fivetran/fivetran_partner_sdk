@@ -9,7 +9,7 @@ There can be multiple reasons for these migrations:
 - **DDL Changes or Bug Fixes**: At times, connectors update table or column schemas in ways that necessitate data transformation or restructuring, which may trigger a common bulk fix or address other use cases. It’s important that these schema changes are applied to the destination before any new data for the affected table is processed.
 - **Sync Mode Migrations**: Customers can trigger migrations to convert their existing tables from one sync mode to another (live/soft-delete/history). These migrations require complex data transformations to maintain history and deleted row information.
 
-> **NOTE**: Basic schema migrations such as adding/dropping columns, changing data types, and modifying primary keys are automatically handled by Fivetran through the `AlterTable` RPC call when implemented correctly. The Schema Migration Helper Service described in this document handles more complex migration scenarios that cannot be achieved through standard `AlterTable` operations alone.
+> **NOTE**: Basic schema migrations such as adding/dropping columns, changing data types, and modifying primary keys are automatically handled by Fivetran through the `AlterTable` RPC call when implemented correctly. See [Fivetran's schema change handling documentation](https://fivetran.com/docs/core-concepts#changingdatatype) for details. The Schema Migration Helper Service described in this document handles more complex migration scenarios that cannot be achieved through standard `AlterTable` operations alone.
 
 As part of the partner implementation of a destination connector, the `migrate` method will be called to perform these complex migrations. This document describes the different migration types and how to implement the `migrate` method for each migration type.
 
@@ -51,7 +51,7 @@ Each operation type has its own set of fields required to perform the migration.
 
 ### Add Operation
 
-#### 1. ADD_COLUMN_WITH_DEFAULT_VALUE
+#### ADD_COLUMN_WITH_DEFAULT_VALUE
 
 This migration should add a new column with the specified column type and default value.
 
@@ -80,7 +80,7 @@ If the ALTER TABLE query doesn't support the DEFAULT clause, then:
 
 ---
 
-#### 2. ADD_COLUMN_IN_HISTORY_MODE
+#### ADD_COLUMN_IN_HISTORY_MODE
 
 This migration should add a column to a table in history mode.  
 The idea is to record the history of the DDL operation (add column with default value) by inserting new rows with the default value and updating the existing active records accordingly.
@@ -157,9 +157,9 @@ UPDATE <schema.table> SET <column_name> = <new_value>;
 
 ---
 
-### RENAME OPERATION
+### Rename Operation
 
-#### 1. RENAME_TABLE
+#### RENAME_TABLE
 
 This migration should rename the specified table in the schema.
 
@@ -190,7 +190,7 @@ ALTER TABLE <schema.from_table> RENAME TO <to_table>;
 
 ---
 
-#### 2. RENAME_COLUMN
+#### RENAME_COLUMN
 
 This migration should rename the specified column in the table.
 
@@ -225,9 +225,9 @@ ALTER TABLE <schema.table> RENAME COLUMN <from_column> TO <to_column>;
 
 ---
 
-### COPY OPERATION
+### Copy Operation
 
-#### 1. COPY_TABLE
+#### COPY_TABLE
 
 This migration should create a new table and copy the data from the source table to the destination table.
 
@@ -249,7 +249,7 @@ This migration should create a new table and copy the data from the source table
 
 ---
 
-#### 2. COPY_COLUMN
+#### COPY_COLUMN
 
 This migration should add a new column and copy the data from the source column to the destination column.
 
@@ -275,7 +275,7 @@ This migration should add a new column and copy the data from the source column 
 
 ---
 
-#### 3. COPY_TABLE_TO_HISTORY_MODE
+#### COPY_TABLE_TO_HISTORY_MODE
 
 This migration should copy an existing table from a non-history mode to a new table in history mode.
 
@@ -305,9 +305,9 @@ This migration should copy an existing table from a non-history mode to a new ta
 
 ---
 
-### DROP OPERATION
+### Drop Operation
 
-#### 1. DROP_TABLE
+#### DROP_TABLE
 
 This migration should drop the specified table.
 
@@ -324,7 +324,7 @@ DROP TABLE <schema.table>;
 
 ---
 
-#### 2. DROP_COLUMN_IN_HISTORY_MODE
+#### DROP_COLUMN_IN_HISTORY_MODE
 
 This migration should drop a column from a table in history mode while maintaining history mode integrity.
 
@@ -378,7 +378,7 @@ This migration should drop a column from a table in history mode while maintaini
 
 ---
 
-### TABLE SYNC MODE MIGRATIONS
+### Table Sync Mode Migrations
 
 These migrations convert tables from one sync mode to another. The `MigrationDetails`, along with `schema` and `table`, contains the `TableSyncModeMigrationType` field to determine which migration to perform.
 
@@ -393,7 +393,7 @@ These migrations convert tables from one sync mode to another. The `MigrationDet
 
 ---
 
-#### 1. LIVE_TO_HISTORY
+#### LIVE_TO_HISTORY
 
 This migration converts a table from live mode to history mode.
 
@@ -415,7 +415,7 @@ This migration converts a table from live mode to history mode.
 
 ---
 
-#### 2. SOFT_DELETE_TO_HISTORY
+#### SOFT_DELETE_TO_HISTORY
 
 This migration converts a table from SOFT DELETE to HISTORY mode.
 
@@ -448,7 +448,7 @@ This migration converts a table from SOFT DELETE to HISTORY mode.
 
 ---
 
-#### 3. HISTORY_TO_LIVE
+#### HISTORY_TO_LIVE
 
 This migration converts a table from HISTORY to LIVE mode.
 
@@ -476,7 +476,7 @@ This migration converts a table from HISTORY to LIVE mode.
 
 ---
 
-#### 4. HISTORY_TO_SOFT_DELETE
+#### HISTORY_TO_SOFT_DELETE
 
 This migration converts a table from HISTORY mode to SOFT DELETE mode.
 
@@ -514,7 +514,7 @@ This migration converts a table from HISTORY mode to SOFT DELETE mode.
 
 ---
 
-#### 5. SOFT_DELETE_TO_LIVE
+#### SOFT_DELETE_TO_LIVE
 
 This migration converts a table from soft-delete mode to live mode.
 
@@ -532,7 +532,7 @@ This migration converts a table from soft-delete mode to live mode.
 
 ---
 
-#### 6. LIVE_TO_SOFT_DELETE
+#### LIVE_TO_SOFT_DELETE
 
 This migration converts a table from live mode to soft-delete mode.
 
