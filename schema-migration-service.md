@@ -1,30 +1,30 @@
-# Schema Migration Guide
+# Schema migration helper guide
 
-## What is Schema Migration
+## What is schema migration
 
-The Schema Migration Service is Fivetran's internal framework for performing operations on tables, allowing syncs to safely change, update, or repair tables and columns in a customer's destination without requiring the customer to run SQL or reload the connector.
+The Schema migration service is fivetran's internal framework for performing operations on tables, allowing syncs to safely change, update, or repair tables and columns in a customer's destination without requiring the customer to run SQL or reload the connector.
 
 There can be multiple reasons for these migrations:
 
-- **DDL Changes or Bug Fixes**: At times, connectors update table or column schemas in ways that necessitate data transformation or restructuring, which may trigger a common bulk fix or address other use cases. It’s important that these schema changes are applied to the destination before any new data for the affected table is processed.
-- **Sync Mode Migrations**: Customers can trigger migrations to convert their existing tables from one sync mode to another (live mode/soft-delete mode/[history mode](https://fivetran.com/docs/core-concepts/sync-modes/history-mode#switchingmodes)]). These migrations require complex data transformations to maintain history and deleted row information.
+- DDL changes or bug fixes: at times, connectors update table or column schemas in ways that necessitate data transformation or restructuring, which may trigger a common bulk fix or address other use cases. It's important that these schema changes are applied to the destination before any new data for the affected table is processed.
+- Sync mode migrations: customers can trigger migrations to convert their existing tables from one sync mode to another (live mode/soft-delete mode/[history mode](https://fivetran.com/docs/core-concepts/sync-modes/history-mode#switchingmodes)]). These migrations require complex data transformations to maintain history and deleted row information.
 
-> **NOTE**: Basic schema migrations such as adding/dropping columns, changing data types, and modifying primary keys are automatically handled by Fivetran through the `AlterTable` RPC call when implemented correctly. See [Fivetran's schema change handling documentation](https://fivetran.com/docs/core-concepts#changingdatatype) for details. The Schema Migration Helper Service described in this document handles more complex migration scenarios that cannot be achieved through standard `AlterTable` operations alone.
+> NOTE: Basic schema migrations such as adding/dropping columns, changing data types, and modifying primary keys are automatically handled by Fivetran through the `AlterTable` RPC call when implemented correctly. See [Fivetran's schema change handling documentation](https://fivetran.com/docs/core-concepts#changingdatatype) for details. The Schema Migration Helper Service described in this document handles more complex migration scenarios that cannot be achieved through standard `AlterTable` operations alone.
 
 As part of the partner implementation of a destination connector, the `migrate` method will be called to perform these complex migrations. This document describes the different migration types and how to implement the `migrate` method for each migration type.
 
 ---
 
-## Migration Types
+## Migration types
 
-- **Sync Mode Migrations**: Migrations performed to migrate from live/soft-delete mode to history mode or vice versa.
-- **Standard Migration**: Any migration other than sync mode migrations.
+- Sync mode migrations: migrations performed to migrate from live/soft-delete mode to history mode or vice versa.
+- Standard migration: any migration other than sync mode migrations.
 
-### How to Implement the `migrate` Method
+### How to implement the migrate method
 
 Your `migrate` method should handle all defined migrations based on the `MigrationDetails` object passed in the request.
 
-#### MigrationDetails Object Structure
+#### MigrationDetails object structure
 
 | Field        | Type      | Description                                         |
 |--------------|-----------|-----------------------------------------------------|
@@ -32,10 +32,10 @@ Your `migrate` method should handle all defined migrations based on the `Migrati
 | `table`      | string    | The table to be migrated                            |
 | `operation`  | Operation | The specific migration operation to be performed    |
 
-#### Supported Operation Types
+#### Supported operation types
 
-| Operation Type                    | Purpose                        | Sub-operations                                         |
-|------------------------------------|--------------------------------|--------------------------------------------------------|
+| Operation type                    | Purpose                        | Sub-operations                                         |
+|-----------------------------------|--------------------------------|--------------------------------------------------------|
 | `AddOperation`                    | Add new table or column        | `ADD_COLUMN_WITH_DEFAULT_VALUE`, `ADD_COLUMN_IN_HISTORY_MODE` |
 | `UpdateColumnValueOperation`      | Update column values           | N/A                                                    |
 | `RenameOperation`                 | Rename table or columns        | `RENAME_TABLE`, `RENAME_COLUMN`                        |
@@ -47,15 +47,15 @@ Each operation type has its own set of fields required to perform the migration.
 
 ---
 
-## Operation Details and Example SQL
+## Operation details and example SQL
 
-### Add Operation
+### Add operation
 
 #### ADD_COLUMN_WITH_DEFAULT_VALUE
 
 This migration should add a new column with the specified column type and default value.
 
-**Request Details:**
+Request details:
 
 | Field                                 | Type     | Description                    |
 |----------------------------------------|----------|--------------------------------|
@@ -63,7 +63,7 @@ This migration should add a new column with the specified column type and defaul
 | `AddColumnWithDefaultValue.column_type`| DataType | The data type of the new column|
 | `AddColumnWithDefaultValue.default_value`| value  | The default value to set for the new column |
 
-**Implementation:**
+Implementation:
 ```sql
 ALTER TABLE <schema.table> ADD COLUMN <column_name> <column_type> DEFAULT <default_value>;
 ```
@@ -85,7 +85,7 @@ If the ALTER TABLE query doesn't support the DEFAULT clause, then:
 This migration should add a column to a table in history mode.  
 The idea is to record the history of the DDL operation (add column with default value) by inserting new rows with the default value and updating the existing active records accordingly.
 
-**Request Details:**
+Request details:
 
 | Field                                   | Type      | Description                                   |
 |------------------------------------------|-----------|-----------------------------------------------|
@@ -96,9 +96,9 @@ The idea is to record the history of the DDL operation (add column with default 
 
 - `operation_timestamp` is the timestamp of the DDL operation trigger and is used to set the `_fivetran_start`, `_fivetran_end`, and `_fivetran_active` values appropriately to maintain history mode integrity.
 
-**Implementation:**
+Implementation:
 
-- **Validation** before starting the migration:
+- Validation before starting the migration:
    - Ensure that the table is not empty. If it is empty, the migration can be skipped as there are no records to maintain history for.
    - Ensure max(_fivetran_start) < operation_timestamp for all active records.
 
@@ -142,40 +142,40 @@ The idea is to record the history of the DDL operation (add column with default 
 
 This migration should update the specified column with a new value.
 
-**Request Details:**
+Request details:
 
 | Field                              | Type  | Description                           |
 |-------------------------------------|-------|---------------------------------------|
 | `UpdateColumnValueOperation.column` | string| The name of the column to update      |
 | `UpdateColumnValueOperation.value`  | value | The new value to set (can be `NULL`)  |
 
-**Implementation:**
+Implementation:
 ```sql
 UPDATE <schema.table> SET <column_name> = <new_value>;
 ```
-> **Note**: `NULL` can also be expected as a valid value to update the column.
+> Note: `NULL` can also be expected as a valid value to update the column.
 
 ---
 
-### Rename Operation
+### Rename operation
 
 #### RENAME_TABLE
 
 This migration should rename the specified table in the schema.
 
-**Request Details:**
+Request details:
 
 | Field                      | Type   | Description                     |
 |----------------------------|--------|---------------------------------|
 | `RenameTable.from_table`   | string | The current table name (old name)|
 | `RenameTable.to_table`     | string | The new table name              |
 
-**Implementation:**
+Implementation:
 ```sql
 ALTER TABLE <schema.from_table> RENAME TO <to_table>;
 ```
 
-**Fallback (if RENAME TABLE is not supported):**
+Fallback (if RENAME TABLE is not supported):
 
 1. Create a new table with the new name and copy data from the old table:
     ```sql
@@ -186,7 +186,7 @@ ALTER TABLE <schema.from_table> RENAME TO <to_table>;
     DROP TABLE <schema.from_table>;
     ```
 
-> **Note**: If the RENAME TABLE migration results in an unsupported error, fall back to using the CreateTable RPC implementation to create a new table. Please note that the new table will not contain any historical (back-dated) data.
+> Note: If the RENAME TABLE migration results in an unsupported error, fall back to using the CreateTable RPC implementation to create a new table. Please note that the new table will not contain any historical (back-dated) data.
 
 ---
 
@@ -194,19 +194,19 @@ ALTER TABLE <schema.from_table> RENAME TO <to_table>;
 
 This migration should rename the specified column in the table.
 
-**Request Details:**
+Request details:
 
 | Field                         | Type   | Description                      |
 |-------------------------------|--------|----------------------------------|
 | `RenameColumn.from_column`     | string | The current column name (old name)|
 | `RenameColumn.to_column`       | string | The new column name              |
 
-**Implementation:**
+Implementation:
 ```sql
 ALTER TABLE <schema.table> RENAME COLUMN <from_column> TO <to_column>;
 ```
 
-**Fallback (if RENAME COLUMN is not supported):**
+Fallback (if RENAME COLUMN is not supported):
 
 1. Add the new column with the same type as the old column:
     ```sql
@@ -221,31 +221,31 @@ ALTER TABLE <schema.table> RENAME COLUMN <from_column> TO <to_column>;
     ALTER TABLE <schema.table> DROP COLUMN <from_column>;
     ```
 
-> **Note**: If the RENAME COLUMN migration returns an unsupported error, fall back to using the `AlterTable` RPC to add a column with the new name. The new column won't have back-dated data.
+> Note: If the RENAME COLUMN migration returns an unsupported error, fall back to using the `AlterTable` RPC to add a column with the new name. The new column won't have back-dated data.
 
 ---
 
-### Copy Operation
+### Copy operation
 
 #### COPY_TABLE
 
 This migration should create a new table and copy the data from the source table to the destination table.
 
-**Request Details:**
+Request details:
 
 | Field                   | Type   | Description             |
 |-------------------------|--------|-------------------------|
 | `CopyTable.from_table`  | string | The source table name   |
 | `CopyTable.to_table`    | string | The destination table name|
 
-**Implementation:**
+Implementation:
 
 1. Create a new table with the new name:
     ```sql
     CREATE TABLE <schema.to_table> AS SELECT * FROM <schema.from_table>;
     ```
 
-> **Note**: If the COPY TABLE migration returns an unsupported error, fall back to using the `CreateTable` RPC to create a new table with the same schema as from_table. The new table won't have data copied from the source table.
+> Note: If the COPY TABLE migration returns an unsupported error, fall back to using the `CreateTable` RPC to create a new table with the same schema as from_table. The new table won't have data copied from the source table.
 
 ---
 
@@ -253,14 +253,14 @@ This migration should create a new table and copy the data from the source table
 
 This migration should add a new column and copy the data from the source column to the destination column.
 
-**Request Details:**
+Request details:
 
 | Field                       | Type   | Description                |
 |-----------------------------|--------|----------------------------|
 | `CopyColumn.from_column`    | string | The source column name     |
 | `CopyColumn.to_column`      | string | The destination column name|
 
-**Implementation:**
+Implementation:
 
 1. Add the new column with the same type as the old column:
     ```sql
@@ -271,7 +271,7 @@ This migration should add a new column and copy the data from the source column 
     UPDATE <schema.table> SET <to_column> = <from_column>;
     ```
 
-> **Note**: If the COPY COLUMN migration returns an unsupported error, fall back to using the `AlterTable` RPC to add a new column with the same type as from_column. The new column won't have data as in the source column.
+> Note: If the COPY COLUMN migration returns an unsupported error, fall back to using the `AlterTable` RPC to add a new column with the same type as from_column. The new column won't have data as in the source column.
 
 ---
 
@@ -279,7 +279,7 @@ This migration should add a new column and copy the data from the source column 
 
 This migration should copy an existing table from a non-history mode to a new table in history mode.
 
-**Request Details:**
+Request details:
 
 | Field                             | Type   | Description                    |
 |-----------------------------------|--------|--------------------------------|
@@ -287,7 +287,7 @@ This migration should copy an existing table from a non-history mode to a new ta
 | `CopyTableToHistoryMode.to_table`  | string | The destination table name     |
 | `CopyTableToHistoryMode.soft_deleted_column` | string | The soft delete column name (if applicable) |
 
-**Implementation:**
+Implementation:
 
 1. Create a new table with the new name and add the history mode columns:
     ```sql
@@ -305,19 +305,19 @@ This migration should copy an existing table from a non-history mode to a new ta
 
 ---
 
-### Drop Operation
+### Drop operation
 
 #### DROP_TABLE
 
 This migration should drop the specified table.
 
-**Request Details:**
+Request details:
 
 | Field                     | Type    | Description                       |
 |---------------------------|---------|-----------------------------------|
 | `DropOperation.drop_table`| boolean | Indicates if the table should be dropped |
 
-**Implementation:**
+Implementation:
 ```sql
 DROP TABLE <schema.table>;
 ```
@@ -328,7 +328,7 @@ DROP TABLE <schema.table>;
 
 This migration should drop a column from a table in history mode while maintaining history mode integrity.
 
-**Request Details:**
+Request details:
 
 | Field                                | Type      | Description                                   |
 |---------------------------------------|-----------|-----------------------------------------------|
@@ -337,10 +337,10 @@ This migration should drop a column from a table in history mode while maintaini
 
 - `operation_timestamp` is the timestamp of the DDL operation trigger and is used to set the `_fivetran_start`, `_fivetran_end`, and `_fivetran_active` values appropriately to maintain history mode integrity.
 
-**Implementation:**
+Implementation:
 - Implementation is similar to the `ADD_COLUMN_IN_HISTORY_MODE` migration.
 
-**Validation** before starting the migration:
+Validation before starting the migration:
 - Ensure that the table is not empty. If it is empty, the migration can be skipped as there are no records to maintain history for.
 - Ensure max(_fivetran_start) < operation_timestamp for all active records.
 
@@ -379,11 +379,11 @@ This migration should drop a column from a table in history mode while maintaini
 
 ---
 
-### Table Sync Mode Migrations
+### Table sync mode migrations
 
 These migrations convert tables from one sync mode to another. The `MigrationDetails`, along with `schema` and `table`, contains the `TableSyncModeMigrationType` field to determine which migration to perform.
 
-**Common Request Fields:**
+Common request fields:
 
 | Field                                           | Type    | Description                                              |
 |-------------------------------------------------|---------|----------------------------------------------------------|
@@ -398,7 +398,7 @@ These migrations convert tables from one sync mode to another. The `MigrationDet
 
 This migration converts a table from live mode to history mode.
 
-**Implementation:**
+Implementation:
 
 1. Add the history mode columns to the table:
     ```sql
@@ -420,7 +420,7 @@ This migration converts a table from live mode to history mode.
 
 This migration converts a table from SOFT DELETE to HISTORY mode.
 
-**Implementation:**
+Implementation:
 
 1. Add the history mode columns to the table:
     ```sql
@@ -453,7 +453,7 @@ This migration converts a table from SOFT DELETE to HISTORY mode.
 
 This migration converts a table from HISTORY to LIVE mode.
 
-**Implementation:**
+Implementation:
 
 1. Drop the primary key constraint if it exists:
     ```sql
@@ -481,7 +481,7 @@ This migration converts a table from HISTORY to LIVE mode.
 
 This migration converts a table from HISTORY mode to SOFT DELETE mode.
 
-**Implementation:**
+Implementation:
 
 1. Drop the primary key constraint if it exists:
     ```sql
@@ -519,7 +519,7 @@ This migration converts a table from HISTORY mode to SOFT DELETE mode.
 
 This migration converts a table from soft-delete mode to live mode.
 
-**Implementation:**
+Implementation:
 
 1. Drop records where `<soft_deleted_column>`, from the migration request, is true:
     ```sql
@@ -537,7 +537,7 @@ This migration converts a table from soft-delete mode to live mode.
 
 This migration converts a table from live mode to soft-delete mode.
 
-**Implementation:**
+Implementation:
 
 1. Add the `<soft_deleted_column>` column if it does not exist:
     ```sql

@@ -108,7 +108,7 @@ The `WriteHistoryBatchRequest` RPC call provides details about the batch files c
 ### Migrate
 The `Migrate` RPC call performs complex schema migration operations on tables. The request includes a `MigrationDetails` object containing the schema, table, and migration operation field `operation`. This field specifies the type of migration to be performed by partner code.
 
-See the [Schema Migration Helper Service](../schema-migration-service.md) guide for detailed information on each operation type and implementation.
+See the [Schema migration helper guide](../schema-migration-service.md) for detailed information on each operation type and implementation.
 
 ## Examples of data types
 Examples of each [DataType](https://github.com/fivetran/fivetran_sdk/blob/main/common.proto#L73C6-L73C14) as they would appear in CSV batch files are as follows:
