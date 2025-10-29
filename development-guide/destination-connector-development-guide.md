@@ -77,8 +77,9 @@ The `DescribeTable` RPC call should report all columns in the destination table,
 - `soft` indicates that the `truncate` operation is a soft truncate operation and instead of removing the rows, the specified `delete_column` needs to be marked as `true`.
 
 ### AlterTable
-- The `AlterTable` RPC call should be used for changing primary key columns, adding columns, and changing data types.
-- However, this operation should not drop any columns even if the `AlterTable` request has a table with a different set of columns. Dropping columns could lead to unexpected customer data loss and is against Fivetran's general approach to data movement.
+The `AlterTable` RPC call should be used for changing primary key columns, adding columns, dropping columns, and changing data types.
+
+- `dropColumns`: A boolean field that indicates whether to drop columns. When `false`, do not drop any columns even if the `AlterTable` request has a different set of columns than the destination table. When `true`, drop columns that exist in the destination but are not present in the request.
 
 ### WriteBatchRequest
 The `WriteBatchRequest` RPC call provides details about the batch files containing the records to be pushed to the destination. We provide the `WriteBatchRequest` parameter that contains all the information required for you to read the batch files. Here are some of the fields included in the request message:
@@ -104,33 +105,10 @@ The `WriteHistoryBatchRequest` RPC call provides details about the batch files c
 
 > NOTE: To learn how to handle `earliest_start_files`, `replace_files`, `update_files` and `delete_files` in history mode, follow the [How to Handle History Mode Batch Files](../how-to-handle-history-mode-batch-files.md) guide.
 
-### Migrate method
-The `migrate` method is called the `MigrationDetails` objects is paased. The `MigrationDetails` object contains the details of the migration, such as the schema, table to be migrated and the type of schema migration operation. The `operation` field in the details contains the type of operations to be performed.
-Partner code will need to read the operation and perform perform the necessary actions for the migration as per the details provided in the `operation` field.
-#### Operation Types:
-1. DropOperation 
-2. CopyOperation
-3. RenameOperation 
-4. AddOperation 
-5. UpdateColumnValueOperation
-6. TableSyncModeMigrationOperation
+### Migrate
+The `Migrate` RPC call performs complex schema migration operations on tables. The request includes a `MigrationDetails` object containing the schema, table, and migration operation field `operation`. This field specifies the type of migration to be performed by partner code.
 
-Each of the `operations` will contain details of the tables and columns(if applicable) that needs the schema update. 
-
-For adding column with default value, an additional field `AddColumnWithDefaultValue` is added which holds details for the default value.
-
-In case of history mode tables, the operations also contain following fields and they need to be handled in such a manner that the history is maintained.
-- `DropColumnInHistoryMode`
-- `CopyTableToHistoryMode`
-- `AddColumnInHistoryMode`
-
-TableSyncModeMigrationType
-- `SOFT_DELETE_TO_LIVE`
-- `SOFT_DELETE_TO_HISTORY`
-- `HISTORY_TO_SOFT_DELETE` 
-- `HISTORY_TO_LIVE` 
-- `LIVE_TO_SOFT_DELETE` 
-- `LIVE_TO_HISTORY`
+See the [Schema Migration Helper Service](../schema-migration-service.md) guide for detailed information on each operation type and implementation.
 
 ## Examples of data types
 Examples of each [DataType](https://github.com/fivetran/fivetran_sdk/blob/main/common.proto#L73C6-L73C14) as they would appear in CSV batch files are as follows:
