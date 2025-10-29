@@ -153,6 +153,39 @@ class ConnectorService(connector_sdk_pb2_grpc.SourceConnectorServicer):
             toggle_field=common_pb2.ToggleField()
         )
 
+        # Add the new descriptive dropdown field
+        form_fields.fields.add(
+            name="appendFileOption",
+            label="Primary Key used for file process and load",
+            description="Select the primary key strategy to use when processing and loading files.",
+            required=True,
+            descriptive_dropdown_fields=common_pb2.DescriptiveDropDownFields(
+                descriptive_dropdown_field=[
+                    common_pb2.DescriptiveDropDownField(
+                        label="Upsert file using file name and line number",
+                        value="upsert_file",
+                        description="Your files have unique names and always contain net-new data. "
+                                    "We will upsert data using surrogate primary keys '_file' and '_line'."
+                    ),
+                    common_pb2.DescriptiveDropDownField(
+                        label="Append file using file modified time",
+                        value="append_file",
+                        description="Your files contain a mix of old and new data or are updated periodically. "
+                                    "You want to track the full history of a file or set of files. "
+                                    "We will upsert your files using surrogate primary keys '_file', '_line', and '_modified'."
+                    ),
+                    common_pb2.DescriptiveDropDownField(
+                        label="Upsert file using custom primary key",
+                        value="upsert_file_with_primary_keys",
+                        description="Your files contain a mix of old and new data or are updated periodically. "
+                                    "You only want to keep the most recent version of every record. "
+                                    "You will choose which primary key you use after you save and test."
+                    ),
+                ]
+            ),
+            default_value="upsert_file"
+        )
+
         # Add the 'uploadFile' upload field
         form_fields.fields.add(
             name="uploadFile",

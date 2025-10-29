@@ -108,6 +108,34 @@ class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
             toggle_field=common_pb2.ToggleField()
         )
 
+        # Add Descriptive Dropdown Field (Pooling Field)
+        pooling_field = common_pb2.FormField(
+            name="poolingStrategy",
+            label="Connection Pooling Strategy",
+            description="Select the pooling strategy for managing database connections.",
+            required=True,
+            descriptive_dropdown_fields=common_pb2.DescriptiveDropDownFields(
+                descriptive_dropdown_field=[
+                    common_pb2.DescriptiveDropDownField(
+                        label="Basic Pooling",
+                        value="basic_pooling",
+                        description="Provides minimal connection reuse and low resource overhead."
+                    ),
+                    common_pb2.DescriptiveDropDownField(
+                        label="Standard Pooling",
+                        value="standard_pooling",
+                        description="Balances connection reuse and performance for typical workloads."
+                    ),
+                    common_pb2.DescriptiveDropDownField(
+                        label="Advanced Pooling",
+                        value="advanced_pooling",
+                        description="Uses intelligent algorithms to optimize performance for high concurrency and throughput."
+                    ),
+                ]
+            ),
+            default_value="standard_pooling"
+        )
+
         # uploadFile upload field
         upload_file = common_pb2.FormField(
             name="uploadFile",
@@ -182,6 +210,7 @@ class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
             conditional_field_for_cloud,
             conditional_field_for_database,
             enable_encryption,
+            pooling_field,
             upload_file
         ])
 
