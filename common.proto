@@ -25,9 +25,26 @@ message FormField {
     DropdownField dropdown_field = 6;
     ToggleField toggle_field = 7;
     ConditionalFields conditional_fields = 10;
+    UploadField upload_field = 11;
+    DescriptiveDropDownFields descriptive_dropdown_fields = 12;
   }
   optional string default_value = 8;
   optional string placeholder = 9;
+}
+
+message UploadField {
+  repeated string allowed_file_type = 1;
+  int32 max_file_size_bytes = 2;
+}
+
+message DescriptiveDropDownFields {
+  repeated DescriptiveDropDownField descriptive_dropdown_field = 1;
+}
+
+message DescriptiveDropDownField {
+  string value = 1;
+  string label = 2;
+  string description = 3;
 }
 
 message ConditionalFields {
