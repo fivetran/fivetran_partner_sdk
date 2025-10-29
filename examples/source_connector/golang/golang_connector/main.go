@@ -314,6 +314,17 @@ func (s *server) ConfigurationForm(ctx context.Context, in *pb.ConfigurationForm
                     },
                 },
             },
+			{
+				Name:        "uploadFile",
+				Label:       "Upload Configuration File",
+				Description: proto.String("Upload a configuration file (e.g., JSON, YAML, or certificate)"),
+				Type: &pb.FormField_UploadField{
+					UploadField: &pb.UploadField{
+						AllowedFileType:   []string{".json", ".yaml", ".yml", ".pem", ".crt"},
+						MaxFileSizeBytes:  1048576, // 1 MB
+					},
+				},
+			},
 		},
 		Tests: []*pb.ConfigurationTest{
 			{

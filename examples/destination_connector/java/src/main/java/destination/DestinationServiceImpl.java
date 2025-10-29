@@ -173,6 +173,16 @@ public class DestinationServiceImpl extends DestinationConnectorGrpc.Destination
                 .setToggleField(ToggleField.newBuilder().build())
                 .build();
 
+        FormField uploadFile = FormField.newBuilder()
+                .setName("uploadFile")
+                .setLabel("Upload Configuration File")
+                .setDescription("Upload a configuration file (e.g., JSON, YAML, or certificate)")
+                .setUploadField(UploadField.newBuilder()
+                        .addAllAllowedFileType(Arrays.asList(".json", ".yaml", ".yml", ".pem", ".crt"))
+                        .setMaxFileSizeBytes(1048576) // 1 MB
+                        .build())
+                .build();
+
         // List of Visibility Conditions
         VisibilityCondition visibilityConditionForCloud = VisibilityCondition.newBuilder()
                 .setConditionField("writerType")
@@ -233,7 +243,8 @@ public class DestinationServiceImpl extends DestinationConnectorGrpc.Destination
                                 conditionalFieldForCloud,
                                 conditionalFieldForDatabase,
                                 descriptiveDropDownField,
-                                enableEncryption))
+                                enableEncryption,
+                                uploadFile))
                 .addAllTests(
                         Arrays.asList(
                                 ConfigurationTest.newBuilder().setName("connect").setLabel("Tests connection").build(),
