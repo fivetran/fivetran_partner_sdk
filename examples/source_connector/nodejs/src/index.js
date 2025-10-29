@@ -68,6 +68,35 @@ const configurationForm = (call, callback) => {
           }
         },
         {
+          name: "appendFileOption",
+          label: "Primary Key used for file process and load",
+          description: "Select the primary key strategy to use when processing and loading files.",
+          required: true,
+          descriptive_dropdown_fields: {
+            descriptive_dropdown_field: [
+              {
+                label: "Upsert file using file name and line number",
+                value: "upsert_file",
+                description:
+                  "Your files have unique names and always contain net-new data. We will upsert data using surrogate primary keys '_file' and '_line'."
+              },
+              {
+                label: "Append file using file modified time",
+                value: "append_file",
+                description:
+                  "Your files contain a mix of old and new data or are updated periodically. You want to track the full history of a file or set of files. We will upsert your files using surrogate primary keys '_file', '_line', and '_modified'."
+              },
+              {
+                label: "Upsert file using custom primary key",
+                value: "upsert_file_with_primary_keys",
+                description:
+                  "Your files contain a mix of old and new data or are updated periodically. You only want to keep the most recent version of every record. You will choose which primary key you use after you save and test."
+              }
+            ]
+          },
+          default_value: "upsert_file"
+        },
+        {
           name: "doesNotMatter",
           label: "It won't be used",
           conditional_fields: {
