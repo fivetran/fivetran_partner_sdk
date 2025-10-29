@@ -34,14 +34,14 @@ Your `migrate` method should handle all defined migrations based on the `Migrati
 
 #### Supported Operation Types
 
-| Operation Type                    | Purpose                              | Sub-operations                                         |
-|------------------------------------|--------------------------------------|--------------------------------------------------------|
-| `AddOperation`                    | Add new tables or columns            | `ADD_COLUMN_WITH_DEFAULT_VALUE`, `ADD_COLUMN_IN_HISTORY_MODE` |
-| `UpdateColumnValueOperation`      | Update column values                 | N/A                                                    |
-| `RenameOperation`                 | Rename tables or columns             | `RENAME_TABLE`, `RENAME_COLUMN`                        |
-| `CopyOperation`                   | Copy tables or data                  | `COPY_TABLE`, `COPY_TABLE_TO_HISTORY_MODE`, `COPY_COLUMN` |
-| `DropOperation`                   | Drop tables or columns               | `DROP_TABLE`, `DROP_COLUMN_IN_HISTORY_MODE`            |
-| `TableSyncModeMigrationOperation` | Migrate tables between sync modes    | `LIVE_TO_HISTORY`, `SOFT_DELETE_TO_HISTORY`, `HISTORY_TO_LIVE`, `HISTORY_TO_SOFT_DELETE`, `SOFT_DELETE_TO_LIVE`, `LIVE_TO_SOFT_DELETE` |
+| Operation Type                    | Purpose                        | Sub-operations                                         |
+|------------------------------------|--------------------------------|--------------------------------------------------------|
+| `AddOperation`                    | Add new table or column        | `ADD_COLUMN_WITH_DEFAULT_VALUE`, `ADD_COLUMN_IN_HISTORY_MODE` |
+| `UpdateColumnValueOperation`      | Update column values           | N/A                                                    |
+| `RenameOperation`                 | Rename table or columns        | `RENAME_TABLE`, `RENAME_COLUMN`                        |
+| `CopyOperation`                   | Copy tables or data            | `COPY_TABLE`, `COPY_TABLE_TO_HISTORY_MODE`, `COPY_COLUMN` |
+| `DropOperation`                   | Drop table or column           | `DROP_TABLE`, `DROP_COLUMN_IN_HISTORY_MODE`            |
+| `TableSyncModeMigrationOperation` | Migrate table between sync modes | `LIVE_TO_HISTORY`, `SOFT_DELETE_TO_HISTORY`, `HISTORY_TO_LIVE`, `HISTORY_TO_SOFT_DELETE`, `SOFT_DELETE_TO_LIVE`, `LIVE_TO_SOFT_DELETE` |
 
 Each operation type has its own set of fields required to perform the migration. Based on the operation field in the request, your `migrate` method should implement the corresponding SQL queries.
 
@@ -186,7 +186,7 @@ ALTER TABLE <schema.from_table> RENAME TO <to_table>;
     DROP TABLE <schema.from_table>;
     ```
 
-> **Note**: If the RENAME TABLE migration results in an unsupported error, fall back to using the CreateTable RPC to create a new table. Please note that the new table will not contain any historical (back-dated) data.
+> **Note**: If the RENAME TABLE migration results in an unsupported error, fall back to using the CreateTable RPC implementation to create a new table. Please note that the new table will not contain any historical (back-dated) data.
 
 ---
 
@@ -402,7 +402,7 @@ This migration converts a table from live mode to history mode.
 
 1. Add the history mode columns to the table:
     ```sql
-    ALTER TABLE <schema.table> ADD COLUMN _fivetran_start TIMESTAMP,
+    ALTER TABLE <schema.table> ADD COLUMN _fivetran_start TIMESTAMP AS PRIMARY KEY,
                                 ADD COLUMN _fivetran_end TIMESTAMP,
                                 ADD COLUMN _fivetran_active BOOLEAN DEFAULT TRUE;
     ```
@@ -424,7 +424,7 @@ This migration converts a table from SOFT DELETE to HISTORY mode.
 
 1. Add the history mode columns to the table:
     ```sql
-    ALTER TABLE <schema.table> ADD COLUMN _fivetran_start TIMESTAMP,
+    ALTER TABLE <schema.table> ADD COLUMN _fivetran_start TIMESTAMP AS PRIMARY KEY,
                                 ADD COLUMN _fivetran_end TIMESTAMP,
                                 ADD COLUMN _fivetran_active BOOLEAN DEFAULT TRUE;
     ```
@@ -526,7 +526,7 @@ This migration converts a table from soft-delete mode to live mode.
     DELETE FROM <schema.table>
     WHERE <soft_deleted_column> = TRUE;
     ```
-2. Drop the <soft_deleted_column> column if it exists:
+2. if `soft_deleted_column = _fivetran_deleted` column, then drop it:
     ```sql
     ALTER TABLE <schema.table> DROP COLUMN _fivetran_deleted;
     ```
@@ -541,7 +541,7 @@ This migration converts a table from live mode to soft-delete mode.
 
 1. Add the `<soft_deleted_column>` column if it does not exist:
     ```sql
-    ALTER TABLE <schema.table> ADD COLUMN _fivetran_deleted BOOLEAN;
+    ALTER TABLE <schema.table> ADD COLUMN <soft_deleted_column> BOOLEAN;
     ```
 2. Update `<soft_deleted_column>`:
     ```sql
