@@ -277,12 +277,15 @@ class TableMetadataHelper:
             return
         start_col = table_obj.columns.add()
         start_col.name = FIVETRAN_START
+        start_col.type = common_pb2.ColumnType(type=common_pb2.DataType.UTC_DATETIME,nullable=False)
 
         end_col = table_obj.columns.add()
         end_col.name = FIVETRAN_END
+        end_col.type = common_pb2.ColumnType(type=common_pb2.DataType.UTC_DATETIME,nullable=True)
 
         active_col = table_obj.columns.add()
         active_col.name = FIVETRAN_ACTIVE
+        active_col.type = common_pb2.ColumnType(type=common_pb2.DataType.BOOLEAN,nullable=False)
 
     @staticmethod
     def add_soft_delete_column(table_obj, column_name):
@@ -291,6 +294,7 @@ class TableMetadataHelper:
             return
         soft_del_col = table_obj.columns.add()
         soft_del_col.name = column_name
+        soft_del_col.type = common_pb2.ColumnType(type=common_pb2.DataType.BOOLEAN,nullable=False)
 
 
 def log_message(level, message):

@@ -363,7 +363,7 @@ public class DestinationServiceImpl extends DestinationConnectorGrpc.Destination
 
     /**
      * This method inspects which migration operation (oneof) was requested and logs / handles it.
-     * For demonstration, all recognized operations return success;.
+     * For demonstration, all recognized operations return success.
      *
      * @param request The migration request containing details of the operation.
      * @param responseObserver The observer to send the migration response.
