@@ -14,7 +14,7 @@ Batch files are compressed using [ZSTD](https://en.wikipedia.org/wiki/Zstd).
 
 ## Encryption
 - Each batch file is encrypted separately using [AES-256](https://en.wikipedia.org/wiki/Advanced_Encryption_Standard) in [CBC](https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation) mode and with `PKCS5Padding`. - You can find the encryption key for each batch file in the `WriteBatchRequest#keys` field.
-- First 16 bytes of each batch file hold the IV vector.
+- The First 16 bytes of each batch file hold the IV vector.
 
 ## Batch files
 - Each batch file is limited in size to 100MB.
@@ -79,7 +79,7 @@ The `DescribeTable` RPC call should report all columns in the destination table,
 ### AlterTable
 The `AlterTable` RPC call should be used for changing primary key columns, adding columns, dropping columns, and changing data types.
 
-- `dropColumns`: A boolean field that indicates whether to drop columns. When `false`, do not drop any columns even if the `AlterTable` request has a different set of columns than the destination table. When `true`, drop columns that exist in the destination but are not present in the request.
+- `dropColumns`: A boolean indicating whether to drop columns not in the `AlterTable` request. When `false` , no columns should be dropped even if the columns in request differ from the destination table, preventing unintended data loss. When `true`, operation should drop columns present in the destination but absent from the request.
 
 ### WriteBatchRequest
 The `WriteBatchRequest` RPC call provides details about the batch files containing the records to be pushed to the destination. We provide the `WriteBatchRequest` parameter that contains all the information required for you to read the batch files. Here are some of the fields included in the request message:
@@ -108,7 +108,7 @@ The `WriteHistoryBatchRequest` RPC call provides details about the batch files c
 ### Migrate
 The `Migrate` RPC call performs complex schema migration operations on tables. The request includes a `MigrationDetails` object containing the schema, table, and migration operation field `operation`. This field specifies the type of migration to be performed by partner code.
 
-See the [Schema migration helper guide](../schema-migration-service.md) for detailed information on each operation type and implementation.
+See the [Schema migration helper guide](../schema-migration-helper-service.md) for detailed information on each operation type and implementation.
 
 ## Examples of data types
 Examples of each [DataType](https://github.com/fivetran/fivetran_sdk/blob/main/common.proto#L73C6-L73C14) as they would appear in CSV batch files are as follows:
