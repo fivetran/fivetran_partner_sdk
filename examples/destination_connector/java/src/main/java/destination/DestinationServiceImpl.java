@@ -117,9 +117,24 @@ public class DestinationServiceImpl extends DestinationConnectorGrpc.Destination
                 .setPlaceholder("user_name")
                 .build();
 
-        FormField password = FormField.newBuilder()
-                .setName("password")
-                .setLabel("password")
+        // Create separate password fields for each writer type to avoid duplicate field name error
+        FormField cloudPassword = FormField.newBuilder()
+                .setName("cloud_password")
+                .setLabel("Password")
+                .setTextField(TextField.Password)
+                .setPlaceholder("your_password")
+                .build();
+
+        FormField filePassword = FormField.newBuilder()
+                .setName("file_password")
+                .setLabel("Password")
+                .setTextField(TextField.Password)
+                .setPlaceholder("your_password")
+                .build();
+
+        FormField dbPassword = FormField.newBuilder()
+                .setName("db_password")
+                .setLabel("Password")
                 .setTextField(TextField.Password)
                 .setPlaceholder("your_password")
                 .build();
@@ -181,13 +196,14 @@ public class DestinationServiceImpl extends DestinationConnectorGrpc.Destination
 
         // List of conditional fields
         // Note: The 'name' and 'label' parameters in the FormField for conditional fields are not used.
+        // Each conditional field uses its own unique password field to avoid duplicate field name error
         FormField conditionalFieldForCloud = FormField.newBuilder()
                 .setName("conditionalFieldForCloud")
                 .setLabel("Conditional Field for Cloud")
                 .setConditionalFields(
                         ConditionalFields.newBuilder()
                                 .setCondition(visibilityConditionForCloud)
-                                .addAllFields(Arrays.asList(host, port, user, password, region))
+                                .addAllFields(Arrays.asList(host, port, user, cloudPassword, region))
                                 .build())
                 .build();
 
@@ -197,7 +213,7 @@ public class DestinationServiceImpl extends DestinationConnectorGrpc.Destination
                 .setConditionalFields(
                         ConditionalFields.newBuilder()
                                 .setCondition(visibilityConditionForFile)
-                                .addAllFields(Arrays.asList(host, port, user, password, table, filePath))
+                                .addAllFields(Arrays.asList(host, port, user, filePassword, table, filePath))
                                 .build())
                 .build();
 
@@ -207,7 +223,7 @@ public class DestinationServiceImpl extends DestinationConnectorGrpc.Destination
                 .setConditionalFields(
                         ConditionalFields.newBuilder()
                                 .setCondition(visibilityConditionForDatabase)
-                                .addAllFields(Arrays.asList(host, port, user, password, database, table))
+                                .addAllFields(Arrays.asList(host, port, user, dbPassword, database, table))
                                 .build())
                 .build();
 
