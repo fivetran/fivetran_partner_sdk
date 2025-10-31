@@ -84,6 +84,8 @@ If the ALTER TABLE query doesn't support the DEFAULT clause, then:
     UPDATE <schema.table> SET <column_name> = <default_value>;
     ```
 
+> Note: If the ADD_COLUMN_WITH_DEFAULT_VALUE migration results in an unsupported error, fivetran will fall back to using the already implemented `AlterTable` RPC implementation to create a new table. Please note that the new table will not contain any historical (back-dated) data.
+
 ---
 
 #### ADD_COLUMN_IN_HISTORY_MODE
@@ -192,7 +194,7 @@ Fallback (if RENAME TABLE is not supported):
     DROP TABLE <schema.from_table>;
     ```
 
-> Note: If the RENAME TABLE migration results in an unsupported error, fivetran will fall back to using the already implemented CreateTable RPC implementation to create a new table. Please note that the new table will not contain any historical (back-dated) data.
+> Note: If the RENAME TABLE migration results in an unsupported error, fivetran will fall back to using the already implemented `AlterTable` RPC implementation to create a new table. Please note that the new table will not contain any historical (back-dated) data.
 
 ---
 
