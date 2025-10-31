@@ -11,7 +11,25 @@ import java.util.logging.*;
 import java.util.logging.Formatter;
 
 public class ConnectorServiceImpl extends SourceConnectorGrpc.SourceConnectorImplBase {
+    private static final String UPSERT_FILE_LABEL = "Upsert file using file name and line number";
+    private static final String UPSERT_FILE_VALUE = "upsert_file";
+    private static final String UPSERT_FILE_DESC =
+            "Your files have unique names and always contain net-new data. We will upsert data using surrogate primary"
+                    + " keys \"_file\" and \"_line\".";
 
+    private static final String APPEND_FILE_LABEL = "Append file using file modified time";
+    private static final String APPEND_FILE_VALUE = "append_file";
+    private static final String APPEND_FILE_DESC =
+            "Your files contain a mix of old and new data or are updated periodically. You want to track the full"
+                    + " history of a file or set of files. We will upsert your files using surrogate primary keys"
+                    + " \"_file\" and \"_line\" and \"_modified\"";
+
+    private static final String CUSTOM_PRIMARY_KEY_LABEL = "Upsert file using custom primary key";
+    private static final String CUSTOM_PRIMARY_KEY_VALUE = "upsert_file_with_primary_keys";
+    private static final String CUSTOM_PRIMARY_KEY_DESC =
+            "Your files contain a mix of old and new data or are updated periodically. You only want to keep the most"
+                    + " recent version of every record. You will choose which primary key you use after you save and"
+                    + " test.";
     private static final Logger logger = getLogger();
 
     // Get the configured logger
@@ -150,6 +168,16 @@ public class ConnectorServiceImpl extends SourceConnectorGrpc.SourceConnectorImp
                 .setToggleField(ToggleField.newBuilder().build())
                 .build();
 
+        FormField uploadFile = FormField.newBuilder()
+                .setName("uploadFile")
+                .setLabel("Upload Configuration File")
+                .setDescription("Upload a configuration file (e.g., JSON, YAML, or certificate)")
+                .setUploadField(UploadField.newBuilder()
+                        .addAllAllowedFileType(Arrays.asList(".json", ".yaml", ".yml", ".pem", ".crt"))
+                        .setMaxFileSizeBytes(1048576) // 1 MB
+                        .build())
+                .build();
+
 
         // Conditional Field for OAuth
         VisibilityCondition visibilityCondition1 = VisibilityCondition.newBuilder()
@@ -199,6 +227,8 @@ public class ConnectorServiceImpl extends SourceConnectorGrpc.SourceConnectorImp
                                 .build())
                 .build();
 
+        FormField descriptiveDropDownField = getDescriptiveDropDownFields();
+
         return ConfigurationFormResponse.newBuilder()
                 .setSchemaSelectionSupported(true)
                 .setTableSelectionSupported(true)
@@ -210,11 +240,48 @@ public class ConnectorServiceImpl extends SourceConnectorGrpc.SourceConnectorImp
                                 conditionalField2,
                                 conditionalField3,
                                 apiVersions,
-                                addMetrics))
+                                descriptiveDropDownField,
+                                addMetrics,
+                                uploadFile))
                 .addAllTests(
                         Arrays.asList(
                                 ConfigurationTest.newBuilder().setName("connect").setLabel("Tests connection").build(),
                                 ConfigurationTest.newBuilder().setName("select").setLabel("Tests selection").build()))
+                .build();
+    }
+
+    private static FormField getDescriptiveDropDownFields() {
+        DescriptiveDropDownField upsertFileOption = DescriptiveDropDownField.newBuilder()
+                .setLabel(UPSERT_FILE_LABEL)
+                .setValue(UPSERT_FILE_VALUE)
+                .setDescription(UPSERT_FILE_DESC)
+                .build();
+
+        DescriptiveDropDownField appendFileOption = DescriptiveDropDownField.newBuilder()
+                .setLabel(APPEND_FILE_LABEL)
+                .setValue(APPEND_FILE_VALUE)
+                .setDescription(APPEND_FILE_DESC)
+                .build();
+
+        DescriptiveDropDownField customPrimaryKeyOption = DescriptiveDropDownField.newBuilder()
+                .setLabel(CUSTOM_PRIMARY_KEY_LABEL)
+                .setValue(CUSTOM_PRIMARY_KEY_VALUE)
+                .setDescription(CUSTOM_PRIMARY_KEY_DESC)
+                .build();
+
+        DescriptiveDropDownFields allDropdownOptions = DescriptiveDropDownFields.newBuilder()
+                .addDescriptiveDropdownField(upsertFileOption)
+                .addDescriptiveDropdownField(appendFileOption)
+                .addDescriptiveDropdownField(customPrimaryKeyOption)
+                .build();
+
+        return FormField.newBuilder()
+                .setName("appendFileOption")
+                .setLabel("Primary Key used for file process and load")
+                .setDescription("Select the primary key strategy to use when processing and loading files.")
+                .setRequired(true)
+                .setDescriptiveDropdownFields(allDropdownOptions)
+                .setDefaultValue(UPSERT_FILE_VALUE)
                 .build();
     }
 

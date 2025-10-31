@@ -286,6 +286,45 @@ func (s *server) ConfigurationForm(ctx context.Context, in *pb.ConfigurationForm
 				Label: "Enable Metrics?",
 				Type:  &pb.FormField_ToggleField{ToggleField: &pb.ToggleField{}},
 			},
+            {
+                Name:        "appendFileOption",
+                Label:       "Primary Key used for file process and load",
+                Description: proto.String("Select the primary key strategy to use when processing and loading files."),
+                Required:    proto.Bool(true),
+                DefaultValue: proto.String("upsert_file"),
+                Type: &pb.FormField_DescriptiveDropdownFields{
+                    DescriptiveDropdownFields: &pb.DescriptiveDropDownFields{
+                        DescriptiveDropdownField: []*pb.DescriptiveDropDownField{
+                            {
+                                Label:       "Upsert file using file name and line number",
+                                Value:       "upsert_file",
+                                Description: "Your files have unique names and always contain net-new data. We will upsert data using surrogate primary keys \"_file\" and \"_line\".",
+                            },
+                            {
+                                Label:       "Append file using file modified time",
+                                Value:       "append_file",
+                                Description: "Your files contain a mix of old and new data or are updated periodically. You want to track the full history of a file or set of files. We will upsert your files using surrogate primary keys \"_file\", \"_line\", and \"_modified\".",
+                            },
+                            {
+                                Label:       "Upsert file using custom primary key",
+                                Value:       "upsert_file_with_primary_keys",
+                                Description: "Your files contain a mix of old and new data or are updated periodically. You only want to keep the most recent version of every record. You will choose which primary key you use after you save and test.",
+                            },
+                        },
+                    },
+                },
+            },
+			{
+				Name:        "uploadFile",
+				Label:       "Upload Configuration File",
+				Description: proto.String("Upload a configuration file (e.g., JSON, YAML, or certificate)"),
+				Type: &pb.FormField_UploadField{
+					UploadField: &pb.UploadField{
+						AllowedFileType:   []string{".json", ".yaml", ".yml", ".pem", ".crt"},
+						MaxFileSizeBytes:  1048576, // 1 MB
+					},
+				},
+			},
 		},
 		Tests: []*pb.ConfigurationTest{
 			{
