@@ -136,16 +136,7 @@ class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
             default_value="standard_pooling"
         )
 
-        # uploadFile upload field
-        upload_file = common_pb2.FormField(
-            name="uploadFile",
-            label="Upload Configuration File",
-            description="Upload a configuration file (e.g., JSON, YAML, or certificate)",
-            upload_field=common_pb2.UploadField(
-                allowed_file_type=[".json", ".yaml", ".yml", ".pem", ".crt"],
-                max_file_size_bytes=1048576  # 1 MB
-            )
-        )
+
 
         # Define Visibility Conditions for Conditional Fields
         visibility_condition_for_cloud = common_pb2.VisibilityCondition(
@@ -210,8 +201,7 @@ class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
             conditional_field_for_cloud,
             conditional_field_for_database,
             enable_encryption,
-            pooling_field,
-            upload_file
+            pooling_field
         ])
 
         # Add tests to the form
