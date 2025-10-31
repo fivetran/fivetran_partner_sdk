@@ -99,7 +99,8 @@
                   "string_val":"Some text",
                   "json_val":"{\"a\":123}",
                   "unspecified_val":null,
-                  "new_column":"New data"
+                  "new_column":"New data",
+                  "op_time":"2005-05-23T20:57:00Z"
                },
                {
                   "id":2,
@@ -118,7 +119,8 @@
                   "string_val":"Another text",
                   "json_val":"{\"b\":456}",
                   "unspecified_val":null,
-                  "new_column":"New data 1"
+                  "new_column":"New data 1",
+                  "op_time":"2005-05-23T20:57:00Z"
                },
                {
                   "id":1,
@@ -137,7 +139,8 @@
                   "string_val":"Duplicate text",
                   "json_val":"{\"c\":789}",
                   "unspecified_val":null,
-                  "new_column":"New data 2"
+                  "new_column":"New data 2",
+                  "op_time":"2005-05-23T20:57:00Z"
                }
             ],
             "campaign": [
