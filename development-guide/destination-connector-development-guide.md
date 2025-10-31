@@ -14,7 +14,7 @@ Batch files are compressed using [ZSTD](https://en.wikipedia.org/wiki/Zstd).
 
 ## Encryption
 - Each batch file is encrypted separately using [AES-256](https://en.wikipedia.org/wiki/Advanced_Encryption_Standard) in [CBC](https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation) mode and with `PKCS5Padding`. - You can find the encryption key for each batch file in the `WriteBatchRequest#keys` field.
-- The First 16 bytes of each batch file hold the IV vector.
+- The first 16 bytes of each batch file hold the IV vector.
 
 ## Batch files
 - Each batch file is limited in size to 100MB.
@@ -79,8 +79,7 @@ The `DescribeTable` RPC call should report all columns in the destination table,
 ### AlterTable
 The `AlterTable` RPC call should be used for changing primary key columns, adding columns, dropping columns, and changing data types.
 
-- `dropColumns`: A boolean indicating whether to drop columns not in the `AlterTable` request. When `false` , no columns should be dropped even if the columns in request differ from the destination table, preventing unintended data loss. When `true`, operation should drop columns present in the destination but absent from the request.
-
+- `dropColumns`: A boolean indicating whether to drop columns not in the `AlterTable` request. When `false`, no columns should be dropped even if the columns in the request differ from those present in the destination table, preventing unintended data loss. When `true`, operation should drop columns present in the destination but absent from the request.
 ### WriteBatchRequest
 The `WriteBatchRequest` RPC call provides details about the batch files containing the records to be pushed to the destination. We provide the `WriteBatchRequest` parameter that contains all the information required for you to read the batch files. Here are some of the fields included in the request message:
 

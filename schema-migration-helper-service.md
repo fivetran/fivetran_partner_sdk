@@ -1,4 +1,4 @@
-# Schema migration helper guide
+# Schema Migration Helper Guide
 
 ## Why have a Schema Migration Helper?
 
@@ -6,12 +6,11 @@ Schema migrations are a general mechanism that Fivetran uses to manage DDL/DML o
 
 Some frequently used schema migrations have been grouped into more easily implemented 'complex' or 'advanced' schema migration operations. These grouped operations provide standardized abstractions that are advantageous for partners to implement, as they handle common scenarios with built-in best practices for data integrity and history preservation.
 
-**Important**: If some migration operations are not implemented, certain Fivetran dashboard features will not work correctly for connections using your connector. For example, customers may be unable to switch sync modes through the UI, or bulk schema fixes may fail to apply automatically.
+> Important: If some migration operations are not implemented, certain Fivetran dashboard features will not work correctly for connections using your connector. For example, customers may be unable to switch sync modes in the dashboard, or bulk schema fixes may fail to apply automatically.
 
 There can be multiple reasons for these migrations:
-
-- **DDL/DML changes or bug fixes**: At times, source connectors update table or column schemas in ways that require data transformation or restructuring, which may trigger a common bulk fix or address other use cases. It's important that these schema changes are applied to the destination before any new data for the affected table is processed.
-- **Sync mode migrations**: Customers can trigger migrations to convert their existing tables from one sync mode to another (soft-delete mode/[history mode](https://fivetran.com/docs/core-concepts/sync-modes/history-mode#switchingmodes)/live mode). These migrations involve a series of data transformations that are easier to execute as a single grouped schema migration helper abstraction to maintain history and deleted row information.
+- DDL/DML changes or bug fixes: At times, source connectors update table or column schemas in ways that require data transformation or restructuring, which may trigger a common bulk fix or address other use cases. It's important that these schema changes are applied to the destination before any new data for the affected table is processed.
+- Sync mode migrations: Customers can trigger migrations to convert their existing tables from one sync mode to another (soft-delete mode/[history mode](https://fivetran.com/docs/core-concepts/sync-modes/history-mode#switchingmodes)/live mode). These migrations involve a series of data transformations that are easier to execute as a single grouped schema migration helper abstraction to maintain history and deleted row information.
 
 > Note: Basic schema migrations such as adding/dropping columns, changing data types, and modifying primary keys are automatically handled by Fivetran through the `AlterTable` RPC call when implemented correctly. The Schema Migration Helper Service described in this document handles more complex migration scenarios that cannot be achieved through standard `AlterTable` operations alone.
 
@@ -84,7 +83,7 @@ If the ALTER TABLE query doesn't support the DEFAULT clause, then:
     UPDATE <schema.table> SET <column_name> = <default_value>;
     ```
 
-> Note: If the ADD_COLUMN_WITH_DEFAULT_VALUE migration results in an unsupported error, fivetran will fall back to using the already implemented `AlterTable` RPC implementation to create a new table. Please note that the new table will not contain any historical (back-dated) data.
+> Note: If the ADD_COLUMN_WITH_DEFAULT_VALUE migration results in an unsupported error, Fivetran will fall back to using the already implemented `AlterTable` RPC implementation to create a new table. Please note that the new table will not contain any historical (back-dated) data.
 
 ---
 
@@ -108,7 +107,7 @@ Implementation:
 
 - Validation before starting the migration:
    - Ensure that the table is not empty. If it is empty, the migration can be skipped as there are no records to maintain history for.
-   - Ensure max(_fivetran_start) < operation_timestamp for all active records.
+   - Ensure `max(_fivetran_start)` < `operation_timestamp` for all active records.
 
 1. Add the new column with the specified type:
     ```sql
@@ -128,14 +127,14 @@ Implementation:
           AND _fivetran_start < {operation_timestamp}
     );
     ```
-3. Update the newly added rows with the default value and operation timestamp:
+3. Update the newly added rows with the `default_value` and `operation_timestamp`:
     ```sql
     UPDATE <schema.table>
     SET <column> = default_value,
         _fivetran_start = <operation_timestamp>
     WHERE <condition_to_identify_new_row>;
     ```
-4. Update the previous active record's _fivetran_end to (operation timestamp) - 1ms and set _fivetran_active to FALSE:
+4. Update the previous active record's `_fivetran_end` to `(operation timestamp) - 1ms` and set `_fivetran_active` to `FALSE`:
     ```sql
     UPDATE <schema.table>
     SET _fivetran_end = <operation_timestamp> - INTERVAL '1 millisecond',
@@ -229,7 +228,7 @@ Fallback (if RENAME COLUMN is not supported):
     ALTER TABLE <schema.table> DROP COLUMN <from_column>;
     ```
 
-> Note: If the RENAME COLUMN migration returns an unsupported error, fivetran will fall back to using the already implemented `AlterTable` RPC to add a column with the new name. The new column won't have back-dated data.
+> Note: If the RENAME COLUMN migration returns an unsupported error, Fivetran will fall back to using the already implemented `AlterTable` RPC to add a column with the new name. The new column won't have back-dated data.
 
 ---
 
@@ -253,7 +252,7 @@ Implementation:
     CREATE TABLE <schema.to_table> AS SELECT * FROM <schema.from_table>;
     ```
 
-> Note: If the COPY TABLE migration returns an unsupported error, fivetran will fall back to using the already implemented `CreateTable` RPC to create a new table with the same schema as from_table. The new table won't have data copied from the source table.
+> Note: If the COPY TABLE migration returns an unsupported error, Fivetran will fall back to using the already implemented `CreateTable` RPC to create a new table with the same schema as from_table. The new table won't have data copied from the source table.
 
 ---
 
@@ -279,7 +278,7 @@ Implementation:
     UPDATE <schema.table> SET <to_column> = <from_column>;
     ```
 
-> Note: If the COPY COLUMN migration returns an unsupported error, fivetran will fall back to using the already implemented `AlterTable` RPC to add a new column with the same type as from_column. The new column won't have data as in the source column.
+> Note: If the COPY COLUMN migration returns an unsupported error, Fivetran will fall back to using the already implemented `AlterTable` RPC to add a new column with the same type as from_column. The new column won't have data as in the source column.
 
 ---
 
@@ -350,7 +349,7 @@ Implementation:
 
 Validation before starting the migration:
 - Ensure that the table is not empty. If it is empty, the migration can be skipped as there are no records to maintain history for.
-- Ensure max(_fivetran_start) < operation_timestamp for all active records.
+- Ensure `max(_fivetran_start) < operation_timestamp` for all active records.
 
 1. Insert new rows to record the history of the DDL operation:
     ```sql
@@ -367,13 +366,13 @@ Validation before starting the migration:
             AND _fivetran_start < {operation_timestamp}
     );
     ```
-2. Update the newly added row with the operation timestamp:
+2. Update the newly added row with the `operation_timestamp`:
     ```sql
     UPDATE {schema.table} 
     SET {column_name} = NULL
     WHERE _fivetran_start = {operation_timestamp};
     ```
-3. Update the previous record's _fivetran_end to (operation timestamp) - 1ms and set _fivetran_active to FALSE:
+3. Update the previous record's `_fivetran_end` to `(operation timestamp) - 1ms` and set `_fivetran_active` to `FALSE`:
     ```sql
     UPDATE {schema.table} 
        SET 
@@ -398,7 +397,7 @@ Common request fields:
 | `TableSyncModeMigrationOperation.soft_deleted_column` | string | The soft delete column name (used in applicable migrations)|
 | `TableSyncModeMigrationOperation.keep_deleted_rows`   | boolean| Whether to keep deleted rows (used in applicable migrations)|
 
-`soft_deleted_column`: In most cases, this will be _fivetran_deleted, but it may be a different column depending on the specific request.
+`soft_deleted_column`: In most cases, this will be `_fivetran_deleted`, but it may be a different column depending on the specific request.
 
 ---
 
@@ -414,7 +413,7 @@ Implementation:
                                 ADD COLUMN _fivetran_end TIMESTAMP,
                                 ADD COLUMN _fivetran_active BOOLEAN DEFAULT TRUE;
     ```
-2. Set all the records as active and set the _fivetran_start, _fivetran_end, and _fivetran_active columns appropriately.
+2. Set all the records as active and set the `_fivetran_start`, `_fivetran_end`, and `_fivetran_active` columns appropriately.
     ```sql
     UPDATE <schema.table>
     SET _fivetran_start = NOW(),
@@ -436,7 +435,7 @@ Implementation:
                                 ADD COLUMN _fivetran_end TIMESTAMP,
                                 ADD COLUMN _fivetran_active BOOLEAN DEFAULT TRUE;
     ```
-2. Use soft_deleted_column to identify active records and set the values of _fivetran_start, _fivetran_end, and _fivetran_active columns appropriately:
+2. Use `soft_deleted_column` to identify active records and set the values of `_fivetran_start`, `_fivetran_end`, and `_fivetran_active` columns appropriately:
     ```sql
     UPDATE <schema.table>
     SET 
@@ -467,7 +466,7 @@ Implementation:
     ```sql
     ALTER TABLE <schema.table> DROP CONSTRAINT IF EXISTS <primary_key_constraint>;
     ```
-2. If `keep_deleted_rows` is false, then drop rows which are not active (skip if `keep_deleted_rows` is true):
+2. If `keep_deleted_rows` is `FALSE`, then drop rows which are not active (skip if `keep_deleted_rows` is `TRUE`):
     ```sql
     DELETE FROM <schema.table>
     WHERE _fivetran_active = FALSE;
