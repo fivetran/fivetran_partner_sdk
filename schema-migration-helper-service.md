@@ -6,11 +6,11 @@ Schema migrations are a general mechanism that Fivetran uses to manage DDL/DML o
 
 Some frequently used schema migrations have been grouped into more easily implemented 'complex' or 'advanced' schema migration operations. These grouped operations provide standardized abstractions that are advantageous for partners to implement, as they handle common scenarios with built-in best practices for data integrity and history preservation.
 
-**Important**: If some migration operations are not implemented, certain Fivetran dashboard features will not work correctly for your connector. For example, customers may be unable to switch sync modes through the UI, or bulk schema fixes may fail to apply automatically.
+**Important**: If some migration operations are not implemented, certain Fivetran dashboard features will not work correctly for connections using your connector. For example, customers may be unable to switch sync modes through the UI, or bulk schema fixes may fail to apply automatically.
 
 There can be multiple reasons for these migrations:
 
-- **DDL/DML changes or bug fixes**: At times, connectors update table or column schemas in ways that require data transformation or restructuring, which may trigger a common bulk fix or address other use cases. It's important that these schema changes are applied to the destination before any new data for the affected table is processed.
+- **DDL/DML changes or bug fixes**: At times, source connectors update table or column schemas in ways that require data transformation or restructuring, which may trigger a common bulk fix or address other use cases. It's important that these schema changes are applied to the destination before any new data for the affected table is processed.
 - **Sync mode migrations**: Customers can trigger migrations to convert their existing tables from one sync mode to another (soft-delete mode/[history mode](https://fivetran.com/docs/core-concepts/sync-modes/history-mode#switchingmodes)/live mode). These migrations involve a series of data transformations that are easier to execute as a single grouped schema migration helper abstraction to maintain history and deleted row information.
 
 > Note: Basic schema migrations such as adding/dropping columns, changing data types, and modifying primary keys are automatically handled by Fivetran through the `AlterTable` RPC call when implemented correctly. The Schema Migration Helper Service described in this document handles more complex migration scenarios that cannot be achieved through standard `AlterTable` operations alone.
@@ -24,7 +24,7 @@ This document guides on how to implement the `migrate` method for different type
 - Sync mode migrations: migrations performed to migrate over different sync modes (live mode, history mode, soft-delete mode).
 - Standard migration: any migration other than sync mode migrations.
 
-> **Note for partners**: LIVE mode,a new sync mode, will be rolling out very soon. Please ensure your implementation is ready to support the new centrally enabled live mode functionality. Further communication from Fivetran regarding the rollout plan and timeline for live mode will be shared soon.
+> **Note for partners**: LIVE mode,a new sync mode, will be rolled out in Dec 2025. Please ensure your implementation is ready to support the new centrally enabled live mode functionality. Further communication from Fivetran regarding the rollout plan and timeline for live mode will be shared soon.
 
 ### How to implement the migrate method
 
@@ -192,7 +192,7 @@ Fallback (if RENAME TABLE is not supported):
     DROP TABLE <schema.from_table>;
     ```
 
-> Note: If the RENAME TABLE migration results in an unsupported error, fall back to using the CreateTable RPC implementation to create a new table. Please note that the new table will not contain any historical (back-dated) data.
+> Note: If the RENAME TABLE migration results in an unsupported error, fivetran will fall back to using the already implemented CreateTable RPC implementation to create a new table. Please note that the new table will not contain any historical (back-dated) data.
 
 ---
 
@@ -227,7 +227,7 @@ Fallback (if RENAME COLUMN is not supported):
     ALTER TABLE <schema.table> DROP COLUMN <from_column>;
     ```
 
-> Note: If the RENAME COLUMN migration returns an unsupported error, fall back to using the `AlterTable` RPC to add a column with the new name. The new column won't have back-dated data.
+> Note: If the RENAME COLUMN migration returns an unsupported error, fivetran will fall back to using the already implemented `AlterTable` RPC to add a column with the new name. The new column won't have back-dated data.
 
 ---
 
@@ -251,7 +251,7 @@ Implementation:
     CREATE TABLE <schema.to_table> AS SELECT * FROM <schema.from_table>;
     ```
 
-> Note: If the COPY TABLE migration returns an unsupported error, fall back to using the `CreateTable` RPC to create a new table with the same schema as from_table. The new table won't have data copied from the source table.
+> Note: If the COPY TABLE migration returns an unsupported error, fivetran will fall back to using the already implemented `CreateTable` RPC to create a new table with the same schema as from_table. The new table won't have data copied from the source table.
 
 ---
 
@@ -277,7 +277,7 @@ Implementation:
     UPDATE <schema.table> SET <to_column> = <from_column>;
     ```
 
-> Note: If the COPY COLUMN migration returns an unsupported error, fall back to using the `AlterTable` RPC to add a new column with the same type as from_column. The new column won't have data as in the source column.
+> Note: If the COPY COLUMN migration returns an unsupported error, fivetran will fall back to using the already implemented `AlterTable` RPC to add a new column with the same type as from_column. The new column won't have data as in the source column.
 
 ---
 
