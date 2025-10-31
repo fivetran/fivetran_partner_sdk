@@ -40,13 +40,13 @@ Your `migrate` method should handle all defined migrations based on the `Migrati
 
 #### Supported operation types
 
-| Operation type                    | Purpose                        | Sub-operations                                         |
-|-----------------------------------|--------------------------------|--------------------------------------------------------|
-| `AddOperation`                    | Add new table or column        | `ADD_COLUMN_WITH_DEFAULT_VALUE`, `ADD_COLUMN_IN_HISTORY_MODE` |
-| `UpdateColumnValueOperation`      | Update column values           | N/A                                                    |
-| `RenameOperation`                 | Rename table or columns        | `RENAME_TABLE`, `RENAME_COLUMN`                        |
-| `CopyOperation`                   | Copy tables or data            | `COPY_TABLE`, `COPY_TABLE_TO_HISTORY_MODE`, `COPY_COLUMN` |
-| `DropOperation`                   | Drop table or column           | `DROP_TABLE`, `DROP_COLUMN_IN_HISTORY_MODE`            |
+| Operation type                    | Purpose                         | Sub-operations                                         |
+|-----------------------------------|---------------------------------|--------------------------------------------------------|
+| `AddOperation`                    | Add column                      | `ADD_COLUMN_WITH_DEFAULT_VALUE`, `ADD_COLUMN_IN_HISTORY_MODE` |
+| `UpdateColumnValueOperation`      | Update data values in column    | N/A                                                    |
+| `RenameOperation`                 | Rename table or column          | `RENAME_TABLE`, `RENAME_COLUMN`                        |
+| `CopyOperation`                   | Copy table or column            | `COPY_TABLE`, `COPY_TABLE_TO_HISTORY_MODE`, `COPY_COLUMN` |
+| `DropOperation`                   | Drop table or column            | `DROP_TABLE`, `DROP_COLUMN_IN_HISTORY_MODE`            |
 | `TableSyncModeMigrationOperation` | Migrate table between sync modes | `LIVE_TO_HISTORY`, `SOFT_DELETE_TO_HISTORY`, `HISTORY_TO_LIVE`, `HISTORY_TO_SOFT_DELETE`, `SOFT_DELETE_TO_LIVE`, `LIVE_TO_SOFT_DELETE` |
 
 Each operation type has its own set of fields required to perform the migration. Based on the operation field in the request, your `migrate` method should implement the corresponding SQL queries.
