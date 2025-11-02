@@ -154,7 +154,7 @@
                   "id": 1,
                   "amount_double": 300.111,
                   "amount_float": 30.22,
-                  "amount_decimal": 11111.111,
+                  "amount_decimal": 12345.1234567890123456789,
                   "flag": true,
                   "short_val": 0,
                   "long_val": 0,
