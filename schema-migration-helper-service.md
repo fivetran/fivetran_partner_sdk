@@ -10,7 +10,7 @@ Some frequently used schema migrations have been grouped into more easily implem
 
 There can be multiple reasons for these migrations:
 - DDL/DML changes or bug fixes: At times, source connectors update table or column schemas in ways that require data transformation or restructuring, which may trigger a common bulk fix or address other use cases. It's important that these schema changes are applied to the destination before any new data for the affected table is processed.
-- Sync mode migrations: Customers can trigger migrations to convert their existing tables from one sync mode to another (soft-delete mode/[history mode](https://fivetran.com/docs/core-concepts/sync-modes/history-mode#switchingmodes)/live mode). These migrations involve a series of data transformations that are easier to execute as a single grouped schema migration helper abstraction to maintain history and deleted row information.
+- Sync mode migrations: Customers can trigger migrations to convert their existing tables from one sync mode to another ([soft-delete mode](https://fivetran.com/docs/core-concepts/sync-modes/soft-delete#softdeletemode) / [history mode](https://fivetran.com/docs/core-concepts/sync-modes/history-mode#switchingmodes) / live mode). These migrations involve a series of data transformations that are easier to execute as a single grouped schema migration helper abstraction to maintain history and deleted row information.
 
 > Note: Basic schema migrations such as adding/dropping columns, changing data types, and modifying primary keys are automatically handled by Fivetran through the `AlterTable` RPC call when implemented correctly. The Schema Migration Helper Service described in this document handles more complex migration scenarios that cannot be achieved through standard `AlterTable` operations alone.
 
@@ -20,7 +20,7 @@ This document guides on how to implement the `migrate` method for different type
 
 ## Migration types
 
-- Sync mode migrations: migrations performed to migrate over different sync modes (live mode, history mode, soft-delete mode).
+- Sync mode migrations: migrations performed to migrate over different sync modes (live mode, [history mode](https://fivetran.com/docs/core-concepts/sync-modes/history-mode#historymode), [soft-delete](https://fivetran.com/docs/core-concepts/sync-modes/soft-delete#softdeletemode) mode).
 - Standard migration: any migration other than sync mode migrations.
 
 > **Note for partners**: LIVE mode,a new sync mode, will be rolled out in Dec 2025. Please ensure your implementation is ready to support the new centrally enabled live mode functionality. Further communication from Fivetran regarding the rollout plan and timeline for live mode will be shared soon.
