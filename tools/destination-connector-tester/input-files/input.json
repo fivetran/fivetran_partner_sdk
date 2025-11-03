@@ -101,11 +101,6 @@
          ]
       }
    },
-   "describe_table": [
-      "transaction",
-      "campaign",
-      "composite_table"
-   ],
    "ops": [
       {
          "upsert": {
@@ -259,5 +254,10 @@
             ]
          }
       }
+   ],
+   "describe_table": [
+      "transaction",
+      "campaign",
+      "composite_table"
    ]
 }
