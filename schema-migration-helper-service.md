@@ -2,32 +2,26 @@
 
 ## Why have a Schema Migration Helper?
 
-Schema migrations are a general mechanism that Fivetran uses to manage DDL/DML operations on existing destination tables. These migrations are occasionally needed to safely change, update, or repair tables and columns in a customer's destination without requiring the customer to run SQL or reload the connector.
+Schema migrations are a general mechanism that Fivetran uses to manage DDL/DML operations on existing destination tables. These migrations are occasionally needed to manage certain DDL/DML operations in a customer's destination without requiring the customer to do it or fix the schema manually.
 
-Some frequently used schema migrations have been grouped into more easily implemented 'complex' or 'advanced' schema migration operations. These grouped operations provide standardized abstractions that are advantageous for partners to implement, as they handle common scenarios with built-in best practices for data integrity and history preservation.
+Some frequently used schema migrations have been grouped into different schema migration operations defined below. These grouped operations provide standardized abstractions that are advantageous for partners to implement, as they handle common scenarios with built-in best practices for data integrity and history preservation.
 
 > Important: If some migration operations are not implemented, certain Fivetran dashboard features will not work correctly for connections using your connector. For example, customers may be unable to switch sync modes in the dashboard, or bulk schema fixes may fail to apply automatically.
 
 There can be multiple reasons for these migrations:
-- DDL/DML changes or bug fixes: At times, source connectors update table or column schemas in ways that require data transformation or restructuring, which may trigger a common bulk fix or address other use cases. It's important that these schema changes are applied to the destination before any new data for the affected table is processed.
-- Sync mode migrations: Customers can trigger migrations to convert their existing tables from one sync mode to another ([soft-delete mode](https://fivetran.com/docs/core-concepts/sync-modes/soft-delete#softdeletemode) / [history mode](https://fivetran.com/docs/core-concepts/sync-modes/history-mode#switchingmodes) / live mode). These migrations involve a series of data transformations that are easier to execute as a single grouped schema migration helper abstraction to maintain history and deleted row information.
+- Table/Column level migrations: Sometimes, source connectors introduce schema changes that require data transformation or restructuring and may trigger bulk fixes or handle special cases. It's crucial to apply these schema changes to the destination before processing new data for the affected table. These changes are less common than basic schema updates—such as adding, dropping, or modifying columns—which are handled by `AlterTable` RPC method.
+- Table sync mode migrations: Customers can trigger migrations to convert their existing tables from one sync mode to another ([soft-delete mode](https://fivetran.com/docs/core-concepts/sync-modes/soft-delete#softdeletemode) / [history mode](https://fivetran.com/docs/core-concepts/sync-modes/history-mode#switchingmodes) / live mode). These migrations involve a series of data transformations that are easier to execute as a single grouped schema migration helper abstraction to maintain history and deleted row information.
 
-> Note: Basic schema migrations such as adding/dropping columns, changing data types, and modifying primary keys are automatically handled by Fivetran through the `AlterTable` RPC call when implemented correctly. The Schema Migration Helper Service described in this document handles more complex migration scenarios that cannot be achieved through standard `AlterTable` operations alone.
+> Note: Basic schema migrations such as adding/dropping columns, changing data types, and modifying primary keys are automatically handled by Fivetran through the `AlterTable` RPC call. The Schema Migration Helper Service described in this document handles more complex migration scenarios that cannot be achieved through standard `AlterTable` operations alone.
 
-This document guides on how to implement the `migrate` method for different types of schema migrations.
+This document guides on how to implement the `Migrate` RPC method for different types of schema migrations.
 
+> Note for partners: LIVE mode, a new sync mode, will be rolled out in Dec 2025. Please ensure your implementation is ready to support the new centrally enabled live mode functionality. Further communication from Fivetran regarding the rollout plan and timeline for live mode will be shared soon.
 ---
-
-## Migration types
-
-- Sync mode migrations: migrations performed to migrate over different sync modes (live mode, [history mode](https://fivetran.com/docs/core-concepts/sync-modes/history-mode#historymode), [soft-delete](https://fivetran.com/docs/core-concepts/sync-modes/soft-delete#softdeletemode) mode).
-- Standard migration: any migration other than sync mode migrations.
-
-> **Note for partners**: LIVE mode,a new sync mode, will be rolled out in Dec 2025. Please ensure your implementation is ready to support the new centrally enabled live mode functionality. Further communication from Fivetran regarding the rollout plan and timeline for live mode will be shared soon.
 
 ### How to implement the migrate method
 
-Your `migrate` method should handle all defined migrations based on the `MigrationDetails` object passed in the request.
+Your `Migrate` RPC method should handle all defined migrations based on the `MigrationDetails` object passed in the request.
 
 #### MigrationDetails object structure
 
