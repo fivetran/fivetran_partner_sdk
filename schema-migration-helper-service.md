@@ -6,7 +6,7 @@ Schema migrations are a general mechanism that Fivetran uses to manage DDL/DML o
 
 Some frequently used schema migrations have been grouped into different schema migration operations defined below. These grouped operations provide standardized abstractions that are advantageous for partners to implement, as they handle common scenarios with built-in best practices for data integrity and history preservation.
 
-> Important: If some migration operations are not implemented, certain Fivetran dashboard features will not work correctly for connections using your connector. For example, customers may be unable to switch sync modes in the dashboard, or bulk schema fixes may fail to apply automatically.
+> Important: If some migration operations are not implemented, customer may observe unexpected behaviours or failures during schema migration requests.
 
 There can be multiple reasons for these migrations:
 - Table/Column level migrations: Sometimes, source connectors introduce schema changes that require data transformation or restructuring and may trigger bulk fixes or handle special cases. It's crucial to apply these schema changes to the destination before processing new data for the affected table. These changes are less common than basic schema updates—such as adding, dropping, or modifying columns—which are handled by `AlterTable` RPC method.
@@ -176,7 +176,7 @@ Implementation:
 ALTER TABLE <schema.from_table> RENAME TO <to_table>;
 ```
 
-Fallback (if RENAME TABLE is not supported):
+Alternative approach (if RENAME TABLE is not supported):
 
 1. Create a new table with the new name and copy data from the old table:
     ```sql
@@ -207,7 +207,7 @@ Implementation:
 ALTER TABLE <schema.table> RENAME COLUMN <from_column> TO <to_column>;
 ```
 
-Fallback (if RENAME COLUMN is not supported):
+Alternative approach (if RENAME COLUMN is not supported):
 
 1. Add the new column with the same type as the old column:
     ```sql
