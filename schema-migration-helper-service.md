@@ -43,7 +43,7 @@ Your `Migrate` RPC method should handle all defined migrations based on the `Mig
 | `TableSyncModeMigrationOperation` | Migrate table between sync modes | `LIVE_TO_HISTORY`, `SOFT_DELETE_TO_HISTORY`, `HISTORY_TO_LIVE`, `HISTORY_TO_SOFT_DELETE`, `SOFT_DELETE_TO_LIVE`, `LIVE_TO_SOFT_DELETE` |
 
 Each operation type has its own set of fields required to perform the migration. Based on the operation field in the request, your `migrate` method should implement the corresponding SQL queries.
-
+> Important: If a sync mode is not supported by your destination, please return an `Unsupported` error code with `MigrationResponse` with an appropriate message.
 ---
 
 ## Operation details and example SQL
