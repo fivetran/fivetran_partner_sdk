@@ -50,109 +50,42 @@ Destination tester simulates operations from a source by reading input files fro
 * truncate_before
 * soft_truncate_before
 
-### Example input file
-Here is an example input file named `input_1.json`:
+### Example Input Files
 
-```json
-{
-   "create_table" : {
-      "transaction": {
-         "columns": {
-            "id": "INT",
-            "amount" : "DOUBLE",
-            "desc": "STRING"
-         },
-         "primary_key": ["id"],
-         "history_mode": true
-      },
-      "campaign": {
-         "columns": {
-            "name": "STRING",
-            "num": {"type": "DECIMAL", "precision": 6, "scale": 3}
-         },
-         "primary_key": []
-      }
-   },
-   "alter_table" : {
-      "transaction": {
-         "columns": {
-            "id": "INT",
-            "amount" : "FLOAT",
-            "desc": "STRING"
-         },
-         "primary_key": ["id"],
-         "history_mode": true
-      }
-   },
-   "describe_table" : [
-      "transaction"
-   ],
-   "ops" : [
-      {
-         "upsert": {
-            "transaction": [
-               {"id":1, "amount": 100.45, "desc":null, "op_time":"2005-05-23T20:57:00Z"},
-               {"id":2, "amount": 150.33, "desc": "two", "op_time":"2005-05-23T20:57:00Z"},
-               {"id":3, "amount": 150.33, "desc": "two", "op_time":"2005-05-23T20:57:00Z"},
-               {"id":4, "amount": 150.33, "desc": "two", "op_time":"2005-05-23T20:57:00Z"}
-            ],
-            "campaign": [
-               {"_fivetran_id": "abc-123-xyz", "name": "Christmas", "num": 100.23},
-               {"_fivetran_id": "vbn-543-hjk", "name": "New Year", "num": 200.56}
-            ]
-         }
-      },
-      {
-         "truncate_before": [
-            "campaign"
-         ]
-      },
-      {
-         "update": {
-            "transaction": [
-               {"id":1, "amount": 200 ,"op_time":"2005-05-24T20:58:00Z"},
-               {"id":5, "amount": 200 ,"op_time":"2005-05-24T20:57:00Z"}
-            ]
-         }
-      },
-      {
-         "upsert": {
-            "transaction": [
-               {"id":10, "amount": 200, "desc": "three", "op_time":"2005-05-26T20:57:00Z"},
-               {"id":10, "amount": 100, "desc": "thee", "op_time":"2005-05-26T20:58:00Z"},
-               {"id":20, "amount": 50, "desc": "mone", "op_time":"2005-05-26T21:57:00Z"}
-            ],
-            "campaign": [
-               {"_fivetran_id": "dfg-890-lkj", "name": "Christmas 2", "num": 400.32}
-            ]
-         }
-      },
-      {
-         "delete": {
-            "transaction": [
-               {"id":3, "op_time":"2005-05-27T20:57:00Z"},
-               {"id":6, "op_time":"2005-05-27T20:57:00Z"}
-            ],
-            "campaign": [
-               {"_fivetran_id": "abc-123-xyz"}
-            ]
-         }
-      },
-      {
-         "soft_delete": {
-            "transaction": [
-               {"id":4, "op_time":"2005-05-27T20:57:00Z"},
-               {"id":5, "op_time":"2005-05-27T20:57:00Z"}
-            ],
-            "campaign": [
-               {"_fivetran_id": "dfg-890-lkj"}
-            ]
-         }
-      }
-   ]
-}
+#### Basic Operations
+For basic table and record operations, refer to [input.json](input-files/input.json). This file demonstrates:
+- Table operations (create_table, alter_table, describe_table)
+- Single record operations (upsert, update, delete, soft_delete)
+- Bulk record operations (truncate_before, soft_truncate_before)
 
-```
+#### Schema Migration Operations
+For testing schema migration operations, the following input files are available:
+
+1. **[schema_migrations_input_ddl.json](input-files/schema_migrations_input_ddl.json)** - DDL schema migration operations including:
+   - add_column
+   - change_column_data_type
+   - drop_column
+
+2. **[schema_migrations_input_dml.json](input-files/schema_migrations_input_dml.json)** - DML schema migration operations including:
+   - copy_column
+   - update_column_value
+   - add_column_with_default_value
+   - set_column_to_null
+   - copy_table
+   - rename_column
+   - rename_table
+   - drop_table
+
+3. **[schema_migrations_input_sync_modes.json](input-files/schema_migrations_input_sync_modes.json)** - Sync mode schema migration operations including:
+   - add_column_in_history_mode
+   - drop_column_in_history_mode
+   - copy_table_to_history_mode
+   - migrate_history_to_live
+   - migrate_soft_delete_to_live
+   - migrate_live_to_soft_delete
+   - migrate_soft_delete_to_history
+   - migrate_live_to_history
+   - migrate_history_to_soft_delete
 
 ## CLI Arguments
 

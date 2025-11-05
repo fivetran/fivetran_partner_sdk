@@ -1,0 +1,112 @@
+{
+   "create_table" : {
+      "transaction": {
+         "columns": {
+            "id": "INT",
+            "amount" : "DOUBLE",
+            "desc": "STRING"
+         },
+         "primary_key": ["id"],
+         "history_mode": false
+      },
+      "transaction_history": {
+         "columns": {
+            "id": "INT",
+            "amount" : "DOUBLE",
+            "desc": "STRING"
+         },
+         "primary_key": ["id"],
+         "history_mode": true
+      }
+   },
+   "ops" : [
+      {
+         "upsert": {
+            "transaction": [
+               {"id":1, "amount": 100.45, "desc":null},
+               {"id":2, "amount": 150.33, "desc": "two"},
+               {"id":3, "amount": 150.33, "desc": "two"},
+               {"id":4, "amount": 150.33, "desc": "two"},
+               {"id":10, "amount": 200, "desc": "three"},
+               {"id":20, "amount": 50, "desc": "money"}
+            ],
+            "transaction_history": [
+               {"id":1, "amount": 100.45, "desc":null, "op_time":"2005-05-23T20:57:00Z"},
+               {"id":2, "amount": 150.33, "desc": "two", "op_time":"2005-05-23T20:57:00Z"},
+               {"id":3, "amount": 150.33, "desc": "two", "op_time":"2005-05-23T20:57:00Z"},
+               {"id":4, "amount": 150.33, "desc": "two", "op_time":"2005-05-23T20:57:00Z"},
+               {"id":10, "amount": 200, "desc": "three", "op_time":"2005-05-26T20:57:00Z"},
+               {"id":10, "amount": 100, "desc": "three", "op_time":"2005-05-26T20:58:00Z"},
+               {"id":20, "amount": 50, "desc": "money", "op_time":"2005-05-26T21:57:00Z"}
+            ]
+         }
+      }
+   ],
+   "schema_migration" : [
+      {
+         "add_column_in_history_mode": [
+            {
+               "table": "transaction_history",
+               "column": "article",
+               "data_type": "STRING",
+               "default_value": "Ordered article",
+               "operation_timestamp": "2005-05-23T20:57:00Z"
+            }
+         ],
+         "drop_column_in_history_mode": [
+            {
+               "table": "transaction_history",
+               "column": "desc",
+               "operation_timestamp": "2005-05-23T20:57:00Z"
+            }
+         ],
+         "copy_table_to_history_mode": [
+            {
+               "from_table": "transaction",
+               "to_table": "new_transaction_history",
+               "deleted_column": "_fivetran_deleted"
+            }
+         ],
+         "migrate_history_to_live": [
+            {
+               "table": "transaction_history",
+               "keep_inactive_rows": true
+            }
+         ],
+         "migrate_soft_delete_to_live": [
+            {
+               "table": "transaction",
+               "deleted_column": "_fivetran_deleted"
+            }
+         ],
+         "migrate_live_to_soft_delete": [
+            {
+               "table": "transaction",
+               "deleted_column": "_fivetran_deleted"
+            }
+         ],
+         "migrate_soft_delete_to_history": [
+            {
+               "table": "transaction",
+               "deleted_column": "_fivetran_deleted"
+            }
+         ],
+         "migrate_live_to_history": [
+            {
+               "table": "transaction_history"
+            }
+         ],
+         "migrate_history_to_soft_delete": [
+            {
+               "table": "new_transaction_history",
+               "deleted_column": "_fivetran_deleted"
+            }
+         ]
+      }
+   ],
+   "describe_table" : [
+      "transaction",
+      "transaction_history",
+      "new_transaction_history"
+   ]
+}

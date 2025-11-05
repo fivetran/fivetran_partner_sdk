@@ -11,7 +11,22 @@ import java.util.Map;
 import java.util.logging.*;
 
 public class DestinationServiceImpl extends DestinationConnectorGrpc.DestinationConnectorImplBase {
+    // Add these constants at the top of the class
+    private static final String POOLING_FIELD_NAME = "connectionPooling";
+    private static final String POOLING_FIELD_LABEL = "Connection Pooling Strategy";
+    private static final String POOLING_FIELD_DESCRIPTION = "Select the database connection pooling strategy based on your application's traffic patterns.";
 
+    private static final String BASIC_POOLING_VALUE = "basic";
+    private static final String BASIC_POOLING_LABEL = "Basic connection pooling";
+    private static final String BASIC_POOLING_DESCRIPTION = "Maintain a small pool of database connections (5-10). Suitable for low to moderate traffic applications.";
+
+    private static final String STANDARD_POOLING_VALUE = "standard";
+    private static final String STANDARD_POOLING_LABEL = "Standard connection pooling";
+    private static final String STANDARD_POOLING_DESCRIPTION = "Maintain a moderate pool of database connections (10-50). Balanced approach for most production workloads.";
+
+    private static final String ADVANCED_POOLING_VALUE = "advanced";
+    private static final String ADVANCED_POOLING_LABEL = "Advanced connection pooling";
+    private static final String ADVANCED_POOLING_DESCRIPTION = "Maintain a large pool with auto-scaling (50-200). For high-traffic applications with variable load patterns.";
     private static final Logger logger = getLogger();
     private static final Map<String, Table> tableMap = new HashMap<>();
     private final SchemaMigrationHelper migrationHelper;
@@ -117,9 +132,24 @@ public class DestinationServiceImpl extends DestinationConnectorGrpc.Destination
                 .setPlaceholder("user_name")
                 .build();
 
-        FormField password = FormField.newBuilder()
-                .setName("password")
-                .setLabel("password")
+        // Create separate password fields for each writer type to avoid duplicate field name error
+        FormField cloudPassword = FormField.newBuilder()
+                .setName("cloud_password")
+                .setLabel("Password")
+                .setTextField(TextField.Password)
+                .setPlaceholder("your_password")
+                .build();
+
+        FormField filePassword = FormField.newBuilder()
+                .setName("file_password")
+                .setLabel("Password")
+                .setTextField(TextField.Password)
+                .setPlaceholder("your_password")
+                .build();
+
+        FormField dbPassword = FormField.newBuilder()
+                .setName("db_password")
+                .setLabel("Password")
                 .setTextField(TextField.Password)
                 .setPlaceholder("your_password")
                 .build();
@@ -163,6 +193,16 @@ public class DestinationServiceImpl extends DestinationConnectorGrpc.Destination
                 .setToggleField(ToggleField.newBuilder().build())
                 .build();
 
+        FormField uploadFile = FormField.newBuilder()
+                .setName("uploadFile")
+                .setLabel("Upload Configuration File")
+                .setDescription("Upload a configuration file (e.g., JSON, YAML, or certificate)")
+                .setUploadField(UploadField.newBuilder()
+                        .addAllAllowedFileType(Arrays.asList(".json", ".yaml", ".yml", ".pem", ".crt"))
+                        .setMaxFileSizeBytes(1048576) // 1 MB
+                        .build())
+                .build();
+
         // List of Visibility Conditions
         VisibilityCondition visibilityConditionForCloud = VisibilityCondition.newBuilder()
                 .setConditionField("writerType")
@@ -181,13 +221,14 @@ public class DestinationServiceImpl extends DestinationConnectorGrpc.Destination
 
         // List of conditional fields
         // Note: The 'name' and 'label' parameters in the FormField for conditional fields are not used.
+        // Each conditional field uses its own unique password field to avoid duplicate field name error
         FormField conditionalFieldForCloud = FormField.newBuilder()
                 .setName("conditionalFieldForCloud")
                 .setLabel("Conditional Field for Cloud")
                 .setConditionalFields(
                         ConditionalFields.newBuilder()
                                 .setCondition(visibilityConditionForCloud)
-                                .addAllFields(Arrays.asList(host, port, user, password, region))
+                                .addAllFields(Arrays.asList(host, port, user, cloudPassword, region))
                                 .build())
                 .build();
 
@@ -197,7 +238,7 @@ public class DestinationServiceImpl extends DestinationConnectorGrpc.Destination
                 .setConditionalFields(
                         ConditionalFields.newBuilder()
                                 .setCondition(visibilityConditionForFile)
-                                .addAllFields(Arrays.asList(host, port, user, password, table, filePath))
+                                .addAllFields(Arrays.asList(host, port, user, filePassword, table, filePath))
                                 .build())
                 .build();
 
@@ -207,9 +248,11 @@ public class DestinationServiceImpl extends DestinationConnectorGrpc.Destination
                 .setConditionalFields(
                         ConditionalFields.newBuilder()
                                 .setCondition(visibilityConditionForDatabase)
-                                .addAllFields(Arrays.asList(host, port, user, password, database, table))
+                                .addAllFields(Arrays.asList(host, port, user, dbPassword, database, table))
                                 .build())
                 .build();
+
+        FormField descriptiveDropDownField = getDescriptiveDropDownFields();
 
         return ConfigurationFormResponse.newBuilder()
                 .setSchemaSelectionSupported(true)
@@ -220,11 +263,48 @@ public class DestinationServiceImpl extends DestinationConnectorGrpc.Destination
                                 conditionalFieldForFile,
                                 conditionalFieldForCloud,
                                 conditionalFieldForDatabase,
-                                enableEncryption))
+                                descriptiveDropDownField,
+                                enableEncryption,
+                                uploadFile))
                 .addAllTests(
                         Arrays.asList(
                                 ConfigurationTest.newBuilder().setName("connect").setLabel("Tests connection").build(),
                                 ConfigurationTest.newBuilder().setName("select").setLabel("Tests selection").build()))
+                .build();
+    }
+
+    private static FormField getDescriptiveDropDownFields() {
+        DescriptiveDropDownField basicPooling = DescriptiveDropDownField.newBuilder()
+                .setLabel(BASIC_POOLING_LABEL)
+                .setValue(BASIC_POOLING_VALUE)
+                .setDescription(BASIC_POOLING_DESCRIPTION)
+                .build();
+
+        DescriptiveDropDownField standardPooling = DescriptiveDropDownField.newBuilder()
+                .setLabel(STANDARD_POOLING_LABEL)
+                .setValue(STANDARD_POOLING_VALUE)
+                .setDescription(STANDARD_POOLING_DESCRIPTION)
+                .build();
+
+        DescriptiveDropDownField advancedPooling = DescriptiveDropDownField.newBuilder()
+                .setLabel(ADVANCED_POOLING_LABEL)
+                .setValue(ADVANCED_POOLING_VALUE)
+                .setDescription(ADVANCED_POOLING_DESCRIPTION)
+                .build();
+
+        DescriptiveDropDownFields allDropdownOptions = DescriptiveDropDownFields.newBuilder()
+                .addDescriptiveDropdownField(basicPooling)
+                .addDescriptiveDropdownField(standardPooling)
+                .addDescriptiveDropdownField(advancedPooling)
+                .build();
+
+        return FormField.newBuilder()
+                .setName(POOLING_FIELD_NAME)
+                .setLabel(POOLING_FIELD_LABEL)
+                .setDescription(POOLING_FIELD_DESCRIPTION)
+                .setRequired(true)
+                .setDescriptiveDropdownFields(allDropdownOptions)
+                .setDefaultValue(STANDARD_POOLING_VALUE)
                 .build();
     }
 
