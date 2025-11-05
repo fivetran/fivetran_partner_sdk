@@ -6,7 +6,7 @@ Schema migrations are a general mechanism that Fivetran uses to manage DDL/DML o
 
 Some frequently used schema migrations have been grouped into different schema migration operations defined below. These grouped operations provide standardized abstractions that are advantageous for partners to implement, as they handle common scenarios with built-in best practices for data integrity and history preservation.
 
-> Important: If some migration operations are not implemented, customer may observe unexpected behaviours or failures during schema migration requests.
+> Important: If some migration operations are not implemented, customer may observe unexpected behaviors or failures during schema migration requests.
 
 There can be multiple reasons for these migrations:
 - Table/Column level migrations: Sometimes, source connectors introduce schema changes that require data transformation or restructuring and may trigger bulk fixes or handle special cases. It's crucial to apply these schema changes to the destination before processing new data for the affected table. These changes are less common than basic schema updates—such as adding, dropping, or modifying columns—which are handled by `AlterTable` RPC method.
