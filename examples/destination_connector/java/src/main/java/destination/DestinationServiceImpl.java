@@ -29,6 +29,11 @@ public class DestinationServiceImpl extends DestinationConnectorGrpc.Destination
     private static final String ADVANCED_POOLING_DESCRIPTION = "Maintain a large pool with auto-scaling (50-200). For high-traffic applications with variable load patterns.";
     private static final Logger logger = getLogger();
     private static final Map<String, Table> tableMap = new HashMap<>();
+    private final SchemaMigrationHelper migrationHelper;
+
+    public DestinationServiceImpl() {
+        this.migrationHelper = new SchemaMigrationHelper(tableMap);
+    }
 
     // Get the configured logger
     private static Logger getLogger() {
@@ -432,6 +437,75 @@ public class DestinationServiceImpl extends DestinationConnectorGrpc.Destination
             System.out.println("Delete files: " + file);
         }
         responseObserver.onNext(WriteBatchResponse.newBuilder().setSuccess(true).build());
+        responseObserver.onCompleted();
+    }
+
+
+    /**
+     * This method inspects which migration operation (oneof) was requested and logs / handles it.
+     * For demonstration, all recognized operations return success.
+     *
+     * @param request The migration request containing details of the operation.
+     * @param responseObserver The observer to send the migration response.
+     *
+     *  Note: This is just for demonstration, so no logic for migration is implemented
+     *        rather different migration methods are just manipulating table_map to simulate
+     *        the migration operations.
+     */
+
+    @Override
+    public void migrate(MigrateRequest request, StreamObserver<MigrateResponse> responseObserver) {
+        MigrationDetails details = request.getDetails();
+        String schema = details.getSchema();
+        String table = details.getTable();
+
+        logger.info(String.format("[Migrate] schema=%s table=%s operation=%s",
+                schema, table, details.getOperationCase()));
+
+        MigrateResponse.Builder respBuilder = MigrateResponse.newBuilder();
+
+        switch (details.getOperationCase()) {
+            case DROP:
+                respBuilder = migrationHelper.handleDrop(details.getDrop(), schema, table);
+                break;
+
+            case COPY:
+                respBuilder = migrationHelper.handleCopy(details.getCopy(), schema, table);
+                break;
+
+            case RENAME:
+                respBuilder = migrationHelper.handleRename(details.getRename(), schema, table);
+                break;
+
+            case ADD:
+                respBuilder = migrationHelper.handleAdd(details.getAdd(), schema, table);
+                break;
+
+            case UPDATE_COLUMN_VALUE:
+                respBuilder = migrationHelper.handleUpdateColumnValue(details.getUpdateColumnValue(), schema, table);
+                break;
+
+            case TABLE_SYNC_MODE_MIGRATION:
+                respBuilder = migrationHelper.handleTableSyncModeMigration(details.getTableSyncModeMigration(), schema, table);
+                break;
+
+            case OPERATION_NOT_SET:
+            default:
+                logger.warning("[Migrate] Unsupported or missing operation.");
+                respBuilder.setUnsupported(true);
+                break;
+        }
+
+        // Example: to return a warning instead:
+        // respBuilder.setWarning(Warning.newBuilder().setMessage("Non-critical issue").build());
+
+        // Example: to return a task instead (async pattern):
+        // respBuilder.setTask(Task.newBuilder().setMessage("error-message").build());
+
+        // Example to return UNSUPPORTED status:
+        // respBuilder.setUnsupported(true);
+
+        responseObserver.onNext(respBuilder.build());
         responseObserver.onCompleted();
     }
 }

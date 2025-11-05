@@ -8,6 +8,7 @@ sys.path.append('sdk_pb2')
 from sdk_pb2 import destination_sdk_pb2
 from sdk_pb2 import common_pb2
 from sdk_pb2 import destination_sdk_pb2_grpc
+from schema_migration_helper import SchemaMigrationHelper
 
 
 INFO = "INFO"
@@ -16,6 +17,10 @@ SEVERE = "SEVERE"
 
 class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
     table_map = {}
+
+    def __init__(self):
+        super().__init__()
+        self.migration_helper = SchemaMigrationHelper(DestinationImpl.table_map)
 
     def ConfigurationForm(self, request, context):
         log_message(INFO, "Fetching Configuration form")
@@ -330,6 +335,65 @@ class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
             return destination_sdk_pb2.DescribeTableResponse(not_found=True)
         else:
             return destination_sdk_pb2.DescribeTableResponse(not_found=False, table=DestinationImpl.table_map[request.table_name])
+
+    def Migrate(self, request, context):
+        """
+        Example implementation of the new Migrate RPC introduced for schema migration support.
+        This method inspects which migration operation (oneof) was requested and logs / handles it.
+        For demonstration, all recognized operations return success.
+
+        :param request: The migration request containing details of the operation.
+        :param context: gRPC context
+
+        Note: This is just for demonstration, so no logic for migration is implemented
+              rather different migration methods are just manipulating table_map to simulate
+              the migration operations.
+        """
+        details = request.details
+        schema = details.schema
+        table = details.table
+
+        operation_case = details.WhichOneof("operation")
+        log_message(INFO, f"[Migrate] schema={schema} table={table} operation={operation_case}")
+
+        response = None
+
+        if operation_case == "drop":
+            response = self.migration_helper.handle_drop(details.drop, schema, table)
+
+        elif operation_case == "copy":
+            response = self.migration_helper.handle_copy(details.copy, schema, table)
+
+        elif operation_case == "rename":
+            response = self.migration_helper.handle_rename(details.rename, schema, table)
+
+        elif operation_case == "add":
+            response = self.migration_helper.handle_add(details.add, schema, table)
+
+        elif operation_case == "update_column_value":
+            response = self.migration_helper.handle_update_column_value(details.update_column_value, schema, table)
+
+        elif operation_case == "table_sync_mode_migration":
+            response = self.migration_helper.handle_table_sync_mode_migration(details.table_sync_mode_migration, schema, table)
+
+        else:
+            log_message(WARNING, "[Migrate] Unsupported or missing operation")
+            response = destination_sdk_pb2.MigrateResponse(unsupported=True)
+
+        # Example: to return a warning instead:
+        # response = destination_sdk_pb2.MigrateResponse(
+        #     warning=common_pb2.Warning(message="Non-critical issue")
+        # )
+
+        # Example: to return a task instead (async pattern):
+        # response = destination_sdk_pb2.MigrateResponse(
+        #             task=common_pb2.Task(message="error-message")
+        # )
+
+        # Example to return UNSUPPORTED status:
+        # response = destination_sdk_pb2.MigrateResponse(unsupported=True)
+
+        return response
 
 def log_message(level, message):
     print(f'{{"level":"{level}", "message": "{message}", "message-origin": "sdk_destination"}}')
