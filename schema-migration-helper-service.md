@@ -527,7 +527,7 @@ Implementation:
     DELETE FROM <schema.table>
     WHERE <soft_deleted_column> = TRUE;
     ```
-2. if `soft_deleted_column = _fivetran_deleted` column, then drop it:
+2. If `soft_deleted_column = _fivetran_deleted` column, then drop it:
     ```sql
     ALTER TABLE <schema.table> DROP COLUMN _fivetran_deleted;
     ```
