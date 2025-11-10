@@ -44,21 +44,21 @@ build:
 
 **Requirements:**
 
-1. **Gradle Wrapper:**
+1. Gradle wrapper:
    - Include `gradlew` script with **LF line endings** (not CRLF)
    - Before committing to git, run: `git config --global core.autocrlf input`
    - Make `gradlew` executable: `chmod +x gradlew`
 
-2. **Build Configuration:**
+2. Build configuration:
    - Include a `jar` task in `build.gradle`
    - The pipeline will run: `./gradlew jar`
 
-3. **JAR Output:**
+3. JAR output:
    - JAR file must be in `build/libs/` directory
    - **Only ONE JAR file** should be present in `build/libs/` after build
    - Do not generate multiple JARs (avoid creating separate `-javadoc.jar`, `-sources.jar`, etc.)
 
-4. **Proto Files:**
+4. Proto files:
    - Ensure `src/main/proto/` directory exists or can be created
    - Proto generation should be configured in `build.gradle`
 
