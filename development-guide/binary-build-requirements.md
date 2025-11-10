@@ -15,7 +15,7 @@ This guide outlines the code structure and build requirements for creating binar
 
 1. **Makefile Structure:**
    - Include a `build` target that creates the binary
-   - **DO NOT set `GOBIN`** in your Makefile (required for cross-compilation from Mac to Linux)
+   - **DO NOT set `GOBIN`** in your Makefile (Setting GOBIN can interfere with cross-compilation from Mac to Linux in the build pipeline)
    - The `build` target should handle:
      - Installation of local dependencies (e.g., `protoc`)
      - Fivetran proto file download
