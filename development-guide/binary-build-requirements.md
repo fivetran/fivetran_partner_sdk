@@ -255,12 +255,12 @@ make build_connector
 
 | Issue | Solution |
 |-------|----------|
-| **Windows line endings (CRLF)** | Convert to LF: `dos2unix gradlew` or set git config |
-| **Multiple JARs generated** | Configure build to produce only shaded/fat JAR |
-| **Missing protos** | For Python, implement `build.sh`; for others, ensure proper directory structure |
-| **Test binaries included** | Ensure C++ test binaries are named with "test" in the name |
-| **build.sh not executable** | Run `chmod +x build.sh` before committing |
-| **Wrong package name (Rust)** | Must be exactly `fivetran_source` or `fivetran_destination` |
+| Windows line endings (CRLF) | Convert to LF: `dos2unix gradlew` or set git config |
+| Multiple JARs generated | Configure build to produce only shaded/fat JAR |
+| Missing protos | For Python, implement `build.sh`; for others, ensure proper directory structure |
+| Test binaries included | Ensure C++ test binaries are named with "test" in the name |
+| build.sh not executable | Run `chmod +x build.sh` before committing |
+| Wrong package name (Rust) | Must be exactly `fivetran_source` or `fivetran_destination` |
 
 ---
 
