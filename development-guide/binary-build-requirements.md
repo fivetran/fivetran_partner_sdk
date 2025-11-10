@@ -98,20 +98,20 @@ build:
 
 **Requirements:**
 
-1. **Required Files in Root Directory:**
+1. Required files in root directory:
    - `main.py` - Entry point of your application
    - `requirements.txt` - All Python dependencies
    - `build.sh` - Script for downloading and generating proto files
 
-2. **build.sh Requirements:**
-   - Must be **executable**: `chmod +x build.sh`
-   - Must **NOT be world-writable** (security requirement)
+2. build.sh requirements:
+   - Must be executable: `chmod +x build.sh`
+   - Must _not_ be world-writable (security requirement)
    - Should handle:
      - Downloading Fivetran proto files to `./protos/` directory
      - Generating Python proto files using `protoc`
      - Installing `grpcio-tools` if needed
 
-3. **Binary Output:**
+3. Binary output:
    - Binary will be automatically generated using PyInstaller
    - Output location: `dist/main`
    - Do not create your own PyInstaller configuration (pipeline handles this)
