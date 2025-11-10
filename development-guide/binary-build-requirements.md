@@ -137,28 +137,28 @@ python -m grpc_tools.protoc -I./protos --python_out=. --grpc_python_out=. ./prot
 
 **Requirements:**
 
-1. **Package Naming:**
-   - For **source connectors**: Package name must be `fivetran_source`
-   - For **destination connectors**: Package name must be `fivetran_destination`
+1. Package naming:
+   - For source connectors: Package name must be `fivetran_source`
+   - For destination connectors: Package name must be `fivetran_destination`
    - Specified in `Cargo.toml`:
      ```toml
      [package]
      name = "fivetran_source"  # or "fivetran_destination"
      ```
 
-2. **Workspace Support:**
+2. Workspace support:
    - If using a Cargo workspace, ensure the appropriate package exists
    - The pipeline will build with: `cargo build --release -p <package_name>`
 
-3. **Git Submodules:**
+3. Git submodules:
    - If your project uses git submodules (e.g., for Fivetran SDK protos), include `.gitmodules`
    - All submodules will be automatically initialized: `git submodule update --init --recursive`
 
-4. **Binary Output:**
+4. Binary output:
    - Binary will be created in `target/release/` directory
    - Should produce **exactly one executable** (excluding `.so` and `.d` files)
 
-5. **Dependencies:**
+5. Dependencies:
    - If using `zstd-sys`, `bindgen`, or other native dependencies, they will be automatically installed
    - No additional configuration needed
 
