@@ -198,7 +198,10 @@ build_dependencies:
     # Install protobuf, dependencies, etc.
 
 build_connector:
-    mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && make -j$(nproc)
+    mkdir -p build
+    cd build
+    cmake -DCMAKE_BUILD_TYPE=Release ..
+    make -j$(nproc)
 ```
 
 ---
