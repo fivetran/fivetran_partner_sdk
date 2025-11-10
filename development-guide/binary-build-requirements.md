@@ -68,16 +68,16 @@ build:
 
 **Requirements:**
 
-1. **POM Configuration:**
+1. POM configuration:
    - Include `pom.xml` with proper packaging configuration
    - The pipeline will run: `mvn clean package`
 
-2. **JAR Output:**
+2. JAR output:
    - JAR file must be in `target/` directory
    - Exclude `original-*.jar` files (shaded/fat JAR should be the main output)
-   - **Only ONE non-original JAR file** should be present after build
+   - _Only one non-original JAR file_ should be present after build
 
-3. **Proto Files:**
+3. Proto files:
    - Proto files will be automatically downloaded to `src/main/proto/`
    - Configure proto generation in `pom.xml` (e.g., using `protobuf-maven-plugin`)
 
