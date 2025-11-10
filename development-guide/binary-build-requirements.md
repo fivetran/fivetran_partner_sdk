@@ -168,12 +168,12 @@ python -m grpc_tools.protoc -I./protos --python_out=. --grpc_python_out=. ./prot
 
 **Requirements:**
 
-1. **Makefile Targets:**
+1. Makefile targets:
    - Include `build_dependencies` target (optional) - installs all required dependencies
    - Include `build_connector` target (required) - builds the binary
    - If `build_connector` doesn't exist, pipeline will try `build` or `make` default target
 
-2. **Build System:**
+2. Build system:
    - Use CMake with output directory: `build/Release/`
    - The pipeline will run:
      ```bash
@@ -181,13 +181,13 @@ python -m grpc_tools.protoc -I./protos --python_out=. --grpc_python_out=. ./prot
      make build_connector     # or `make build`
      ```
 
-3. **Binary Output:**
+3. Binary output:
    - Binary must be in `build/Release/` directory
    - Binary name **must NOT contain "test"** (e.g., no `integration_tests`, `unit_test`, etc.)
    - Binary must **NOT be a `.so` file**
    - Should produce **exactly one executable** matching above criteria
 
-4. **Compiler Requirements:**
+4. Compiler requirements:
    - Code will be built with **Clang 16**
    - CMake **3.28.2** will be used
    - Ensure code is compatible with these versions
