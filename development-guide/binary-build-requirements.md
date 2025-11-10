@@ -13,20 +13,20 @@ This guide outlines the code structure and build requirements for creating binar
 
 **Requirements:**
 
-1. **Makefile Structure:**
+1. Makefile structure:
    - Include a `build` target that creates the binary
-   - **DO NOT set `GOBIN`** in your Makefile (Setting GOBIN can interfere with cross-compilation from Mac to Linux in the build pipeline)
+   - _Do not_ set `GOBIN` in your Makefile (Setting GOBIN can interfere with cross-compilation from Mac to Linux in the build pipeline)
    - The `build` target should handle:
      - Installation of local dependencies (e.g., `protoc`)
      - Fivetran proto file download
      - Proto file generation
 
-2. **Binary Output:**
+2. Binary output:
    - Binary must be created in the `bin/` directory
    - Binary must be named `server`
    - Final path: `./bin/server`
 
-3. **Go Module:**
+3. Go module:
    - Include `go.mod` file specifying Go version
 
 **Example Makefile Snippet:**
