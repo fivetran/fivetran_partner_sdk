@@ -155,3 +155,6 @@ Yes, definitely. This happens during the [initial sync](https://fivetran.com/doc
 
 ### What happens if a source connector sends a delete event for a record that was never upserted? 
 Deletes for records that were never upserted are safely ignored — no action should be taken.
+
+### What happens if a source connector sends an update event for a record that was never upserted?
+Updates for records that were never upserted are safely ignored — no action should be taken.
