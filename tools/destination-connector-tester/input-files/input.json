@@ -21,7 +21,6 @@
             "xml_val": "XML",
             "string_val": "STRING",
             "json_val": "JSON",
-            "unspecified_val": "UNSPECIFIED",
             "old_column": "STRING"
          },
          "primary_key": [
@@ -79,7 +78,6 @@
             "xml_val": "XML",
             "string_val": "STRING",
             "json_val": "JSON",
-            "unspecified_val": "UNSPECIFIED",
             "new_column": "STRING"
          },
          "primary_key": [
@@ -121,7 +119,6 @@
                   "xml_val": "<tag>This is xml</tag>",
                   "string_val": "Some text",
                   "json_val": "{\"a\":123}",
-                  "unspecified_val": null,
                   "new_column": "New data",
                   "op_time": "2005-05-23T20:57:00Z"
                },
@@ -141,7 +138,6 @@
                   "xml_val": "<tag>XML test</tag>",
                   "string_val": "Another text",
                   "json_val": "{\"b\":456}",
-                  "unspecified_val": null,
                   "new_column": "New data 1",
                   "op_time": "2005-05-23T20:57:00Z"
                },
@@ -161,7 +157,6 @@
                   "xml_val": "<tag>Duplicate PK</tag>",
                   "string_val": "Duplicate text",
                   "json_val": "{\"c\":789}",
-                  "unspecified_val": null,
                   "new_column": "New data 2",
                   "op_time": "2005-05-23T20:57:00Z"
                }
