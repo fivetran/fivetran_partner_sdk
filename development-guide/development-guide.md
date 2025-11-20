@@ -21,7 +21,7 @@ Fivetran currently supports connectors built in the following languages:
 - Java
 - C++
 
-New source partners are encouraged to build in Python and start by submitting a Community connector to our [cSDK repository](https://github.com/fivetran/fivetran_sdk).
+We encourage new source partners to build their source connectors in Python for quicker onboarding experience and to start by submitting a community connector to our [Connector SDK repository](https://github.com/fivetran/fivetran_connector_sdk).
 
 For detailed language-specific requirements, see the [source connector development guide](source-connector-development-guide.md) and [destination connector development guide](destination-connector-development-guide.md).
 

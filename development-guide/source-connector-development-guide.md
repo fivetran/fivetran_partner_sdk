@@ -3,22 +3,20 @@
 ## Language support
 
 Fivetran supports source connectors built in the following languages:
-- **Python** (recommended for new partners)
+- Python (recommended for new partners)
 - Go
 - Rust
 - Java
 
 ### Getting started
-New source partners are encouraged to:
-- Build in Python for the quicker onboarding experience
-- Start by submitting a Community connector to our [Connector SDK repository](https://github.com/fivetran/fivetran_connector_sdk)
+We encourage new source partners to build their source connectors in Python for quicker onboarding experience and to start by submitting a community connector to our [Connector SDK repository](https://github.com/fivetran/fivetran_connector_sdk).
 
 ### Partner examples
-- **Planetscale**: Go
-- **Convex**: Rust
-- **Tracksuit**: Python
-- **Datastreamer**: Python
-- **Singlestore**: Java
+- Planetscale: Go
+- Convex: Rust
+- Tracksuit: Python
+- Datastreamer: Python
+- Singlestore: Java
 
 ## Guidelines
 
