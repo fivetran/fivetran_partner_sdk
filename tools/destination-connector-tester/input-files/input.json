@@ -205,12 +205,6 @@
                   "amount_double": 400.555,
                   "flag": false,
                   "op_time": "2023-10-30T15:00:00Z"
-               },
-               {
-                  "id": 999,
-                  "amount_double": 0,
-                  "flag": false,
-                  "op_time": "2023-10-30T15:00:00Z"
                }
             ]
          }
