@@ -1,5 +1,27 @@
 # Source Connector Guidelines
 
+## Language support
+
+Fivetran supports source connectors built in the following languages:
+- **Python** (recommended for new partners)
+- Go
+- Rust
+- Java
+
+### Getting started
+New source partners are encouraged to:
+- Build in Python for the quicker onboarding experience
+- Start by submitting a Community connector to our [Connector SDK repository](https://github.com/fivetran/fivetran_connector_sdk)
+
+### Partner examples
+- **Planetscale**: Go
+- **Convex**: Rust
+- **Tracksuit**: Python
+- **Datastreamer**: Python
+- **Singlestore**: Java
+
+## Guidelines
+
 - Don't push anything other than source data to the destination. State data is saved to a production database and returned in `UpdateRequest`.
 - Make sure to handle new schemas/tables/columns per the information and user choices in `UpdateRequest#selection`.
 - Make sure you checkpoint at least once an hour. In general, the more frequently you do it, the better.
