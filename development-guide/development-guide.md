@@ -10,7 +10,20 @@ Fivetran SDK uses [gRPC](https://grpc.io/) to talk to partner code. The partner 
 
 ### Language
 
-At the moment, partner code should be developed in a language that can generate a statically linked binary executable.
+Partner code should be developed in a language that can generate a statically linked binary executable.
+
+#### Supported languages
+Fivetran currently supports connectors built in the following languages:
+
+- Python (recommended for new partners)
+- Go
+- Rust
+- Java
+- C++
+
+We encourage new source partners to build their source connectors in Python for quicker onboarding experience and to start by submitting a community connector to our [Connector SDK repository](https://github.com/fivetran/fivetran_connector_sdk).
+
+For detailed language-specific requirements, see the [source connector development guide](source-connector-development-guide.md) and [destination connector development guide](destination-connector-development-guide.md).
 
 ### Command line arguments
 The executable needs to do the following:

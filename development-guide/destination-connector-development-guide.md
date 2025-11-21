@@ -1,5 +1,24 @@
 # Destination Connector Guidelines
 
+## Language support
+
+Fivetran supports destination connectors built in the following languages:
+- Go
+- Rust
+- Java
+- C++
+- Python
+
+We currently have destination partners using each of these supported languages.
+
+### Partner examples
+- [Singlestore](https://github.com/singlestore-labs/singlestore-fivetran-destination): Java
+- [Clickhouse](https://github.com/ClickHouse/clickhouse-fivetran-destination): Go
+- [Motherduck](https://github.com/motherduckdb/motherduck-fivetran-connector): C++
+- [Materialize](https://github.com/MaterializeInc/materialize/tree/main/src/fivetran-destination): Rust
+
+## Overview
+
 The destination connector should implement the listed rpc calls to load the data Fivetran sends.
 
 ## System columns
