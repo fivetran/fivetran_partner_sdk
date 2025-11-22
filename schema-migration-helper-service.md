@@ -360,13 +360,7 @@ Validation before starting the migration:
             AND _fivetran_start < {operation_timestamp}
     );
     ```
-2. Update the newly added row with the `operation_timestamp`:
-    ```sql
-    UPDATE {schema.table} 
-    SET {column_name} = NULL
-    WHERE _fivetran_start = {operation_timestamp};
-    ```
-3. Update the previous record's `_fivetran_end` to `(operation timestamp) - 1ms` and set `_fivetran_active` to `FALSE`:
+2. Update the previous record's `_fivetran_end` to `(operation timestamp) - 1ms` and set `_fivetran_active` to `FALSE`:
     ```sql
     UPDATE {schema.table} 
        SET 
