@@ -1,0 +1,23 @@
+{
+  "create_table": {
+    "transaction": {
+      "columns": {
+        "id": "INT"
+      },
+      "primary_key": ["id"]
+    }
+  },
+  "ops": [
+    {
+      "delete": {
+        "transaction": [
+          {
+            "id": 1000,
+            "op_time": "2023-10-30T11:00:00Z"
+          }
+        ]
+      }
+    }
+  ],
+  "describe_table": ["transaction"]
+}

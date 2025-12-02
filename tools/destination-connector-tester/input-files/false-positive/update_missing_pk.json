@@ -1,0 +1,25 @@
+{
+  "create_table": {
+    "transaction": {
+      "columns": {
+        "id": "INT",
+        "amount_double": "DOUBLE"
+      },
+      "primary_key": ["id"]
+    }
+  },
+  "ops": [
+    {
+      "update": {
+        "transaction": [
+          {
+            "id": 999,
+            "amount_double": 0.0,
+            "op_time": "2023-10-30T10:00:00Z"
+          }
+        ]
+      }
+    }
+  ],
+  "describe_table": ["transaction"]
+}
