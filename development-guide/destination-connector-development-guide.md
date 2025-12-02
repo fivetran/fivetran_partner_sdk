@@ -179,6 +179,4 @@ Deletes for records that were never upserted are safely ignored — no action sh
 Updates for records that were never upserted are safely ignored — no action should be taken.
 
 ### What are “false-positive” operations, and how should destinations handle them?
-A false-positive operation is an update, delete, or soft_delete event that targets a record which does not exist in the destination at execution time. This can happen when a record was never upserted, was removed by a previous truncate or soft_truncate, or was deleted earlier in the same batch.
-
-False-positive operations are expected and must be safely ignored — no action should be taken, and the operation should not fail.
+A false-positive operation is an update, delete, or soft_delete event that targets a record which does not exist in the destination at execution time. This can happen when a record was never upserted, was removed by a previous truncate or soft_truncate, or was deleted earlier in the same batch.False-positive operations are expected and must be safely ignored — no action should be taken, and the operation should not fail.
