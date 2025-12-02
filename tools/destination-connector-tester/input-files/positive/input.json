@@ -23,9 +23,7 @@
             "json_val": "JSON",
             "old_column": "STRING"
          },
-         "primary_key": [
-            "id"
-         ],
+         "primary_key": ["id"],
          "history_mode": true
       },
       "campaign": {
@@ -49,11 +47,7 @@
             "old_pk": "STRING",
             "value": "STRING"
          },
-         "primary_key": [
-            "pk1",
-            "pk2",
-            "old_pk"
-         ]
+         "primary_key": ["pk1", "pk2", "old_pk"]
       }
    },
    "alter_table": {
@@ -80,9 +74,7 @@
             "json_val": "JSON",
             "new_column": "STRING"
          },
-         "primary_key": [
-            "id"
-         ],
+         "primary_key": ["id"],
          "history_mode": true
       },
       "composite_table": {
@@ -92,11 +84,7 @@
             "new_pk": "STRING",
             "value": "STRING"
          },
-         "primary_key": [
-            "pk1",
-            "pk2",
-            "new_pk"
-         ]
+         "primary_key": ["pk1", "pk2", "new_pk"]
       }
    },
    "ops": [
@@ -216,11 +204,6 @@
                   "id": 2,
                   "op_time": "2023-10-30T16:00:00Z"
                }
-            ],
-            "campaign": [
-               {
-                  "_fivetran_id": "abc-123-xyz"
-               }
             ]
          }
       },
@@ -230,11 +213,6 @@
                {
                   "id": 1,
                   "op_time": "2023-10-30T16:30:00Z"
-               }
-            ],
-            "campaign": [
-               {
-                  "_fivetran_id": "abc-123-xyz"
                }
             ]
          }
