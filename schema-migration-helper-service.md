@@ -453,6 +453,10 @@ Implementation:
                         END
     WHERE <condition>;
     ```
+   
+3. If `soft_deleted_column = _fivetran_deleted`, then drop it:
+    ```sql
+    ALTER TABLE <schema.table> DROP COLUMN _fivetran_deleted;
 
 ---
 
