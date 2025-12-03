@@ -101,7 +101,7 @@ Implementation:
 
 - Validation before starting the migration:
    - Ensure that the table is not empty. If it is empty, the migration can be skipped as there are no records to maintain history for.
-   - Ensure `max(_fivetran_start)` < `operation_timestamp` for all active records.
+   - Ensure `max(_fivetran_start)` <= `operation_timestamp` for all active records.
 
 1. Add the new column with the specified type:
     ```sql
@@ -128,6 +128,9 @@ Implementation:
         _fivetran_start = <operation_timestamp>
     WHERE <condition_to_identify_new_row>;
     ```
+   This step is important in case of source connector sends multiple ADD_COLUMN_IN_HISTORY_MODE operations with the same operation_timestamp. It will ensure, we only record history once for that timestamp.
+
+
 4. Update the previous active record's `_fivetran_end` to `(operation timestamp) - 1ms` and set `_fivetran_active` to `FALSE`:
     ```sql
     UPDATE <schema.table>
@@ -343,7 +346,7 @@ Implementation:
 
 Validation before starting the migration:
 - Ensure that the table is not empty. If it is empty, the migration can be skipped as there are no records to maintain history for.
-- Ensure `max(_fivetran_start) < operation_timestamp` for all active records.
+- Ensure `max(_fivetran_start)` <= `operation_timestamp` for all active records.
 
 1. Insert new rows to record the history of the DDL operation:
     ```sql
@@ -366,6 +369,9 @@ Validation before starting the migration:
     SET {column_name} = NULL
     WHERE _fivetran_start = {operation_timestamp};
     ```
+   This step is important in case of source connector sends multiple DROP_COLUMN_IN_HISTORY_MODE operations with the same operation_timestamp. It will ensure, we only record history once for that timestamp.
+
+
 3. Update the previous record's `_fivetran_end` to `(operation timestamp) - 1ms` and set `_fivetran_active` to `FALSE`:
     ```sql
     UPDATE {schema.table} 
@@ -447,6 +453,10 @@ Implementation:
                         END
     WHERE <condition>;
     ```
+   
+3. If `soft_deleted_column = _fivetran_deleted`, then drop it:
+    ```sql
+    ALTER TABLE <schema.table> DROP COLUMN _fivetran_deleted;
 
 ---
 
