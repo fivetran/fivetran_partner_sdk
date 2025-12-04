@@ -1,0 +1,13 @@
+{
+  "create_table": {},
+  "ops": [
+    {
+      "soft_truncate_before": [
+        "nonexistent_table"
+      ]
+    }
+  ],
+  "describe_table": [
+    "nonexistent_table"
+  ]
+}
