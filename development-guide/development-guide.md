@@ -59,19 +59,100 @@ The executable needs to do the following:
 - These issues may include bad source data or connection problems with the source itself. Where applicable, the alerts should also provide guidance to customers on how to resolve the problem.
 - We allow throwing [errors](https://fivetran.com/docs/using-fivetran/fivetran-dashboard/alerts#errors) and [warnings](https://fivetran.com/docs/using-fivetran/fivetran-dashboard/alerts#warnings).
 - Partner code should use [Warning](https://github.com/fivetran/fivetran_sdk/blob/main/common.proto#L160) and [Task](https://github.com/fivetran/fivetran_sdk/blob/main/common.proto#L164) messages defined in the proto files to relay information or errors to Fivetran.
-- Partners can send multiple warning messages, but only one task message is allowed. Once a task message is issued, the sync stops immediately.
-- Usage example:
-```
+
+#### Response Types and Multiple Messages
+
+The ability to send multiple responses depends on whether the RPC returns a streaming response:
+
+**Source Connectors (Streaming Responses):**
+- The `Update` RPC is defined as: `rpc Update (UpdateRequest) returns (stream UpdateResponse) {}`
+- The `stream` keyword means you can call `responseObserver.onNext()` **multiple times** to send multiple responses.
+- You can send multiple warnings, records, checkpoints, etc. in separate `UpdateResponse` messages.
+- You can send **only one task message** - once a task is issued, the sync stops immediately.
+
+**Destination Connectors (Single Responses):**
+- RPCs like `AlterTable`, `CreateTable`, `WriteBatch`, etc. return single (non-streaming) responses.
+- Example: `rpc AlterTable(AlterTableRequest) returns (AlterTableResponse) {}`
+- You can call `responseObserver.onNext()` **only once**, followed by `responseObserver.onCompleted()`.
+- Each response uses a `oneof` field, meaning you can return **only one of**: success, warning, or task.
+
+#### Usage Examples
+
+**Source Connector - Multiple responses with Update (streaming):**
+```java
+// Update supports streaming - you can send multiple responses
 responseObserver.onNext(
-                UpdateResponse.newBuilder()
-                        .setTask(
-                                Task.newBuilder()
-                                        .setMessage("Unable to connect to the database. Please provide the correct credentials.")
-                                        .build()
-                        )
-                        .build());
+    UpdateResponse.newBuilder()
+        .setWarning(Warning.newBuilder()
+            .setMessage("Table 'users' has 5 rows with invalid email format.")
+            .build())
+        .build()
+);
+
+responseObserver.onNext(
+    UpdateResponse.newBuilder()
+        .setWarning(Warning.newBuilder()
+            .setMessage("Table 'orders' has 3 rows with missing timestamps.")
+            .build())
+        .build()
+);
+
+// Continue sending data
+responseObserver.onNext(
+    UpdateResponse.newBuilder()
+        .setRecord(record)
+        .build()
+);
+
+// Send task to stop sync
+responseObserver.onNext(
+    UpdateResponse.newBuilder()
+        .setTask(Task.newBuilder()
+            .setMessage("Unable to connect to the database. Please verify credentials.")
+            .build())
+        .build()
+);
 ```
-> NOTE: We continue with the sync in case of Warnings, and break execution when Tasks are thrown. 
+
+**Destination Connector - Single response with AlterTable:**
+```java
+// AlterTable does NOT support streaming - only ONE response allowed
+// You can return EITHER success, warning, OR task (not multiple)
+
+// Option 1: Return success
+responseObserver.onNext(
+    AlterTableResponse.newBuilder()
+        .setSuccess(true)
+        .build()
+);
+responseObserver.onCompleted();
+
+// Option 2: Return warning (in a different call)
+responseObserver.onNext(
+    AlterTableResponse.newBuilder()
+        .setWarning(Warning.newBuilder()
+            .setMessage("Column type change may result in data loss.")
+            .build())
+        .build()
+);
+responseObserver.onCompleted();
+
+// Option 3: Return task to stop sync (in a different call)
+responseObserver.onNext(
+    AlterTableResponse.newBuilder()
+        .setTask(Task.newBuilder()
+            .setMessage("Insufficient permissions to alter table.")
+            .build())
+        .build()
+);
+responseObserver.onCompleted();
+
+// INCORRECT - Cannot send multiple responses for AlterTable:
+// responseObserver.onNext(AlterTableResponse.newBuilder().setWarning(...).build());
+// responseObserver.onNext(AlterTableResponse.newBuilder().setSuccess(true).build()); // ERROR!
+```
+
+> **NOTE:** We continue with the sync in case of Warnings, and break execution when Tasks are thrown. 
 
 ### Retries
 - Partner code should retry transient problems internally
