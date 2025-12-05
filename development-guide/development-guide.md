@@ -59,7 +59,7 @@ The executable needs to do the following:
 - We allow throwing [errors](https://fivetran.com/docs/using-fivetran/fivetran-dashboard/alerts#errors) and [warnings](https://fivetran.com/docs/using-fivetran/fivetran-dashboard/alerts#warnings).
 - Partner code should use [Warning](https://github.com/fivetran/fivetran_sdk/blob/main/common.proto#L160) and [Task](https://github.com/fivetran/fivetran_sdk/blob/main/common.proto#L164) messages defined in the proto files to relay information or errors to Fivetran.
 
-#### Response Types and Multiple Messages
+#### Response Types and Guidelines for Warnings and Tasks
 
 The ability to send multiple responses depends on whether the RPC returns a streaming response:
 
