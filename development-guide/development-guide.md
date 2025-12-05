@@ -53,7 +53,6 @@ The executable needs to do the following:
 - Partner code should capture and relay a clear message when the account permissions are not sufficient.
 
 ### User alerts
-> NOTE: Available in V2 only.
 
 - Partners can throw alerts on the Fivetran dashboard to notify customers about potential issues with their connector.
 - These issues may include bad source data or connection problems with the source itself. Where applicable, the alerts should also provide guidance to customers on how to resolve the problem.
@@ -183,7 +182,7 @@ The [`ConfigurationForm` RPC call](#configurationform) retrieves the tests that 
 - Descriptive dropdown: A dropdown field with contextual descriptions for each option, helping users choose the right value. Use a label–description pair for each option in `DescriptiveDropDownFields`.
 - Toggle field: A toggle switch for binary options (e.g., on/off or yes/no).
 - Upload field: Lets users upload files (e.g., certificates, keys) through the setup form. Use `allowed_file_type` to specify permitted file types and `max_file_size_bytes` to set a file size limit. Uploaded files are automatically converted to Base64-encoded strings in the SDK configuration object. You must implement decoding of the Base64 string to reconstruct the uploaded file locally.
-- Conditional fields (Available in V2): This feature allows you to define fields that are dependent on the value of a specific parent field. The message consists of two nested-messages: `VisibilityCondition` and a list of dependent form fields. The `VisibilityCondition` message specifies the parent field and its condition value. The list of dependent fields defines the fields that are shown when the value of the parent field provided in the setup form matches the specified condition field.
+- Conditional fields: This feature allows you to define fields that are dependent on the value of a specific parent field. The message consists of two nested-messages: `VisibilityCondition` and a list of dependent form fields. The `VisibilityCondition` message specifies the parent field and its condition value. The list of dependent fields defines the fields that are shown when the value of the parent field provided in the setup form matches the specified condition field.
 
 ## Source connector guidelines
 Refer to our [source connector development guide](source-connector-development-guide.md).
