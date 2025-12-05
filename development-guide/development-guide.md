@@ -63,13 +63,13 @@ The executable needs to do the following:
 
 The ability to send multiple responses depends on whether the RPC returns a streaming response:
 
-**RPCs that support multiple responses (streaming):**
+##### RPCs that support multiple responses (streaming):
 - RPCs defined with the `stream` keyword allow you to call `responseObserver.onNext()` **multiple times**.
 - Example: `rpc Update (UpdateRequest) returns (stream UpdateResponse) {}` (source connector)
 - You can send multiple warnings, records, checkpoints, etc. in separate response messages.
 - You can send **only one task message** - once a task is issued, the sync stops immediately.
 
-**RPCs that support only a single response (non-streaming):**
+##### RPCs that support only a single response (non-streaming):
 - Most destination connector RPCs return single (non-streaming) responses: `AlterTable`, `CreateTable`, `WriteBatch`, `Truncate`, `Migrate`, etc.
 - Example: `rpc AlterTable(AlterTableRequest) returns (AlterTableResponse) {}`
 - You can call `responseObserver.onNext()` **only once**, followed by `responseObserver.onCompleted()`.
@@ -77,7 +77,7 @@ The ability to send multiple responses depends on whether the RPC returns a stre
 
 #### Usage Examples
 
-**Source Connector - Multiple responses with Update (streaming):**
+##### Multiple responses with Update (streaming):
 ```java
 // Update supports streaming - you can send multiple responses
 responseObserver.onNext(
@@ -113,7 +113,7 @@ responseObserver.onNext(
 );
 ```
 
-**Destination Connector - Single response with AlterTable:**
+##### Single response with AlterTable:
 ```java
 // AlterTable does NOT support streaming - only ONE response allowed
 // You can return EITHER success, warning, OR task (not multiple)
