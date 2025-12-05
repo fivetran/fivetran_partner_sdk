@@ -151,7 +151,7 @@ responseObserver.onCompleted();
 // responseObserver.onNext(AlterTableResponse.newBuilder().setSuccess(true).build()); // ERROR!
 ```
 
-> **NOTE:** We continue with the sync in case of Warnings, and break execution when Tasks are thrown. 
+> NOTE: We continue with the sync in case of Warnings, and break execution when Tasks are thrown.
 
 ### Retries
 - Partner code should retry transient problems internally
