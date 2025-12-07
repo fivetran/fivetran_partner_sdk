@@ -1,0 +1,62 @@
+{
+  "create_table": {
+    "transaction": {
+      "columns": {
+        "id": "INT"
+      },
+      "primary_key": ["id"],
+      "history_mode": true
+    },
+    "campaign": {
+      "columns": {
+        "name": "STRING",
+        "is_active": "BOOLEAN"
+      },
+      "primary_key": []
+    }
+  },
+  "ops": [
+    {
+      "upsert": {
+        "transaction": [
+          {
+            "id": 2,
+            "op_time": "2023-10-29T11:00:00Z"
+          }
+        ],
+        "campaign": [
+          {
+            "_fivetran_id": "def-456-uvw",
+            "name": "Campaign B",
+            "is_active": true
+          }
+        ]
+      }
+    },
+    {
+      "truncate_before": [
+        "transaction",
+        "campaign"
+      ]
+    },
+    {
+      "delete": {
+        "transaction": [
+          {
+            "id": 2,
+            "op_time": "2023-10-30T16:00:00Z"
+          }
+        ],
+        "campaign": [
+          {
+            "_fivetran_id": "def-456-uvw"
+          }
+        ]
+      }
+    }
+  ],
+  "describe_table": [
+    "transaction",
+    "campaign"
+  ]
+}

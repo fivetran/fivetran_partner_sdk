@@ -1,0 +1,52 @@
+{
+  "create_table": {
+    "transaction": {
+      "columns": {
+        "id": "INT",
+        "amount_double": "DOUBLE",
+        "flag": "BOOLEAN"
+      },
+      "primary_key": ["id"],
+      "history_mode": true
+    },
+    "campaign": {
+      "columns": {
+        "name": "STRING",
+        "num_decimal": {
+          "type": "DECIMAL",
+          "precision": 6,
+          "scale": 3
+        },
+        "start_date": "NAIVE_DATE",
+        "end_datetime": "UTC_DATETIME",
+        "is_active": "BOOLEAN"
+      },
+      "primary_key": []
+    }
+  },
+  "ops": [
+    {
+      "update": {
+        "transaction": [
+          {
+            "id": 999,
+            "amount_double": 999.99,
+            "flag": false,
+            "op_time": "2023-10-30T15:00:00Z"
+          }
+        ],
+        "campaign": [
+          {
+            "_fivetran_id": "missing-update-id",
+            "name": "Non-existent Campaign",
+            "is_active": false
+          }
+        ]
+      }
+    }
+  ],
+  "describe_table": [
+    "transaction",
+    "campaign"
+  ]
+}
