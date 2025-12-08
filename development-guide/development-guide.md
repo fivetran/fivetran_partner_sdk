@@ -77,7 +77,7 @@ The ability to send multiple responses depends on whether the RPC returns a stre
 
 #### Usage examples
 
-##### Multiple responses with Update (streaming):
+##### Multiple responses (streaming):
 ```java
 // Update supports streaming - you can send multiple responses
 responseObserver.onNext(
@@ -113,7 +113,7 @@ responseObserver.onNext(
 );
 ```
 
-##### Single response with AlterTable:
+##### Single response:
 ```java
 // AlterTable does NOT support streaming - only ONE response allowed
 // You can return EITHER success, warning, OR task (not multiple)
