@@ -64,8 +64,7 @@ The executable needs to do the following:
 The ability to send multiple responses depends on whether the RPC returns a streaming response:
 
 ##### RPCs that support multiple responses (streaming):
-- RPCs defined with the `stream` keyword allow you to call `responseObserver.onNext()` multiple times.
-- Example: `rpc Update (UpdateRequest) returns (stream UpdateResponse) {}` (source connector)
+- RPCs defined with the `stream` keyword allow you to call `responseObserver.onNext()` multiple times. Example: `rpc Update (UpdateRequest) returns (stream UpdateResponse) {}` (source connector)
 - You can send multiple warnings, records, checkpoints, etc. in separate response messages.
 - You can send only one task message - once a task is issued, the sync stops immediately.
 
