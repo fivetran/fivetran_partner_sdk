@@ -87,6 +87,18 @@ For testing schema migration operations, the following input files are available
    - migrate_live_to_history
    - migrate_history_to_soft_delete
 
+#### Operations on Non-Existent Records
+For operations that reference a record or table that does not exist in the destination, refer to the examples in
+[operations_on_nonexistent_records](input-files/operations_on_nonexistent_records).These files demonstrate:
+
+- update on a non-existent record
+- delete on a non-existent record
+- soft_delete on a non-existent record
+- truncate_before on a table that does not exist
+- Record operations issued after a truncate_before has removed all rows
+
+These operations must be safely ignored by the destination.
+
 ## CLI Arguments
 
 The tester supports the following optional CLI arguments to alter its default behavior. You can append these options to the end of the `docker run` command provided in step 2 of [How To Run](https://github.com/fivetran/fivetran_sdk/tree/main/tools/destination-connector-tester#how-to-run) section above.
