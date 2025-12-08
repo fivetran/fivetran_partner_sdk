@@ -70,7 +70,6 @@ The ability to send multiple responses depends on whether the RPC returns a stre
 
 ##### RPCs that support only a single response (non-streaming):
 - Most destination connector RPCs return single (non-streaming) responses: `AlterTable`, `CreateTable`, `WriteBatch`, `Truncate`, `Migrate`, etc. Example: `rpc AlterTable(AlterTableRequest) returns (AlterTableResponse) {}`
-
 - You can call `responseObserver.onNext()` only once, followed by `responseObserver.onCompleted()`.
 - Each response uses a `oneof` field, meaning you can return only one of: success, warning, or task (not multiple).
 
