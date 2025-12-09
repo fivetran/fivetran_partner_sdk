@@ -66,24 +66,103 @@ The executable needs to do the following:
 - Partner code should capture and relay a clear message when the account permissions are not sufficient.
 
 ### User alerts
-> NOTE: Available in V2 only.
 
 - Partners can throw alerts on the Fivetran dashboard to notify customers about potential issues with their connector.
 - These issues may include bad source data or connection problems with the source itself. Where applicable, the alerts should also provide guidance to customers on how to resolve the problem.
 - We allow throwing [errors](https://fivetran.com/docs/using-fivetran/fivetran-dashboard/alerts#errors) and [warnings](https://fivetran.com/docs/using-fivetran/fivetran-dashboard/alerts#warnings).
 - Partner code should use [Warning](https://github.com/fivetran/fivetran_sdk/blob/main/common.proto#L160) and [Task](https://github.com/fivetran/fivetran_sdk/blob/main/common.proto#L164) messages defined in the proto files to relay information or errors to Fivetran.
-- Usage example:
-```
+
+#### Guidelines for warnings and tasks
+
+The ability to send multiple responses depends on whether the RPC returns a streaming response:
+
+##### RPCs that support multiple responses (streaming):
+- RPCs defined with the `stream` keyword allow you to call `responseObserver.onNext()` multiple times. Example: `rpc Update (UpdateRequest) returns (stream UpdateResponse) {}` (source connector)
+- You can send multiple warnings, records, checkpoints, etc. in separate response messages.
+- You can send only one task message - once a task is issued, the sync stops immediately.
+
+##### RPCs that support only a single response (non-streaming):
+- Most destination connector RPCs return single (non-streaming) responses: `AlterTable`, `CreateTable`, `WriteBatch`, `Truncate`, `Migrate`, etc. Example: `rpc AlterTable(AlterTableRequest) returns (AlterTableResponse) {}`
+- You can call `responseObserver.onNext()` only once, followed by `responseObserver.onCompleted()`.
+- Each response uses a `oneof` field, meaning you can return only one of: success, warning, or task (not multiple).
+
+#### Usage examples
+
+##### Multiple responses (streaming):
+```java
+// Update supports streaming - you can send multiple responses
 responseObserver.onNext(
-                UpdateResponse.newBuilder()
-                        .setTask(
-                                Task.newBuilder()
-                                        .setMessage("Unable to connect to the database. Please provide the correct credentials.")
-                                        .build()
-                        )
-                        .build());
+    UpdateResponse.newBuilder()
+        .setWarning(Warning.newBuilder()
+            .setMessage("Table 'users' has 5 rows with invalid email format.")
+            .build())
+        .build()
+);
+
+responseObserver.onNext(
+    UpdateResponse.newBuilder()
+        .setWarning(Warning.newBuilder()
+            .setMessage("Table 'orders' has 3 rows with missing timestamps.")
+            .build())
+        .build()
+);
+
+// Continue sending data
+responseObserver.onNext(
+    UpdateResponse.newBuilder()
+        .setRecord(record)
+        .build()
+);
+
+// Send task to stop sync
+responseObserver.onNext(
+    UpdateResponse.newBuilder()
+        .setTask(Task.newBuilder()
+            .setMessage("Unable to connect to the database. Please verify credentials.")
+            .build())
+        .build()
+);
 ```
-> NOTE: We continue with the sync in case of Warnings, and break execution when Tasks are thrown. 
+
+##### Single response:
+```java
+// AlterTable does NOT support streaming - only ONE response allowed
+// You can return EITHER success, warning, OR task (not multiple)
+
+// Option 1: Return success
+responseObserver.onNext(
+    AlterTableResponse.newBuilder()
+        .setSuccess(true)
+        .build()
+);
+responseObserver.onCompleted();
+
+// Option 2: Return warning (in a different call)
+responseObserver.onNext(
+    AlterTableResponse.newBuilder()
+        .setWarning(Warning.newBuilder()
+            .setMessage("Column type change may result in data loss.")
+            .build())
+        .build()
+);
+responseObserver.onCompleted();
+
+// Option 3: Return task to stop sync (in a different call)
+responseObserver.onNext(
+    AlterTableResponse.newBuilder()
+        .setTask(Task.newBuilder()
+            .setMessage("Insufficient permissions to alter table.")
+            .build())
+        .build()
+);
+responseObserver.onCompleted();
+
+// INCORRECT - Cannot send multiple responses for AlterTable:
+// responseObserver.onNext(AlterTableResponse.newBuilder().setWarning(...).build());
+// responseObserver.onNext(AlterTableResponse.newBuilder().setSuccess(true).build()); // ERROR!
+```
+
+> NOTE: We continue with the sync in case of Warnings, and break execution when Tasks are thrown.
 
 ### Retries
 - Partner code should retry transient problems internally
@@ -114,7 +193,7 @@ The [`ConfigurationForm` RPC call](#configurationform) retrieves the tests that 
 - Descriptive dropdown: A dropdown field with contextual descriptions for each option, helping users choose the right value. Use a label–description pair for each option in `DescriptiveDropDownFields`.
 - Toggle field: A toggle switch for binary options (e.g., on/off or yes/no).
 - Upload field: Lets users upload files (e.g., certificates, keys) through the setup form. Use `allowed_file_type` to specify permitted file types and `max_file_size_bytes` to set a file size limit. Uploaded files are automatically converted to Base64-encoded strings in the SDK configuration object. You must implement decoding of the Base64 string to reconstruct the uploaded file locally.
-- Conditional fields (Available in V2): This feature allows you to define fields that are dependent on the value of a specific parent field. The message consists of two nested-messages: `VisibilityCondition` and a list of dependent form fields. The `VisibilityCondition` message specifies the parent field and its condition value. The list of dependent fields defines the fields that are shown when the value of the parent field provided in the setup form matches the specified condition field.
+- Conditional fields: This feature allows you to define fields that are dependent on the value of a specific parent field. The message consists of two nested-messages: `VisibilityCondition` and a list of dependent form fields. The `VisibilityCondition` message specifies the parent field and its condition value. The list of dependent fields defines the fields that are shown when the value of the parent field provided in the setup form matches the specified condition field.
 
 ## Source connector guidelines
 Refer to our [source connector development guide](source-connector-development-guide.md).
