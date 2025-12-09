@@ -95,7 +95,7 @@ For operations that reference a record or table that does not exist in the desti
 - delete on a non-existent record
 - soft_delete on a non-existent record
 - truncate_before on a table that does not exist
-- Record operations issued after a truncate_before has removed all rows
+- record operations issued after a truncate_before has removed all rows
 
 These operations must be safely ignored by the destination.
 
