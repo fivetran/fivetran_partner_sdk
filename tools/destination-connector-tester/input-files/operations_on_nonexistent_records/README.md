@@ -7,6 +7,6 @@ This folder contains examples where a source operation refers to a **record or t
 - `DELETE` on a missing record
 - `SOFT_DELETE` on a missing record
 - `TRUNCATE` for a table that does not exist
-- Operations (update/delete/soft_delete) issued **after a TRUNCATE** removed all rows
+- Operations (`UPDATE`/`DELETE`/`SOFT_DELETE`) issued after a `TRUNCATE` removed all rows
 
 These examples demonstrate required no-op behavior for destination connectors.
