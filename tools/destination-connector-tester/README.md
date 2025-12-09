@@ -89,7 +89,7 @@ For testing schema migration operations, the following input files are available
 
 #### Operations on Non-Existent Records
 For operations that reference a record or table that does not exist in the destination, refer to the examples in
-[operations_on_nonexistent_records](input-files/operations_on_nonexistent_records).These files demonstrate:
+[operations_on_nonexistent_records](input-files/operations_on_nonexistent_records). These files demonstrate:
 
 - update on a non-existent record
 - delete on a non-existent record
