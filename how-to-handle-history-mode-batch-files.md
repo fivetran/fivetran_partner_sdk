@@ -138,6 +138,21 @@ ID(PK) | COL1  | COL2 | _fivetran_start(PK) | _fivetran_end | _fivetran_active |
 1 | def | | T5 | TMAX | TRUE | T109
 2 | | 1000 | T4 | TMAX | TRUE | T108 
 
+The following rows, which were previously active in the destination table, will be deactivated during processing the `earliest_start_files`:
+
+ID(PK) | COL1 | COL2 | _fivetran_start(PK) | _fivetran_end | _fivetran_active | _fivetran_synced
+--- |-----|---|----|------|------| --- 
+1  | pqr | 2 | T2 | TMAX | TRUE | T101
+2  | mno | 3 | T2 | TMAX | TRUE | T103 
+
+Once `earliest_start_files` processing completes, the following rows are marked as inactive:
+
+ID(PK) | COL1 | COL2 | _fivetran_start(PK) | _fivetran_end | _fivetran_active | _fivetran_synced
+--- |-----|---|----|----------|-------| --- 
+1  | pqr | 2 | T2 | T3-1msec | FALSE | T101
+2  | mno | 3 | T2 | T4-1msec | FALSE | T103
+
+To learn more, read our [`earliest_start_files` documentation](https://github.com/fivetran/fivetran_partner_sdk/blob/main/how-to-handle-history-mode-batch-files.md#earliest_start_files).
 
 The final destination table will be as follows:
 
