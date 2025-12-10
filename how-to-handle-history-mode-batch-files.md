@@ -140,13 +140,17 @@ ID(PK) | COL1  | COL2 | _fivetran_start(PK) | _fivetran_end | _fivetran_active |
 
 The following rows, which were previously active in the destination table, will be deactivated during earliest start file processing:
 
-- `{ID=1, COL1=pqr, COL2=2, _fivetran_start=T2, _fivetran_end=TMAX, _fivetran_active=TRUE}`
-- `{ID=2, COL1=mno, COL2=3, _fivetran_start=T2, _fivetran_end=TMAX, _fivetran_active=TRUE}`
+ID(PK) | COL1 | COL2 | _fivetran_start(PK) | _fivetran_end | _fivetran_active | _fivetran_synced
+--- |-----|---|----|------|------| --- 
+1  | pqr | 2 | T2 | TMAX | TRUE | T101
+2  | mno | 3 | T2 | TMAX | TRUE | T103 
 
 After earliest start file processing completes, the following rows will be marked as inactive:
 
-- `{ID=1, COL1=abc, COL2=1, _fivetran_start=T2, _fivetran_end=T3-1msec, _fivetran_active=FALSE}`
-- `{ID=2, COL1=mno, COL2=2, _fivetran_start=T2, _fivetran_end=T4-1msec, _fivetran_active=FALSE}`
+ID(PK) | COL1 | COL2 | _fivetran_start(PK) | _fivetran_end | _fivetran_active | _fivetran_synced
+--- |-----|---|----|----------|-------| --- 
+1  | pqr | 2 | T2 | T3-1msec | FALSE | T101
+2  | mno | 3 | T2 | T4-1msec | FALSE | T103
 
 Please read more about earliest start file processing [here](https://github.com/fivetran/fivetran_partner_sdk/blob/main/how-to-handle-history-mode-batch-files.md#earliest_start_files).
 
