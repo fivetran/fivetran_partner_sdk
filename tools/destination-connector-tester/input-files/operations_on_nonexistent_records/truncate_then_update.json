@@ -1,0 +1,80 @@
+{
+  "create_table": {
+    "transaction": {
+      "columns": {
+        "id": "INT",
+        "amount_double": "DOUBLE",
+        "flag": "BOOLEAN"
+      },
+      "primary_key": ["id"],
+      "history_mode": true
+    },
+    "campaign": {
+      "columns": {
+        "name": "STRING",
+        "num_decimal": {
+          "type": "DECIMAL",
+          "precision": 6,
+          "scale": 3
+        },
+        "start_date": "NAIVE_DATE",
+        "end_datetime": "UTC_DATETIME",
+        "is_active": "BOOLEAN"
+      },
+      "primary_key": []
+    }
+  },
+  "ops": [
+    {
+      "upsert": {
+        "transaction": [
+          {
+            "id": 1,
+            "amount_double": 100.0,
+            "flag": true,
+            "op_time": "2023-10-29T10:00:00Z"
+          }
+        ],
+        "campaign": [
+          {
+            "_fivetran_id": "abc-123-xyz",
+            "name": "Campaign A",
+            "num_decimal": 100.123,
+            "start_date": "2023-01-01",
+            "end_datetime": "2023-12-31T23:59:59.000Z",
+            "is_active": true
+          }
+        ]
+      }
+    },
+    {
+      "truncate_before": [
+        "transaction",
+        "campaign"
+      ]
+    },
+    {
+      "update": {
+        "transaction": [
+          {
+            "id": 1,
+            "amount_double": 400.555,
+            "flag": false,
+            "op_time": "2023-10-30T15:00:00Z"
+          }
+        ],
+        "campaign": [
+          {
+            "_fivetran_id": "abc-123-xyz",
+            "name": "Campaign A Updated",
+            "is_active": false
+          }
+        ]
+      }
+    }
+  ],
+  "describe_table": [
+    "transaction",
+    "campaign"
+  ]
+}

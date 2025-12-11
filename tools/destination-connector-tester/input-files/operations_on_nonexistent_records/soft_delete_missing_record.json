@@ -1,0 +1,40 @@
+{
+  "create_table": {
+    "transaction": {
+      "columns": {
+        "id": "INT",
+        "amount_double": "DOUBLE"
+      },
+      "primary_key": ["id"],
+      "history_mode": true
+    },
+    "campaign": {
+      "columns": {
+        "name": "STRING",
+        "is_active": "BOOLEAN"
+      },
+      "primary_key": []
+    }
+  },
+  "ops": [
+    {
+      "soft_delete": {
+        "transaction": [
+          {
+            "id": 2000,
+            "op_time": "2023-10-30T16:30:00Z"
+          }
+        ],
+        "campaign": [
+          {
+            "_fivetran_id": "missing-soft-id"
+          }
+        ]
+      }
+    }
+  ],
+  "describe_table": [
+    "transaction",
+    "campaign"
+  ]
+}
