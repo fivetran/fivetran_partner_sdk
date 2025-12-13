@@ -171,3 +171,7 @@ For details on running the tester, see the [Source Tester](https://github.com/fi
 
 ### Is it possible for me to see the connector log output?
 Sort of. We will email you the logs for a failed sync through support but the number of log messages is limited and this is a slow process for debugging in general. What you need to do is add your own logging for your own platform of choice so you are not reliant on us for logs. Plus, that way, you can implement alerts, monitoring, etc.
+
+### What is the maximum supported gRPC message size for Partner SDK services?
+The maximum supported gRPC message size is 128 MB (134,217,728 bytes). This limit applies to both inbound and outbound messages between the Fivetran platform and
+Partner SDK services.
