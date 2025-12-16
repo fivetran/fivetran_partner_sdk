@@ -9,6 +9,7 @@ from sdk_pb2 import destination_sdk_pb2
 from sdk_pb2 import common_pb2
 from sdk_pb2 import destination_sdk_pb2_grpc
 from schema_migration_helper import SchemaMigrationHelper
+from duckdb_helper import DuckDBHelper
 
 
 INFO = "INFO"
@@ -16,11 +17,17 @@ WARNING = "WARNING"
 SEVERE = "SEVERE"
 
 class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
-    table_map = {}
+    # Initialize DuckDB with a file-based database for persistence
+    # Use ":memory:" for in-memory database or "destination.db" for file-based
+    db_helper = None
+    default_schema = "fivetran_destination"
 
     def __init__(self):
         super().__init__()
-        self.migration_helper = SchemaMigrationHelper(DestinationImpl.table_map)
+        # Initialize DuckDB helper (use file-based database)
+        if DestinationImpl.db_helper is None:
+            DestinationImpl.db_helper = DuckDBHelper("destination.db")
+        self.migration_helper = SchemaMigrationHelper(DestinationImpl.db_helper)
 
     def ConfigurationForm(self, request, context):
         log_message(INFO, "Fetching Configuration form")
@@ -238,20 +245,55 @@ class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
         return common_pb2.TestResponse(success=True)
 
     def CreateTable(self, request, context):
-        print("[CreateTable] :" + str(request.schema_name) + " | " + str(request.table.name) + " | " + str(request.table.columns))
-        DestinationImpl.table_map[request.table.name] = request.table
-        return destination_sdk_pb2.CreateTableResponse(success=True)
+        schema_name = request.schema_name if request.schema_name else self.default_schema
+        print("[CreateTable] :" + str(schema_name) + " | " + str(request.table.name) + " | " + str(request.table.columns))
+        try:
+            self.db_helper.create_table(schema_name, request.table)
+            return destination_sdk_pb2.CreateTableResponse(success=True)
+        except Exception as e:
+            log_message(WARNING, f"CreateTable failed: {str(e)}")
+            return destination_sdk_pb2.CreateTableResponse(success=False)
 
     def AlterTable(self, request, context):
-        res: destination_sdk_pb2.AlterTableResponse
+        schema_name = request.schema_name if request.schema_name else self.default_schema
+        print("[AlterTable]: " + str(schema_name) + " | " + str(request.table.name) + " | " + str(request.table.columns))
 
-        print("[AlterTable]: " + str(request.schema_name) + " | " + str(request.table.name) + " | " + str(request.table.columns))
-        DestinationImpl.table_map[request.table.name] = request.table
-        return destination_sdk_pb2.AlterTableResponse(success=True)
+        try:
+            # Get current table schema
+            current_table = self.db_helper.describe_table(schema_name, request.table.name)
+
+            if current_table is None:
+                log_message(WARNING, f"Table {schema_name}.{request.table.name} does not exist")
+                return destination_sdk_pb2.AlterTableResponse(success=False)
+
+            # Get new columns by comparing
+            current_column_names = {col.name for col in current_table.columns}
+            new_columns = [col for col in request.table.columns if col.name not in current_column_names]
+
+            # Add new columns
+            for column in new_columns:
+                self.db_helper.add_column(schema_name, request.table.name, column)
+
+            return destination_sdk_pb2.AlterTableResponse(success=True)
+        except Exception as e:
+            log_message(WARNING, f"AlterTable failed: {str(e)}")
+            return destination_sdk_pb2.AlterTableResponse(success=False)
 
     def Truncate(self, request, context):
-        print("[TruncateTable]: " + str(request.schema_name) + " | " + str(request.schema_name) + " | soft" + str(request.soft))
-        return destination_sdk_pb2.TruncateResponse(success=True)
+        schema_name = request.schema_name if request.schema_name else self.default_schema
+        table_name = request.table_name
+        print("[TruncateTable]: " + str(schema_name) + " | " + str(table_name) + " | soft=" + str(request.soft))
+        try:
+            # For soft truncate, you might want different logic (e.g., mark rows as deleted)
+            # For now, we'll just do a hard truncate
+            if not request.soft:
+                self.db_helper.truncate_table(schema_name, table_name)
+            else:
+                log_message(INFO, f"Soft truncate not fully implemented, skipping actual truncate for {schema_name}.{table_name}")
+            return destination_sdk_pb2.TruncateResponse(success=True)
+        except Exception as e:
+            log_message(WARNING, f"Truncate failed: {str(e)}")
+            return destination_sdk_pb2.TruncateResponse(success=False)
 
     def WriteBatch(self, request, context):
         for replace_file in request.replace_files:
@@ -330,11 +372,17 @@ class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
         return res
 
     def DescribeTable(self, request, context):
-        log_message(SEVERE, "Sample severe message: Completed fetching table info")
-        if request.table_name not in DestinationImpl.table_map:
+        schema_name = request.schema_name if request.schema_name else self.default_schema
+        log_message(SEVERE, f"Sample severe message: Completed fetching table info for {schema_name}.{request.table_name}")
+        try:
+            table = self.db_helper.describe_table(schema_name, request.table_name)
+            if table is None:
+                return destination_sdk_pb2.DescribeTableResponse(not_found=True)
+            else:
+                return destination_sdk_pb2.DescribeTableResponse(not_found=False, table=table)
+        except Exception as e:
+            log_message(WARNING, f"DescribeTable failed: {str(e)}")
             return destination_sdk_pb2.DescribeTableResponse(not_found=True)
-        else:
-            return destination_sdk_pb2.DescribeTableResponse(not_found=False, table=DestinationImpl.table_map[request.table_name])
 
     def Migrate(self, request, context):
         """
