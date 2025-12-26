@@ -3,7 +3,6 @@ import sys
 sys.path.append('sdk_pb2')
 
 from sdk_pb2 import common_pb2
-from sdk_pb2 import destination_sdk_pb2
 
 INFO = "INFO"
 WARNING = "WARNING"
