@@ -273,16 +273,75 @@ class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
             current_column_names = {col.name for col in current_table.columns}
             requested_column_names = {col.name for col in request.table.columns}
 
+            # Build maps for easy lookup
+            current_columns_map = {col.name: col for col in current_table.columns}
+            requested_columns_map = {col.name: col for col in request.table.columns}
+
             # Find columns to add (in request but not in current)
             new_columns = [col for col in request.table.columns if col.name not in current_column_names]
 
             # Find columns to drop (in current but not in request)
             columns_to_drop = [col.name for col in current_table.columns if col.name not in requested_column_names]
 
+            # Find columns with type changes (in both but different types)
+            columns_with_type_changes = []
+            for col_name in current_column_names & requested_column_names:
+                current_col = current_columns_map[col_name]
+                requested_col = requested_columns_map[col_name]
+                if current_col.type != requested_col.type:
+                    columns_with_type_changes.append((col_name, requested_col))
+
             # Add new columns
             for column in new_columns:
                 self.db_helper.add_column(schema_name, request.table.name, column)
                 log_message(INFO, f"Added column: {column.name} to {schema_name}.{request.table.name}")
+
+            # Handle type changes using DuckDB's native ALTER COLUMN
+            for col_name, new_col_def in columns_with_type_changes:
+                log_message(INFO, f"Changing type for column: {col_name} to {new_col_def.type}")
+
+                escaped_schema = self.db_helper.escape_identifier(schema_name)
+                escaped_table = self.db_helper.escape_identifier(request.table.name)
+                escaped_col = self.db_helper.escape_identifier(col_name)
+                sql_type = self.db_helper.map_datatype_to_sql(new_col_def.type)
+
+                # Use DuckDB's native ALTER COLUMN SET DATA TYPE
+                sql = f'ALTER TABLE "{escaped_schema}"."{escaped_table}" ALTER COLUMN "{escaped_col}" SET DATA TYPE {sql_type}'
+                self.db_helper.get_connection().execute(sql)
+
+                log_message(INFO, f"Type change completed for column: {col_name}")
+
+            # Handle primary key changes
+            current_pk_columns = [col.name for col in current_table.columns if col.primary_key]
+            requested_pk_columns = [col.name for col in request.table.columns if col.primary_key]
+
+            # Check if primary key changed
+            if set(current_pk_columns) != set(requested_pk_columns):
+                log_message(INFO, f"Primary key change detected: {current_pk_columns} -> {requested_pk_columns}")
+
+                escaped_schema = self.db_helper.escape_identifier(schema_name)
+                escaped_table = self.db_helper.escape_identifier(request.table.name)
+
+                # Drop existing primary key constraint if it exists
+                if current_pk_columns:
+                    # Try to drop the primary key constraint
+                    # DuckDB uses table_name + "_pkey" as default constraint name
+                    constraint_name = f"{request.table.name}_pkey"
+                    escaped_constraint = self.db_helper.escape_identifier(constraint_name)
+                    try:
+                        sql = f'ALTER TABLE "{escaped_schema}"."{escaped_table}" DROP CONSTRAINT "{escaped_constraint}"'
+                        self.db_helper.get_connection().execute(sql)
+                        log_message(INFO, f"Dropped primary key constraint: {constraint_name}")
+                    except Exception as e:
+                        # Constraint might not exist or have different name, log but continue
+                        log_message(WARNING, f"Could not drop primary key constraint: {str(e)}")
+
+                # Add new primary key constraint if requested
+                if requested_pk_columns:
+                    pk_cols_str = ", ".join([f'"{self.db_helper.escape_identifier(col)}"' for col in requested_pk_columns])
+                    sql = f'ALTER TABLE "{escaped_schema}"."{escaped_table}" ADD PRIMARY KEY ({pk_cols_str})'
+                    self.db_helper.get_connection().execute(sql)
+                    log_message(INFO, f"Added primary key constraint on columns: {requested_pk_columns}")
 
             # Drop columns if drop_columns flag is true
             if drop_columns and columns_to_drop:
