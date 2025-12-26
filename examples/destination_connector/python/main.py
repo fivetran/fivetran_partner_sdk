@@ -19,7 +19,7 @@ SEVERE = "SEVERE"
 class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
     # DuckDB helper for data persistence
     # Currently configured to use file-based storage ("destination.db")
-    # To use in-memory storage instead, change line 29 to: DuckDBHelper(":memory:")
+    # To use in-memory storage instead, use DuckDBHelper(":memory:")
     db_helper = None
     default_schema = "fivetran_destination"
 
