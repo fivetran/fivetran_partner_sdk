@@ -19,12 +19,12 @@ class DuckDBHelper:
             db_path: Path to database file. If empty, creates in-memory database.
         """
         self.db_path = db_path if db_path else ":memory:"
-        self.connection = duckdb.connect(self.db_path)
+        self._connection = duckdb.connect(self.db_path)
         log_message(INFO, f"Connected to DuckDB at: {self.db_path}")
 
     def get_connection(self):
         """Get the DuckDB connection."""
-        return self.connection
+        return self._connection
 
     def _escape_identifier(self, identifier):
         """
@@ -44,8 +44,8 @@ class DuckDBHelper:
 
     def close(self):
         """Close the DuckDB connection."""
-        if self.connection:
-            self.connection.close()
+        if self._connection:
+            self._connection.close()
             log_message(INFO, "DuckDB connection closed")
 
     def table_exists(self, schema_name, table_name):
@@ -55,13 +55,13 @@ class DuckDBHelper:
             FROM information_schema.tables
             WHERE table_schema = ? AND table_name = ?
         """
-        result = self.connection.execute(query, [schema_name, table_name]).fetchone()
+        result = self._connection.execute(query, [schema_name, table_name]).fetchone()
         return result[0] > 0
 
     def create_schema_if_not_exists(self, schema_name):
         """Create a schema if it doesn't exist."""
         sql = f'CREATE SCHEMA IF NOT EXISTS "{self._escape_identifier(schema_name)}"'
-        self.connection.execute(sql)
+        self._connection.execute(sql)
         log_message(INFO, f"Schema created or already exists: {schema_name}")
 
     def create_table(self, schema_name, table):
@@ -76,13 +76,13 @@ class DuckDBHelper:
         columns_str = ", ".join(column_defs)
         sql = f'CREATE TABLE "{self._escape_identifier(schema_name)}"."{self._escape_identifier(table.name)}" ({columns_str})'
 
-        self.connection.execute(sql)
+        self._connection.execute(sql)
         log_message(INFO, f"Table created: {schema_name}.{table.name}")
 
     def drop_table(self, schema_name, table_name):
         """Drop a table if it exists."""
         sql = f'DROP TABLE IF EXISTS "{self._escape_identifier(schema_name)}"."{self._escape_identifier(table_name)}"'
-        self.connection.execute(sql)
+        self._connection.execute(sql)
         log_message(INFO, f"Table dropped: {schema_name}.{table_name}")
 
     def describe_table(self, schema_name, table_name):
@@ -97,7 +97,7 @@ class DuckDBHelper:
             ORDER BY ordinal_position
         """
 
-        result = self.connection.execute(query, [schema_name, table_name]).fetchall()
+        result = self._connection.execute(query, [schema_name, table_name]).fetchall()
 
         # Build table object
         table_builder_columns = []
@@ -122,43 +122,43 @@ class DuckDBHelper:
     def add_column(self, schema_name, table_name, column):
         """Add a column to an existing table."""
         sql = f'ALTER TABLE "{self._escape_identifier(schema_name)}"."{self._escape_identifier(table_name)}" ADD COLUMN "{self._escape_identifier(column.name)}" {self._map_datatype_to_sql(column.type)}'
-        self.connection.execute(sql)
+        self._connection.execute(sql)
         log_message(INFO, f"Column added: {column.name} to {schema_name}.{table_name}")
 
     def drop_column(self, schema_name, table_name, column_name):
         """Drop a column from a table."""
         sql = f'ALTER TABLE "{self._escape_identifier(schema_name)}"."{self._escape_identifier(table_name)}" DROP COLUMN "{self._escape_identifier(column_name)}"'
-        self.connection.execute(sql)
+        self._connection.execute(sql)
         log_message(INFO, f"Column dropped: {column_name} from {schema_name}.{table_name}")
 
     def rename_column(self, schema_name, table_name, old_name, new_name):
         """Rename a column."""
         sql = f'ALTER TABLE "{self._escape_identifier(schema_name)}"."{self._escape_identifier(table_name)}" RENAME COLUMN "{self._escape_identifier(old_name)}" TO "{self._escape_identifier(new_name)}"'
-        self.connection.execute(sql)
+        self._connection.execute(sql)
         log_message(INFO, f"Column renamed: {old_name} to {new_name} in {schema_name}.{table_name}")
 
     def truncate_table(self, schema_name, table_name):
         """Truncate a table."""
         sql = f'TRUNCATE TABLE "{self._escape_identifier(schema_name)}"."{self._escape_identifier(table_name)}"'
-        self.connection.execute(sql)
+        self._connection.execute(sql)
         log_message(INFO, f"Table truncated: {schema_name}.{table_name}")
 
     def rename_table(self, schema_name, old_name, new_name):
         """Rename a table."""
         sql = f'ALTER TABLE "{self._escape_identifier(schema_name)}"."{self._escape_identifier(old_name)}" RENAME TO "{self._escape_identifier(new_name)}"'
-        self.connection.execute(sql)
+        self._connection.execute(sql)
         log_message(INFO, f"Table renamed: {old_name} to {new_name} in {schema_name}")
 
     def copy_table(self, schema_name, from_table, to_table):
         """Copy a table structure and data."""
         sql = f'CREATE TABLE "{self._escape_identifier(schema_name)}"."{self._escape_identifier(to_table)}" AS SELECT * FROM "{self._escape_identifier(schema_name)}"."{self._escape_identifier(from_table)}"'
-        self.connection.execute(sql)
+        self._connection.execute(sql)
         log_message(INFO, f"Table copied: {from_table} to {to_table} in {schema_name}")
 
     def update_column_value(self, schema_name, table_name, column_name, value):
         """Update all rows in a column with a specific value."""
         sql = f'UPDATE "{self._escape_identifier(schema_name)}"."{self._escape_identifier(table_name)}" SET "{self._escape_identifier(column_name)}" = ?'
-        self.connection.execute(sql, [value])
+        self._connection.execute(sql, [value])
         log_message(INFO, f"Column {column_name} updated in {schema_name}.{table_name}")
 
     def _map_datatype_to_sql(self, datatype):

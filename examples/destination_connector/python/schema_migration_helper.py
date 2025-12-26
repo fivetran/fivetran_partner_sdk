@@ -65,7 +65,7 @@ class SchemaMigrationHelper:
                             escaped_to_col = self.db_helper._escape_identifier(copy_column.to_column)
                             escaped_from_col = self.db_helper._escape_identifier(copy_column.from_column)
                             sql = f'UPDATE "{escaped_schema}"."{escaped_table}" SET "{escaped_to_col}" = "{escaped_from_col}"'
-                            self.db_helper.connection.execute(sql)
+                            self.db_helper.get_connection().execute(sql)
                             break
 
                 log_message(INFO, f"[Migrate:CopyColumn] table={schema}.{table} from_col={copy_column.from_column} to_col={copy_column.to_column}")
@@ -92,7 +92,7 @@ class SchemaMigrationHelper:
                     escaped_to_table = self.db_helper._escape_identifier(copy_table_history_mode.to_table)
                     escaped_from_table = self.db_helper._escape_identifier(copy_table_history_mode.from_table)
                     sql = f'INSERT INTO "{escaped_schema}"."{escaped_to_table}" ({columns_str}) SELECT {columns_str} FROM "{escaped_schema}"."{escaped_from_table}"'
-                    self.db_helper.connection.execute(sql)
+                    self.db_helper.get_connection().execute(sql)
 
                 log_message(INFO, f"[Migrate:CopyTableToHistoryMode] from={copy_table_history_mode.from_table} to={copy_table_history_mode.to_table} soft_deleted_column={copy_table_history_mode.soft_deleted_column}")
                 return destination_sdk_pb2.MigrateResponse(success=True)
