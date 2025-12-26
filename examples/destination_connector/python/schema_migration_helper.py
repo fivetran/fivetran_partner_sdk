@@ -263,18 +263,6 @@ class TableMetadataHelper:
         table_obj.columns.extend(columns_to_keep)
 
     @staticmethod
-    def remove_history_mode_columns(table_obj):
-        """Removes history mode columns from a table."""
-        if not hasattr(table_obj, 'columns'):
-            return
-        columns_to_keep = [
-            col for col in table_obj.columns
-            if col.name not in [FIVETRAN_START, FIVETRAN_END, FIVETRAN_ACTIVE]
-        ]
-        del table_obj.columns[:]
-        table_obj.columns.extend(columns_to_keep)
-
-    @staticmethod
     def add_history_mode_columns(table_obj):
         """Adds history mode columns to a table."""
         if not hasattr(table_obj, 'columns'):
@@ -290,15 +278,6 @@ class TableMetadataHelper:
         active_col = table_obj.columns.add()
         active_col.name = FIVETRAN_ACTIVE
         active_col.type = common_pb2.DataType.BOOLEAN
-
-    @staticmethod
-    def add_soft_delete_column(table_obj, column_name):
-        """Adds a soft delete column to a table."""
-        if not column_name or not hasattr(table_obj, 'columns'):
-            return
-        soft_del_col = table_obj.columns.add()
-        soft_del_col.name = column_name
-        soft_del_col.type = common_pb2.DataType.BOOLEAN
 
     @staticmethod
     def add_history_mode_columns_to_db(db_helper, schema, table):
