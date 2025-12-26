@@ -235,8 +235,8 @@ Creates a sophisticated dynamic configuration UI:
 
 #### 5. `AlterTable()`
 - Modifies existing table schemas in DuckDB
-- Adds new columns to existing tables (incremental updates)
-- Executes `ALTER TABLE ADD COLUMN` SQL statements
+- Adds new columns to existing tables (incremental updates) and can drop columns when the `drop_columns` flag is set
+- Executes `ALTER TABLE` SQL statements (e.g., `ADD COLUMN`, `DROP COLUMN`) to apply schema changes
 
 #### 6. `Truncate()`
 - Removes all data from specified tables using DuckDB `TRUNCATE TABLE`
