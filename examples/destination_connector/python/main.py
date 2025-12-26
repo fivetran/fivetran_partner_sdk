@@ -17,14 +17,16 @@ WARNING = "WARNING"
 SEVERE = "SEVERE"
 
 class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
-    # Initialize DuckDB with a file-based database for persistence
-    # Use ":memory:" for in-memory database or "destination.db" for file-based
+    # DuckDB helper for data persistence
+    # Currently configured to use file-based storage ("destination.db")
+    # To use in-memory storage instead, change line 29 to: DuckDBHelper(":memory:")
     db_helper = None
     default_schema = "fivetran_destination"
 
     def __init__(self):
         super().__init__()
-        # Initialize DuckDB helper (use file-based database)
+        # Initialize DuckDB helper with file-based storage for data persistence
+        # Change "destination.db" to ":memory:" for in-memory storage (data lost on restart)
         if DestinationImpl.db_helper is None:
             DestinationImpl.db_helper = DuckDBHelper("destination.db")
         self.migration_helper = SchemaMigrationHelper(DestinationImpl.db_helper)
