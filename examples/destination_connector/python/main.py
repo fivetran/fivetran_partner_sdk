@@ -256,7 +256,8 @@ class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
 
     def AlterTable(self, request, context):
         schema_name = request.schema_name if request.schema_name else self.default_schema
-        print("[AlterTable]: " + str(schema_name) + " | " + str(request.table.name) + " | " + str(request.table.columns))
+        drop_columns = request.drop_columns
+        print(f"[AlterTable]: {schema_name} | {request.table.name} | drop_columns={drop_columns} | columns={request.table.columns}")
 
         try:
             # Get current table schema
@@ -266,13 +267,28 @@ class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
                 log_message(WARNING, f"Table {schema_name}.{request.table.name} does not exist")
                 return destination_sdk_pb2.AlterTableResponse(success=False)
 
-            # Get new columns by comparing
+            # Compare current and requested columns
             current_column_names = {col.name for col in current_table.columns}
+            requested_column_names = {col.name for col in request.table.columns}
+
+            # Find columns to add (in request but not in current)
             new_columns = [col for col in request.table.columns if col.name not in current_column_names]
+
+            # Find columns to drop (in current but not in request)
+            columns_to_drop = [col.name for col in current_table.columns if col.name not in requested_column_names]
 
             # Add new columns
             for column in new_columns:
                 self.db_helper.add_column(schema_name, request.table.name, column)
+                log_message(INFO, f"Added column: {column.name} to {schema_name}.{request.table.name}")
+
+            # Drop columns if drop_columns flag is true
+            if drop_columns and columns_to_drop:
+                for column_name in columns_to_drop:
+                    self.db_helper.drop_column(schema_name, request.table.name, column_name)
+                    log_message(INFO, f"Dropped column: {column_name} from {schema_name}.{request.table.name}")
+            elif columns_to_drop:
+                log_message(INFO, f"Skipping drop of {len(columns_to_drop)} columns (drop_columns=false): {columns_to_drop}")
 
             return destination_sdk_pb2.AlterTableResponse(success=True)
         except Exception as e:
@@ -282,14 +298,36 @@ class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
     def Truncate(self, request, context):
         schema_name = request.schema_name if request.schema_name else self.default_schema
         table_name = request.table_name
-        print("[TruncateTable]: " + str(schema_name) + " | " + str(table_name) + " | soft=" + str(request.soft))
+        print("[TruncateTable]: " + str(schema_name) + " | " + str(table_name) + " | soft=" + str(request.HasField("soft")))
         try:
-            # For soft truncate, you might want different logic (e.g., mark rows as deleted)
-            # For now, we'll just do a hard truncate
-            if not request.soft:
-                self.db_helper.truncate_table(schema_name, table_name)
+            # Check if soft truncate is requested
+            if request.HasField("soft"):
+                # Soft truncate: mark rows as deleted instead of removing them
+                deleted_column = request.soft.deleted_column
+                log_message(INFO, f"Performing soft truncate on {schema_name}.{table_name} using column {deleted_column}")
+
+                # Build UPDATE statement to mark all rows as deleted
+                escaped_schema = self.db_helper._escape_identifier(schema_name)
+                escaped_table = self.db_helper._escape_identifier(table_name)
+                escaped_deleted_col = self.db_helper._escape_identifier(deleted_column)
+
+                # Handle time-based truncate if synced_column and utc_delete_before are provided
+                if request.synced_column and request.HasField("utc_delete_before"):
+                    escaped_synced_col = self.db_helper._escape_identifier(request.synced_column)
+                    delete_before_timestamp = request.utc_delete_before.ToDatetime()
+                    sql = f'UPDATE "{escaped_schema}"."{escaped_table}" SET "{escaped_deleted_col}" = TRUE WHERE "{escaped_synced_col}" < ?'
+                    self.db_helper.get_connection().execute(sql, [delete_before_timestamp])
+                    log_message(INFO, f"Soft truncated rows where {request.synced_column} < {delete_before_timestamp}")
+                else:
+                    # Mark all rows as deleted
+                    sql = f'UPDATE "{escaped_schema}"."{escaped_table}" SET "{escaped_deleted_col}" = TRUE'
+                    self.db_helper.get_connection().execute(sql)
+                    log_message(INFO, f"Soft truncated all rows in {schema_name}.{table_name}")
             else:
-                log_message(INFO, f"Soft truncate not fully implemented, skipping actual truncate for {schema_name}.{table_name}")
+                # Hard truncate: remove all data from the table
+                self.db_helper.truncate_table(schema_name, table_name)
+                log_message(INFO, f"Hard truncated {schema_name}.{table_name}")
+
             return destination_sdk_pb2.TruncateResponse(success=True)
         except Exception as e:
             log_message(WARNING, f"Truncate failed: {str(e)}")
