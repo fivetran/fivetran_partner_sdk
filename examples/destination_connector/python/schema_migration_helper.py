@@ -53,20 +53,29 @@ class SchemaMigrationHelper:
                 copy_column = copy_op.copy_column
                 # Get table schema to find the column type
                 table_obj = self.db_helper.describe_table(schema, table)
-                if table_obj:
-                    for col in table_obj.columns:
-                        if col.name == copy_column.from_column:
-                            # Add new column with same type
-                            new_col = common_pb2.Column(name=copy_column.to_column, type=col.type)
-                            self.db_helper.add_column(schema, table, new_col)
-                            # Copy data from old column to new column using escaped identifiers
-                            escaped_schema = self.db_helper._escape_identifier(schema)
-                            escaped_table = self.db_helper._escape_identifier(table)
-                            escaped_to_col = self.db_helper._escape_identifier(copy_column.to_column)
-                            escaped_from_col = self.db_helper._escape_identifier(copy_column.from_column)
-                            sql = f'UPDATE "{escaped_schema}"."{escaped_table}" SET "{escaped_to_col}" = "{escaped_from_col}"'
-                            self.db_helper.get_connection().execute(sql)
-                            break
+                if not table_obj:
+                    log_message(WARNING, f"[Migrate:CopyColumn] Table {schema}.{table} does not exist")
+                    return destination_sdk_pb2.MigrateResponse(success=False)
+
+                column_found = False
+                for col in table_obj.columns:
+                    if col.name == copy_column.from_column:
+                        # Add new column with same type
+                        new_col = common_pb2.Column(name=copy_column.to_column, type=col.type)
+                        self.db_helper.add_column(schema, table, new_col)
+                        # Copy data from old column to new column using escaped identifiers
+                        escaped_schema = self.db_helper._escape_identifier(schema)
+                        escaped_table = self.db_helper._escape_identifier(table)
+                        escaped_to_col = self.db_helper._escape_identifier(copy_column.to_column)
+                        escaped_from_col = self.db_helper._escape_identifier(copy_column.from_column)
+                        sql = f'UPDATE "{escaped_schema}"."{escaped_table}" SET "{escaped_to_col}" = "{escaped_from_col}"'
+                        self.db_helper.get_connection().execute(sql)
+                        column_found = True
+                        break
+
+                if not column_found:
+                    log_message(WARNING, f"[Migrate:CopyColumn] Column {copy_column.from_column} not found in {schema}.{table}")
+                    return destination_sdk_pb2.MigrateResponse(success=False)
 
                 log_message(INFO, f"[Migrate:CopyColumn] table={schema}.{table} from_col={copy_column.from_column} to_col={copy_column.to_column}")
                 return destination_sdk_pb2.MigrateResponse(success=True)
@@ -75,24 +84,27 @@ class SchemaMigrationHelper:
                 copy_table_history_mode = copy_op.copy_table_to_history_mode
                 from_table_obj = self.db_helper.describe_table(schema, copy_table_history_mode.from_table)
 
-                if from_table_obj:
-                    # Create new table metadata without soft delete column and with history columns
-                    new_table = TableMetadataHelper.create_table_copy(from_table_obj, copy_table_history_mode.to_table)
-                    TableMetadataHelper.remove_column_from_table(new_table, copy_table_history_mode.soft_deleted_column)
-                    TableMetadataHelper.add_history_mode_columns(new_table)
+                if not from_table_obj:
+                    log_message(WARNING, f"[Migrate:CopyTableToHistoryMode] Source table {schema}.{copy_table_history_mode.from_table} does not exist")
+                    return destination_sdk_pb2.MigrateResponse(success=False)
 
-                    # Create the new table in DuckDB
-                    self.db_helper.create_table(schema, new_table)
+                # Create new table metadata without soft delete column and with history columns
+                new_table = TableMetadataHelper.create_table_copy(from_table_obj, copy_table_history_mode.to_table)
+                TableMetadataHelper.remove_column_from_table(new_table, copy_table_history_mode.soft_deleted_column)
+                TableMetadataHelper.add_history_mode_columns(new_table)
 
-                    # Copy data (excluding soft deleted column) with escaped identifiers
-                    columns_to_copy = [col.name for col in new_table.columns
-                                      if col.name not in [FIVETRAN_START, FIVETRAN_END, FIVETRAN_ACTIVE]]
-                    columns_str = ", ".join([f'"{self.db_helper._escape_identifier(col)}"' for col in columns_to_copy])
-                    escaped_schema = self.db_helper._escape_identifier(schema)
-                    escaped_to_table = self.db_helper._escape_identifier(copy_table_history_mode.to_table)
-                    escaped_from_table = self.db_helper._escape_identifier(copy_table_history_mode.from_table)
-                    sql = f'INSERT INTO "{escaped_schema}"."{escaped_to_table}" ({columns_str}) SELECT {columns_str} FROM "{escaped_schema}"."{escaped_from_table}"'
-                    self.db_helper.get_connection().execute(sql)
+                # Create the new table in DuckDB
+                self.db_helper.create_table(schema, new_table)
+
+                # Copy data (excluding soft deleted column) with escaped identifiers
+                columns_to_copy = [col.name for col in new_table.columns
+                                  if col.name not in [FIVETRAN_START, FIVETRAN_END, FIVETRAN_ACTIVE]]
+                columns_str = ", ".join([f'"{self.db_helper._escape_identifier(col)}"' for col in columns_to_copy])
+                escaped_schema = self.db_helper._escape_identifier(schema)
+                escaped_to_table = self.db_helper._escape_identifier(copy_table_history_mode.to_table)
+                escaped_from_table = self.db_helper._escape_identifier(copy_table_history_mode.from_table)
+                sql = f'INSERT INTO "{escaped_schema}"."{escaped_to_table}" ({columns_str}) SELECT {columns_str} FROM "{escaped_schema}"."{escaped_from_table}"'
+                self.db_helper.get_connection().execute(sql)
 
                 log_message(INFO, f"[Migrate:CopyTableToHistoryMode] from={copy_table_history_mode.from_table} to={copy_table_history_mode.to_table} soft_deleted_column={copy_table_history_mode.soft_deleted_column}")
                 return destination_sdk_pb2.MigrateResponse(success=True)
