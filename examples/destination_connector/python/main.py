@@ -502,7 +502,9 @@ if __name__ == '__main__':
         print("\nReceived shutdown signal...")
     finally:
         print("Shutting down server...")
+        # Stop server first with grace period to allow in-flight requests to complete
+        server.stop(grace=5)
+        # Close database connection after all requests have finished
         if DestinationImpl.db_helper:
             DestinationImpl.db_helper.close()
-        server.stop(grace=5)
         print("Destination gRPC server terminated...")
