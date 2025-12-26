@@ -241,7 +241,7 @@ Creates a sophisticated dynamic configuration UI:
 #### 6. `Truncate()`
 - Removes all data from specified tables using DuckDB `TRUNCATE TABLE`
 - Hard truncate: Deletes all rows from the table
-- Soft truncate: Not fully implemented (returns appropriate response)
+- Soft truncate: Fully implemented, supporting both full soft truncate and time-based soft truncate based on request parameters
 - Logs truncation operations with table and schema details
 
 #### 7. `WriteBatch()`
