@@ -63,8 +63,12 @@ class SchemaMigrationHelper:
                             # Add new column with same type
                             new_col = common_pb2.Column(name=copy_column.to_column, type=col.type)
                             self.db_helper.add_column(schema, table, new_col)
-                            # Copy data from old column to new column
-                            sql = f'UPDATE "{schema}"."{table}" SET "{copy_column.to_column}" = "{copy_column.from_column}"'
+                            # Copy data from old column to new column using escaped identifiers
+                            escaped_schema = self.db_helper._escape_identifier(schema)
+                            escaped_table = self.db_helper._escape_identifier(table)
+                            escaped_to_col = self.db_helper._escape_identifier(copy_column.to_column)
+                            escaped_from_col = self.db_helper._escape_identifier(copy_column.from_column)
+                            sql = f'UPDATE "{escaped_schema}"."{escaped_table}" SET "{escaped_to_col}" = "{escaped_from_col}"'
                             self.db_helper.connection.execute(sql)
                             break
 
@@ -84,11 +88,14 @@ class SchemaMigrationHelper:
                     # Create the new table in DuckDB
                     self.db_helper.create_table(schema, new_table)
 
-                    # Copy data (excluding soft deleted column)
+                    # Copy data (excluding soft deleted column) with escaped identifiers
                     columns_to_copy = [col.name for col in new_table.columns
                                       if col.name not in [FIVETRAN_START, FIVETRAN_END, FIVETRAN_ACTIVE]]
-                    columns_str = ", ".join([f'"{col}"' for col in columns_to_copy])
-                    sql = f'INSERT INTO "{schema}"."{copy_table_history_mode.to_table}" ({columns_str}) SELECT {columns_str} FROM "{schema}"."{copy_table_history_mode.from_table}"'
+                    columns_str = ", ".join([f'"{self.db_helper._escape_identifier(col)}"' for col in columns_to_copy])
+                    escaped_schema = self.db_helper._escape_identifier(schema)
+                    escaped_to_table = self.db_helper._escape_identifier(copy_table_history_mode.to_table)
+                    escaped_from_table = self.db_helper._escape_identifier(copy_table_history_mode.from_table)
+                    sql = f'INSERT INTO "{escaped_schema}"."{escaped_to_table}" ({columns_str}) SELECT {columns_str} FROM "{escaped_schema}"."{escaped_from_table}"'
                     self.db_helper.connection.execute(sql)
 
                 log_message(INFO, f"[Migrate:CopyTableToHistoryMode] from={copy_table_history_mode.from_table} to={copy_table_history_mode.to_table} soft_deleted_column={copy_table_history_mode.soft_deleted_column}")
@@ -309,16 +316,16 @@ class TableMetadataHelper:
         """Removes history mode columns from a table in the database."""
         try:
             db_helper.drop_column(schema, table, FIVETRAN_START)
-        except:
-            pass
+        except Exception as e:
+            log_message(WARNING, f"Failed to drop column {FIVETRAN_START}: {str(e)}")
         try:
             db_helper.drop_column(schema, table, FIVETRAN_END)
-        except:
-            pass
+        except Exception as e:
+            log_message(WARNING, f"Failed to drop column {FIVETRAN_END}: {str(e)}")
         try:
             db_helper.drop_column(schema, table, FIVETRAN_ACTIVE)
-        except:
-            pass
+        except Exception as e:
+            log_message(WARNING, f"Failed to drop column {FIVETRAN_ACTIVE}: {str(e)}")
 
     @staticmethod
     def add_soft_delete_column_to_db(db_helper, schema, table, column_name):

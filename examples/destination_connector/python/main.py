@@ -456,5 +456,13 @@ if __name__ == '__main__':
     destination_sdk_pb2_grpc.add_DestinationConnectorServicer_to_server(DestinationImpl(), server)
     server.start()
     print(f"Destination gRPC server started on port {args.port}...")
-    server.wait_for_termination()
-    print("Destination gRPC server terminated...")
+    try:
+        server.wait_for_termination()
+    except KeyboardInterrupt:
+        print("\nReceived shutdown signal...")
+    finally:
+        print("Shutting down server...")
+        if DestinationImpl.db_helper:
+            DestinationImpl.db_helper.close()
+        server.stop(grace=5)
+        print("Destination gRPC server terminated...")
