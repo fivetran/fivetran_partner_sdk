@@ -307,13 +307,13 @@ class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
                 log_message(INFO, f"Performing soft truncate on {schema_name}.{table_name} using column {deleted_column}")
 
                 # Build UPDATE statement to mark all rows as deleted
-                escaped_schema = self.db_helper._escape_identifier(schema_name)
-                escaped_table = self.db_helper._escape_identifier(table_name)
-                escaped_deleted_col = self.db_helper._escape_identifier(deleted_column)
+                escaped_schema = self.db_helper.escape_identifier(schema_name)
+                escaped_table = self.db_helper.escape_identifier(table_name)
+                escaped_deleted_col = self.db_helper.escape_identifier(deleted_column)
 
                 # Handle time-based truncate if synced_column and utc_delete_before are provided
                 if request.synced_column and request.HasField("utc_delete_before"):
-                    escaped_synced_col = self.db_helper._escape_identifier(request.synced_column)
+                    escaped_synced_col = self.db_helper.escape_identifier(request.synced_column)
                     delete_before_timestamp = request.utc_delete_before.ToDatetime()
                     sql = f'UPDATE "{escaped_schema}"."{escaped_table}" SET "{escaped_deleted_col}" = TRUE WHERE "{escaped_synced_col}" < ?'
                     self.db_helper.get_connection().execute(sql, [delete_before_timestamp])

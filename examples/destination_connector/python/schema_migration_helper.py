@@ -64,10 +64,10 @@ class SchemaMigrationHelper:
                         new_col = common_pb2.Column(name=copy_column.to_column, type=col.type)
                         self.db_helper.add_column(schema, table, new_col)
                         # Copy data from old column to new column using escaped identifiers
-                        escaped_schema = self.db_helper._escape_identifier(schema)
-                        escaped_table = self.db_helper._escape_identifier(table)
-                        escaped_to_col = self.db_helper._escape_identifier(copy_column.to_column)
-                        escaped_from_col = self.db_helper._escape_identifier(copy_column.from_column)
+                        escaped_schema = self.db_helper.escape_identifier(schema)
+                        escaped_table = self.db_helper.escape_identifier(table)
+                        escaped_to_col = self.db_helper.escape_identifier(copy_column.to_column)
+                        escaped_from_col = self.db_helper.escape_identifier(copy_column.from_column)
                         sql = f'UPDATE "{escaped_schema}"."{escaped_table}" SET "{escaped_to_col}" = "{escaped_from_col}"'
                         self.db_helper.get_connection().execute(sql)
                         column_found = True
@@ -99,10 +99,10 @@ class SchemaMigrationHelper:
                 # Copy data (excluding soft deleted column) with escaped identifiers
                 columns_to_copy = [col.name for col in new_table.columns
                                   if col.name not in [FIVETRAN_START, FIVETRAN_END, FIVETRAN_ACTIVE]]
-                columns_str = ", ".join([f'"{self.db_helper._escape_identifier(col)}"' for col in columns_to_copy])
-                escaped_schema = self.db_helper._escape_identifier(schema)
-                escaped_to_table = self.db_helper._escape_identifier(copy_table_history_mode.to_table)
-                escaped_from_table = self.db_helper._escape_identifier(copy_table_history_mode.from_table)
+                columns_str = ", ".join([f'"{self.db_helper.escape_identifier(col)}"' for col in columns_to_copy])
+                escaped_schema = self.db_helper.escape_identifier(schema)
+                escaped_to_table = self.db_helper.escape_identifier(copy_table_history_mode.to_table)
+                escaped_from_table = self.db_helper.escape_identifier(copy_table_history_mode.from_table)
                 sql = f'INSERT INTO "{escaped_schema}"."{escaped_to_table}" ({columns_str}) SELECT {columns_str} FROM "{escaped_schema}"."{escaped_from_table}"'
                 self.db_helper.get_connection().execute(sql)
 
