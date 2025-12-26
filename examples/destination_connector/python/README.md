@@ -24,7 +24,7 @@ The example destination connector simulates writing data to multiple destination
 - **Cloud**: Cloud storage services (host, port, user, password, region)
 
 ### Data Operations
-- **Table Management**: Create, alter, describe, and truncate tables with in-memory registry
+- **Table Management**: Create, alter, describe, and truncate tables using DuckDB
 - **Batch Writing**: Process encrypted and compressed data files for optimal security and performance
 - **History Mode**: Advanced historical data tracking with specialized batch processing order
 - **File Processing**: Decrypt AES-encrypted files and decompress Zstandard-compressed data
@@ -32,10 +32,17 @@ The example destination connector simulates writing data to multiple destination
 
 ### Key Features
 - **Dynamic Configuration Forms**: Conditional field visibility based on destination type selection
-- **In-Memory Table Registry**: Tracks table schemas and metadata across operations
+- **DuckDB Storage**: Real database operations with data persistence (file-based or in-memory)
 - **Advanced File Processing**: Handles AES decryption and Zstandard decompression
 - **History Mode Batch Processing**: Implements precise ordering for historical data consistency
 - **Structured Logging**: JSON-formatted logs with severity levels and message origins
+
+### Data Storage
+The connector uses **DuckDB** for data persistence:
+- **Database file**: `destination.db` (created automatically in the working directory)
+- **Persistence**: Data survives connector restarts
+- **Multi-schema support**: Tables organized by schema (default: `fivetran_destination`)
+- **In-memory option**: Can be configured to use in-memory database for testing
 
 ## Prerequisites
 
@@ -151,6 +158,7 @@ pip install -r requirements.txt
 Installs all required packages including:
 - **gRPC libraries**: `grpcio==1.65.5` and `grpcio-tools==1.65.5` (Python 3.12 compatible)
 - **Protocol Buffers**: `protobuf==5.27.2`
+- **Database**: `duckdb>=1.1.0` for data storage and persistence
 - **Encryption**: `pycryptodome==3.20.0` for AES decryption
 - **Compression**: `zstandard~=0.23.0` for Zstandard decompression
 
@@ -169,9 +177,17 @@ Generates Python classes and gRPC service stubs from protocol buffer definitions
 The main connector implementation containing:
 - **DestinationImpl class**: Implements the gRPC destination service interface
 - **Server setup**: Configures and starts the gRPC server on port 50052 (default)
+- **DuckDB integration**: Uses `DuckDBHelper` for data storage and persistence
 - **JSON logging**: Structured logging with severity levels
 
-#### 2. `read_csv.py`
+#### 2. `duckdb_helper.py`
+Database operations helper:
+- **Connection management**: Handles DuckDB connection lifecycle
+- **SQL operations**: Create, alter, drop tables and columns
+- **Type mapping**: Converts between Fivetran and DuckDB data types
+- **Persistence**: Stores data in `destination.db` file (or in-memory)
+
+#### 3. `read_csv.py`
 Advanced file processing utilities:
 - **AES decryption**: `aes_decrypt()` function for encrypted file processing
 - **Zstandard decompression**: `zstd_decompress()` for compressed data
@@ -208,23 +224,24 @@ Creates a sophisticated dynamic configuration UI:
 - Returns success/failure status for configuration validation
 
 #### 3. `DescribeTable()`
-- Returns table schema information from in-memory registry
-- Uses `table_map` dictionary to track table metadata
+- Queries table schema information from DuckDB
+- Returns column names and data types for the specified table
 - Returns `not_found=True` if table doesn't exist
 
 #### 4. `CreateTable()`
-- Creates new tables in the destination system
-- Stores table schema in `table_map` for future reference
+- Creates new tables in DuckDB with specified schema
+- Executes `CREATE TABLE` SQL statement with column definitions
 - Logs table creation details with schema information
 
 #### 5. `AlterTable()`
-- Modifies existing table schemas
-- Updates the in-memory table registry with new schema
-- Supports adding/modifying columns and constraints
+- Modifies existing table schemas in DuckDB
+- Adds new columns to existing tables (incremental updates)
+- Executes `ALTER TABLE ADD COLUMN` SQL statements
 
 #### 6. `Truncate()`
-- Removes data from specified tables
-- Supports both hard and soft truncation modes
+- Removes all data from specified tables using DuckDB `TRUNCATE TABLE`
+- Hard truncate: Deletes all rows from the table
+- Soft truncate: Not fully implemented (returns appropriate response)
 - Logs truncation operations with table and schema details
 
 #### 7. `WriteBatch()`
