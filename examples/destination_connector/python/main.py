@@ -411,7 +411,7 @@ class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
 
     def DescribeTable(self, request, context):
         schema_name = request.schema_name if request.schema_name else self.default_schema
-        log_message(SEVERE, f"Sample severe message: Completed fetching table info for {schema_name}.{request.table_name}")
+        log_message(INFO, f"Completed fetching table info for {schema_name}.{request.table_name}")
         try:
             table = self.db_helper.describe_table(schema_name, request.table_name)
             if table is None:
