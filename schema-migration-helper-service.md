@@ -342,7 +342,7 @@ Request details:
 - `operation_timestamp` is the timestamp of the DDL operation trigger and is used to set the `_fivetran_start`, `_fivetran_end`, and `_fivetran_active` values appropriately to maintain history mode integrity.
 
 Implementation:
-- Implementation is similar to the `ADD_COLUMN_IN_HISTORY_MODE` migration, but sets the column to NULL instead of a default value.
+- Implementation is similar to the `ADD_COLUMN_IN_HISTORY_MODE` migration, but sets the column to `NULL` instead of a default value.
 - The column itself is not physically dropped from the table to preserve historical values.
 
 Validation before starting the migration:
