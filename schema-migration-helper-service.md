@@ -330,19 +330,20 @@ DROP TABLE <schema.table>;
 
 #### DROP_COLUMN_IN_HISTORY_MODE
 
-This migration should drop a column from a table in history mode while maintaining history mode integrity.
+This migration records the history of a column drop operation in history mode. Rather than physically dropping the column, it maintains the column with NULL values for new records to preserve historical data.
 
 Request details:
 
 | Field                                | Type      | Description                                   |
 |---------------------------------------|-----------|-----------------------------------------------|
-| `DropColumnInHistoryMode.column`      | string    | The name of the column to drop                |
+| `DropColumnInHistoryMode.column`      | string    | The name of the column being dropped          |
 | `DropColumnInHistoryMode.operation_timestamp` | timestamp | The timestamp of the migration operation      |
 
 - `operation_timestamp` is the timestamp of the DDL operation trigger and is used to set the `_fivetran_start`, `_fivetran_end`, and `_fivetran_active` values appropriately to maintain history mode integrity.
 
 Implementation:
-- Implementation is similar to the `ADD_COLUMN_IN_HISTORY_MODE` migration.
+- Implementation is similar to the `ADD_COLUMN_IN_HISTORY_MODE` migration, but sets the column to NULL instead of a default value.
+- The column itself is not physically dropped from the table to preserve historical values.
 
 Validation before starting the migration:
 - Ensure that the table is not empty. If it is empty, the migration can be skipped as there are no records to maintain history for.
