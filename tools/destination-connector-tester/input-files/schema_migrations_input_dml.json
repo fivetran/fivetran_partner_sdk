@@ -56,7 +56,7 @@
                "table": "transaction",
                "column": "operation_time",
                "data_type": "UTC_DATETIME",
-               "default_value": "2005-05-23T20:57:00Z"
+               "default_value": "2005-05-28T20:57:00Z"
             }
          ],
          "set_column_to_null": [
