@@ -73,7 +73,7 @@ class DuckDBHelper:
 
         column_defs = []
         for column in table.columns:
-            column_def = f'"{self.escape_identifier(column.name)}" {self._map_datatype_to_sql(column.type)}'
+            column_def = f'"{self.escape_identifier(column.name)}" {self.map_datatype_to_sql(column.type)}'
             column_defs.append(column_def)
 
         columns_str = ", ".join(column_defs)
@@ -124,7 +124,7 @@ class DuckDBHelper:
 
     def add_column(self, schema_name, table_name, column):
         """Add a column to an existing table."""
-        sql = f'ALTER TABLE "{self.escape_identifier(schema_name)}"."{self.escape_identifier(table_name)}" ADD COLUMN "{self.escape_identifier(column.name)}" {self._map_datatype_to_sql(column.type)}'
+        sql = f'ALTER TABLE "{self.escape_identifier(schema_name)}"."{self.escape_identifier(table_name)}" ADD COLUMN "{self.escape_identifier(column.name)}" {self.map_datatype_to_sql(column.type)}'
         self._connection.execute(sql)
         log_message(INFO, f"Column added: {column.name} to {schema_name}.{table_name}")
 
@@ -164,8 +164,13 @@ class DuckDBHelper:
         self._connection.execute(sql, [value])
         log_message(INFO, f"Column {column_name} updated in {schema_name}.{table_name}")
 
-    def _map_datatype_to_sql(self, datatype):
-        """Map Fivetran DataType to SQL type."""
+    def map_datatype_to_sql(self, datatype):
+        """
+        Map Fivetran DataType to SQL type.
+
+        This is a public method as it's needed by external callers
+        for type conversion operations.
+        """
         type_mapping = {
             common_pb2.DataType.BOOLEAN: "BOOLEAN",
             common_pb2.DataType.SHORT: "SMALLINT",
