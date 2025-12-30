@@ -26,9 +26,16 @@ class SchemaMigrationHelper:
                 return destination_sdk_pb2.MigrateResponse(success=True)
 
             elif entity_case == "drop_column_in_history_mode":
+                # IMPORTANT: DO NOT physically drop the column from the table.
+                # The column must remain in the table structure to preserve historical data.
+                #
+                # Real implementation should:
+                # 1. Insert new rows with the column set to NULL and operation_timestamp
+                # 2. Update previous active records' _fivetran_end and _fivetran_active
+                # See schema-migration-helper-service.md for full implementation details.
                 drop_column = drop_op.drop_column_in_history_mode
-                self.db_helper.drop_column(schema, table, drop_column.column)
-                log_message(INFO, f"[Migrate:DropColumnHistory] table={schema}.{table} column={drop_column.column} op_ts={drop_column.operation_timestamp}")
+                # The column remains in the table - no metadata changes needed
+                log_message(INFO, f"[Migrate:DropColumnHistory] table={schema}.{table} column={drop_column.column} op_ts={drop_column.operation_timestamp} - Column preserved for history")
                 return destination_sdk_pb2.MigrateResponse(success=True)
 
             else:
