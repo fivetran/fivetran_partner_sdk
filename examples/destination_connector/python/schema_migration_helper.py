@@ -31,14 +31,15 @@ class SchemaMigrationHelper:
             return destination_sdk_pb2.MigrateResponse(success=True)
 
         elif entity_case == "drop_column_in_history_mode":
-            # table-map manipulation to simulate drop column in history mode, replace with actual logic.
+            # IMPORTANT: DO NOT physically drop the column from the table.
+            # The column must remain in the table structure to preserve historical data.
+            #
+            # Real implementation should:
+            # 1. Insert new rows with the column set to NULL and operation_timestamp
+            # 2. Update previous active records' _fivetran_end and _fivetran_active
+            # See schema-migration-helper-service.md for full implementation details.
             drop_column = drop_op.drop_column_in_history_mode
-            table_obj = self.table_map.get(table)
-            if table_obj:
-                # Remove the specified column from the table
-                columns_to_keep = [col for col in table_obj.columns if col.name != drop_column.column]
-                del table_obj.columns[:]
-                table_obj.columns.extend(columns_to_keep)
+            # The column remains in the table - no metadata changes needed
 
             log_message(INFO, f"[Migrate:DropColumnHistory] table={schema}.{table} column={drop_column.column} op_ts={drop_column.operation_timestamp}")
             return destination_sdk_pb2.MigrateResponse(success=True)
