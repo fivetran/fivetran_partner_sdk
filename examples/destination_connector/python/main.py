@@ -50,17 +50,25 @@ class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
         # Special handling for DECIMAL - check precision/scale
         if col1.type == common_pb2.DataType.DECIMAL:
             # Check if both have decimal parameters
-            col1_has_decimal = col1.HasField("decimal")
-            col2_has_decimal = col2.HasField("decimal")
+            col1_has_params = col1.HasField("params")
+            col2_has_params = col2.HasField("params")
 
-            # If only one has decimal params, they're different
-            if col1_has_decimal != col2_has_decimal:
+            # If only one has params, they're different
+            if col1_has_params != col2_has_params:
                 return True
 
-            # If both have decimal params, compare precision and scale
-            if col1_has_decimal and col2_has_decimal:
-                return (col1.decimal.precision != col2.decimal.precision or
-                        col1.decimal.scale != col2.decimal.scale)
+            # If both have params, check if they both have decimal
+            if col1_has_params and col2_has_params:
+                col1_has_decimal = col1.params.HasField("decimal")
+                col2_has_decimal = col2.params.HasField("decimal")
+
+                if col1_has_decimal != col2_has_decimal:
+                    return True
+
+                # If both have decimal params, compare precision and scale
+                if col1_has_decimal and col2_has_decimal:
+                    return (col1.params.decimal.precision != col2.params.decimal.precision or
+                            col1.params.decimal.scale != col2.params.decimal.scale)
 
         return False
 

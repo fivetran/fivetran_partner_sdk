@@ -1,6 +1,6 @@
-grpcio==1.65.5
-grpcio-tools==1.65.5
-protobuf==5.27.2
+grpcio==1.76.0
+grpcio-tools==1.76.0
+protobuf>=6.31.1
 google~=3.0.0
 pip~=24.0
 setuptools~=70.0.0

@@ -111,7 +111,8 @@ class DuckDBHelper:
             numeric_precision = row[2]
             numeric_scale = row[3]
 
-            column_type = self._map_sql_type_to_datatype(data_type)
+            column_type = (self.
+                           _map_sql_type_to_datatype(data_type))
             column = common_pb2.Column(
                 name=column_name,
                 type=column_type
@@ -119,8 +120,8 @@ class DuckDBHelper:
 
             # For DECIMAL types, populate precision and scale
             if column_type == common_pb2.DataType.DECIMAL and numeric_precision is not None:
-                column.decimal.precision = int(numeric_precision)
-                column.decimal.scale = int(numeric_scale) if numeric_scale is not None else 0
+                column.params.decimal.precision = int(numeric_precision)
+                column.params.decimal.scale = int(numeric_scale) if numeric_scale is not None else 0
 
             table_builder_columns.append(column)
 
@@ -189,9 +190,9 @@ class DuckDBHelper:
         """
         # Handle DECIMAL specially - needs precision/scale from column definition
         if datatype == common_pb2.DataType.DECIMAL:
-            if column and column.HasField("decimal"):
-                precision = column.decimal.precision
-                scale = column.decimal.scale
+            if column and column.HasField("params") and column.params.HasField("decimal"):
+                precision = column.params.decimal.precision
+                scale = column.params.decimal.scale
                 return f"DECIMAL({precision}, {scale})"
             else:
                 # Default fallback when precision/scale not specified
@@ -220,20 +221,25 @@ class DuckDBHelper:
         """Map SQL type to Fivetran DataType."""
         sql_type = sql_type.upper()
 
+        # Log the SQL type for debugging
+        log_message(INFO, f"Mapping SQL type: {sql_type}")
+
         if "BOOL" in sql_type:
             return common_pb2.DataType.BOOLEAN
         if "SMALLINT" in sql_type or "INT2" in sql_type:
             return common_pb2.DataType.SHORT
-        if "INTEGER" in sql_type or "INT4" in sql_type:
+        if "INTEGER" in sql_type or "INT4" in sql_type or "INT " in sql_type:
             return common_pb2.DataType.INT
         if "BIGINT" in sql_type or "INT8" in sql_type:
             return common_pb2.DataType.LONG
         if "DECIMAL" in sql_type or "NUMERIC" in sql_type:
             return common_pb2.DataType.DECIMAL
-        if "REAL" in sql_type or "FLOAT4" in sql_type:
-            return common_pb2.DataType.FLOAT
+        # Check DOUBLE before FLOAT because "DOUBLE" contains the word but not "FLOAT"
         if "DOUBLE" in sql_type or "FLOAT8" in sql_type:
             return common_pb2.DataType.DOUBLE
+        # Check for FLOAT - covers FLOAT, REAL, FLOAT4
+        if "FLOAT" in sql_type or "REAL" in sql_type or "FLOAT4" in sql_type:
+            return common_pb2.DataType.FLOAT
         if "DATE" in sql_type and "TIME" not in sql_type:
             return common_pb2.DataType.NAIVE_DATE
         if "TIMESTAMP" in sql_type and "TZ" in sql_type:
@@ -247,6 +253,8 @@ class DuckDBHelper:
         if "JSON" in sql_type:
             return common_pb2.DataType.JSON
 
+        # If no match found, log warning and return STRING as fallback
+        log_message(WARNING, f"Unknown SQL type '{sql_type}', defaulting to STRING")
         return common_pb2.DataType.STRING
 
 

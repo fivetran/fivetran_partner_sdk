@@ -154,7 +154,7 @@ class SchemaMigrationHelper:
                 self.db_helper.add_column(schema, table, new_col)
 
                 # If default value is provided, update existing rows
-                if add_col_history_mode.HasField("default_value"):
+                if add_col_history_mode.default_value:
                     self.db_helper.update_column_value(schema, table, add_col_history_mode.column, add_col_history_mode.default_value)
 
                 log_message(INFO, f"[Migrate:AddColumnHistory] table={schema}.{table} column={add_col_history_mode.column} type={add_col_history_mode.column_type} default={add_col_history_mode.default_value} op_ts={add_col_history_mode.operation_timestamp}")
@@ -169,7 +169,7 @@ class SchemaMigrationHelper:
                 self.db_helper.add_column(schema, table, new_col)
 
                 # Update existing rows with default value
-                if add_col_default_with_value.HasField("default_value"):
+                if add_col_default_with_value.default_value:
                     self.db_helper.update_column_value(schema, table, add_col_default_with_value.column, add_col_default_with_value.default_value)
 
                 log_message(INFO, f"[Migrate:AddColumnDefault] table={schema}.{table} column={add_col_default_with_value.column} type={add_col_default_with_value.column_type} default={add_col_default_with_value.default_value}")
@@ -209,6 +209,7 @@ class SchemaMigrationHelper:
                 # Remove soft delete column and add history mode columns
                 if soft_deleted_column:
                     self.db_helper.drop_column(schema, table, soft_deleted_column)
+
                 TableMetadataHelper.add_history_mode_columns_to_db(self.db_helper, schema, table)
                 log_message(INFO, f"[Migrate:TableSyncModeMigration] Migrating table={schema}.{table} from SOFT_DELETE to HISTORY")
                 return destination_sdk_pb2.MigrateResponse(success=True)
