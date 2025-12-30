@@ -31,6 +31,39 @@ class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
             DestinationImpl.db_helper = DuckDBHelper("destination.db")
         self.migration_helper = SchemaMigrationHelper(DestinationImpl.db_helper)
 
+    def _columns_have_different_types(self, col1, col2):
+        """
+        Compare two columns to determine if they have different types.
+        For DECIMAL types, also compares precision and scale.
+
+        Args:
+            col1: First column to compare
+            col2: Second column to compare
+
+        Returns:
+            True if columns have different types, False otherwise
+        """
+        # If base types are different, they definitely have different types
+        if col1.type != col2.type:
+            return True
+
+        # Special handling for DECIMAL - check precision/scale
+        if col1.type == common_pb2.DataType.DECIMAL:
+            # Check if both have decimal parameters
+            col1_has_decimal = col1.HasField("decimal")
+            col2_has_decimal = col2.HasField("decimal")
+
+            # If only one has decimal params, they're different
+            if col1_has_decimal != col2_has_decimal:
+                return True
+
+            # If both have decimal params, compare precision and scale
+            if col1_has_decimal and col2_has_decimal:
+                return (col1.decimal.precision != col2.decimal.precision or
+                        col1.decimal.scale != col2.decimal.scale)
+
+        return False
+
     def ConfigurationForm(self, request, context):
         log_message(INFO, "Fetching Configuration form")
 
@@ -288,7 +321,7 @@ class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
             for col_name in current_column_names & requested_column_names:
                 current_col = current_columns_map[col_name]
                 requested_col = requested_columns_map[col_name]
-                if current_col.type != requested_col.type:
+                if self._columns_have_different_types(current_col, requested_col):
                     columns_with_type_changes.append((col_name, requested_col))
 
             # Add new columns
@@ -303,7 +336,7 @@ class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
                 escaped_schema = self.db_helper.escape_identifier(schema_name)
                 escaped_table = self.db_helper.escape_identifier(request.table.name)
                 escaped_col = self.db_helper.escape_identifier(col_name)
-                sql_type = self.db_helper.map_datatype_to_sql(new_col_def.type)
+                sql_type = self.db_helper.map_datatype_to_sql(new_col_def.type, new_col_def)
 
                 # Use DuckDB's native ALTER COLUMN SET DATA TYPE
                 sql = f'ALTER TABLE "{escaped_schema}"."{escaped_table}" ALTER COLUMN "{escaped_col}" SET DATA TYPE {sql_type}'

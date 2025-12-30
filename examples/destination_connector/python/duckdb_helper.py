@@ -73,7 +73,7 @@ class DuckDBHelper:
 
         column_defs = []
         for column in table.columns:
-            column_def = f'"{self.escape_identifier(column.name)}" {self.map_datatype_to_sql(column.type)}'
+            column_def = f'"{self.escape_identifier(column.name)}" {self.map_datatype_to_sql(column.type, column)}'
             column_defs.append(column_def)
 
         columns_str = ", ".join(column_defs)
@@ -94,7 +94,7 @@ class DuckDBHelper:
             return None
 
         query = """
-            SELECT column_name, data_type
+            SELECT column_name, data_type, numeric_precision, numeric_scale
             FROM information_schema.columns
             WHERE table_schema = ? AND table_name = ?
             ORDER BY ordinal_position
@@ -108,11 +108,20 @@ class DuckDBHelper:
         for row in result:
             column_name = row[0]
             data_type = row[1]
+            numeric_precision = row[2]
+            numeric_scale = row[3]
 
+            column_type = self._map_sql_type_to_datatype(data_type)
             column = common_pb2.Column(
                 name=column_name,
-                type=self._map_sql_type_to_datatype(data_type)
+                type=column_type
             )
+
+            # For DECIMAL types, populate precision and scale
+            if column_type == common_pb2.DataType.DECIMAL and numeric_precision is not None:
+                column.decimal.precision = int(numeric_precision)
+                column.decimal.scale = int(numeric_scale) if numeric_scale is not None else 0
+
             table_builder_columns.append(column)
 
         table_obj = common_pb2.Table(
@@ -124,7 +133,7 @@ class DuckDBHelper:
 
     def add_column(self, schema_name, table_name, column):
         """Add a column to an existing table."""
-        sql = f'ALTER TABLE "{self.escape_identifier(schema_name)}"."{self.escape_identifier(table_name)}" ADD COLUMN "{self.escape_identifier(column.name)}" {self.map_datatype_to_sql(column.type)}'
+        sql = f'ALTER TABLE "{self.escape_identifier(schema_name)}"."{self.escape_identifier(table_name)}" ADD COLUMN "{self.escape_identifier(column.name)}" {self.map_datatype_to_sql(column.type, column)}'
         self._connection.execute(sql)
         log_message(INFO, f"Column added: {column.name} to {schema_name}.{table_name}")
 
@@ -164,19 +173,35 @@ class DuckDBHelper:
         self._connection.execute(sql, [value])
         log_message(INFO, f"Column {column_name} updated in {schema_name}.{table_name}")
 
-    def map_datatype_to_sql(self, datatype):
+    def map_datatype_to_sql(self, datatype, column=None):
         """
         Map Fivetran DataType to SQL type.
 
         This is a public method as it's needed by external callers
         for type conversion operations.
+
+        Args:
+            datatype: The Fivetran DataType enum value
+            column: Optional Column object containing additional type parameters (e.g., decimal precision/scale)
+
+        Returns:
+            SQL type string
         """
+        # Handle DECIMAL specially - needs precision/scale from column definition
+        if datatype == common_pb2.DataType.DECIMAL:
+            if column and column.HasField("decimal"):
+                precision = column.decimal.precision
+                scale = column.decimal.scale
+                return f"DECIMAL({precision}, {scale})"
+            else:
+                # Default fallback when precision/scale not specified
+                return "DECIMAL(38, 10)"
+
         type_mapping = {
             common_pb2.DataType.BOOLEAN: "BOOLEAN",
             common_pb2.DataType.SHORT: "SMALLINT",
             common_pb2.DataType.INT: "INTEGER",
             common_pb2.DataType.LONG: "BIGINT",
-            common_pb2.DataType.DECIMAL: "DECIMAL(38, 10)",
             common_pb2.DataType.FLOAT: "REAL",
             common_pb2.DataType.DOUBLE: "DOUBLE",
             common_pb2.DataType.NAIVE_DATE: "DATE",
