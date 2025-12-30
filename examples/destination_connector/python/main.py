@@ -436,10 +436,19 @@ class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
             return destination_sdk_pb2.TruncateResponse(success=False)
 
     def WriteBatch(self, request, context):
+        """
+        Write batch data to the destination.
+
+        This example implementation decrypts and prints batch files for demonstration purposes.
+        For production use, implement your data loading logic here to process REPLACE, UPDATE,
+        and DELETE files and write them to your destination.
+
+        See: https://github.com/fivetran/fivetran_partner_sdk/blob/main/development-guide/destination-connector-development-guide.md#writebatchrequest
+        """
         for replace_file in request.replace_files:
             print("replace files: " + str(replace_file))
         for update_file in request.update_files:
-            print("replace files: " + str(update_file))
+            print("update files: " + str(update_file))
         for delete_file in request.delete_files:
             print("delete files: " + str(delete_file))
 
@@ -490,13 +499,19 @@ class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
              - Update `_fivetran_end` to match the corresponding record’s end timestamp from the batch file.
 
         This structured processing ensures data consistency and historical tracking in the destination table.
+        This example implementation decrypts and prints history mode batch files for demonstration purposes.
+        For production use, implement your data loading logic here to process history mode-specific batch files
+        (earliest_start_files, replace_files, update_files, delete_files) and write them to your destination
+        while maintaining history tracking with _fivetran_start, _fivetran_end, and _fivetran_active columns.
+
+        See: https://github.com/fivetran/fivetran_partner_sdk/blob/main/development-guide/destination-connector-development-guide.md#writehistorybatchrequest
         '''
         for earliest_start_file in request.earliest_start_files:
             print("earliest_start files: " + str(earliest_start_file))
         for replace_file in request.replace_files:
             print("replace files: " + str(replace_file))
         for update_file in request.update_files:
-            print("replace files: " + str(update_file))
+            print("update files: " + str(update_file))
         for delete_file in request.delete_files:
             print("delete files: " + str(delete_file))
 
