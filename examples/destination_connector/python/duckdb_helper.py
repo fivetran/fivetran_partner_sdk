@@ -111,8 +111,7 @@ class DuckDBHelper:
             numeric_precision = row[2]
             numeric_scale = row[3]
 
-            column_type = (self.
-                           _map_sql_type_to_datatype(data_type))
+            column_type = self._map_sql_type_to_datatype(data_type)
             column = common_pb2.Column(
                 name=column_name,
                 type=column_type
