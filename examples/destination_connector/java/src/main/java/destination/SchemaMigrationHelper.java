@@ -27,11 +27,15 @@ public class SchemaMigrationHelper {
                 respBuilder.setSuccess(true);
                 break;
             case DROP_COLUMN_IN_HISTORY_MODE:
-                // table-map manipulation to simulate drop column in history mode, replace with actual logic.
+                // IMPORTANT: DO NOT physically drop the column from the table.
+                // The column must remain in the table structure to preserve historical data.
+                //
+                // Real implementation should:
+                // 1. Insert new rows with the column set to NULL and operation_timestamp
+                // 2. Update previous active records' _fivetran_end and _fivetran_active
+                // See schema-migration-helper-service.md for full implementation details.
                 DropColumnInHistoryMode dropColumn = dropOp.getDropColumnInHistoryMode();
-                Table tableObj = tableMap.get(table);
-                Table.Builder updatedTableBuilder = metadataHelper.rebuildTableWithoutColumn(tableObj, dropColumn.getColumn());
-                metadataHelper.updateTableWithModifiedColumns(tableMap, table, updatedTableBuilder);
+                // The column remains in the table - no metadata changes needed
 
                 logger.info(String.format("[Migrate:DropColumnHistory] table=%s.%s column=%s op_ts=%s",
                         schema, table, dropColumn.getColumn(), dropColumn.getOperationTimestamp()));
