@@ -157,7 +157,7 @@ pip install -r requirements.txt
 ```
 Installs all required packages including:
 - **gRPC libraries**: `grpcio==1.65.5` and `grpcio-tools==1.65.5` (Python 3.12 compatible)
-- **Protocol Buffers**: `protobuf==5.27.2`
+- **Protocol Buffers**: `protobuf>=6.31.1`
 - **Database**: `duckdb>=1.1.0` for data storage and persistence
 - **Encryption**: `pycryptodome==3.20.0` for AES decryption
 - **Compression**: `zstandard~=0.23.0` for Zstandard decompression
