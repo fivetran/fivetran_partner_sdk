@@ -366,7 +366,9 @@ class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
                 # Drop existing primary key constraint if it exists
                 if current_pk_columns:
                     # Try to drop the primary key constraint
-                    # DuckDB uses table_name + "_pkey" as default constraint name
+                    # Note: This assumes DuckDB's default naming convention (table_name + "_pkey").
+                    # For production, consider querying information_schema.table_constraints to get
+                    # the actual constraint name, especially if table names contain special characters.
                     constraint_name = f"{request.table.name}_pkey"
                     escaped_constraint = self.db_helper.escape_identifier(constraint_name)
                     try:
