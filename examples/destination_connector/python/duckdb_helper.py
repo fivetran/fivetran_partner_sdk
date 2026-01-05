@@ -34,6 +34,16 @@ class DuckDBHelper:
         This is a public method as it's needed by external callers
         (e.g., schema_migration_helper.py, main.py) to build SQL statements.
 
+        IMPORTANT: Always use the escaped identifier within double quotes in SQL:
+
+        Correct usage:
+            escaped_name = self.escape_identifier(table_name)
+            sql = f'SELECT * FROM "{escaped_name}"'  # Note the quotes!
+
+        Incorrect usage:
+            escaped_name = self.escape_identifier(table_name)
+            sql = f'SELECT * FROM {escaped_name}'  # Missing quotes - vulnerable!
+
         Args:
             identifier: The identifier to escape
 
@@ -281,4 +291,6 @@ class DuckDBHelper:
 
 
 def log_message(level, message):
-    print(f'{{"level":"{level}", "message": "{message}", "message-origin": "sdk_destination"}}')
+    import json
+    log_entry = {"level": level, "message": message, "message-origin": "sdk_destination"}
+    print(json.dumps(log_entry))
