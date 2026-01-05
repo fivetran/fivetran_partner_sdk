@@ -47,9 +47,17 @@ class DuckDBHelper:
 
     def close(self):
         """Close the DuckDB connection."""
-        if self._connection:
-            self._connection.close()
+        conn = getattr(self, "_connection", None)
+        if not conn:
+            return
+        try:
+            conn.close()
             log_message(INFO, "DuckDB connection closed")
+        except Exception as e:
+            # Log a warning but do not raise, to allow cleanup to continue
+            log_message(WARNING, f"Error while closing DuckDB connection: {e}")
+        finally:
+            self._connection = None
 
     def table_exists(self, schema_name, table_name):
         """Check if a table exists in the given schema."""
