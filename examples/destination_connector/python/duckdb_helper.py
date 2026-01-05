@@ -175,10 +175,25 @@ class DuckDBHelper:
         self._connection.execute(sql)
         log_message(INFO, f"Table copied: {from_table} to {to_table} in {schema_name}")
 
+    def _normalize_value(self, value):
+        """
+        Normalize a Python value for safe binding into DuckDB.
+
+        Allows None (NULL) and common primitive types directly. Falls back
+        to string representation for unsupported types to avoid driver errors.
+        """
+        if value is None:
+            return None
+        if isinstance(value, (int, float, bool, str, bytes)):
+            return value
+        # Fallback: use string representation for other types
+        return str(value)
+
     def update_column_value(self, schema_name, table_name, column_name, value):
         """Update all rows in a column with a specific value."""
         sql = f'UPDATE "{self.escape_identifier(schema_name)}"."{self.escape_identifier(table_name)}" SET "{self.escape_identifier(column_name)}" = ?'
-        self._connection.execute(sql, [value])
+        normalized_value = self._normalize_value(value)
+        self._connection.execute(sql, [normalized_value])
         log_message(INFO, f"Column {column_name} updated in {schema_name}.{table_name}")
 
     def map_datatype_to_sql(self, datatype, column=None):
