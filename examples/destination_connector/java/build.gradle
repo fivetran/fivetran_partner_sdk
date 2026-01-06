@@ -40,6 +40,9 @@ dependencies {
 
     implementation 'com.github.luben:zstd-jni:1.5.5-11'
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-csv:2.2.3'
+
+    implementation 'org.duckdb:duckdb_jdbc:1.4.3.0'
+    implementation 'com.google.code.gson:gson:2.10.1'
 }
 
 protobuf {
