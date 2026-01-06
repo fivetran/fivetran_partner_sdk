@@ -429,7 +429,7 @@ class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
 
 def log_message(level, message):
     import json
-    log_entry = {"level": level, "message": message, "message-origin": "sdk_destination"}
+    log_entry = {"level": level, "message": json.dumps(message), "message-origin": "sdk_destination"}
     print(json.dumps(log_entry))
 
 if __name__ == '__main__':
