@@ -430,8 +430,8 @@ class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
 
 def log_message(level, message):
     import json
-    log_entry = {"level": level, "message": json.dumps(message), "message-origin": "sdk_destination"}
-    print(json.dumps(log_entry))
+    escaped_message = json.dumps(message)
+    print(f'{{"level": "{level}", "message": {escaped_message}, "message-origin": "sdk_destination"}}')
 
 def is_port_in_use(port):
     """Check if a port is already in use."""

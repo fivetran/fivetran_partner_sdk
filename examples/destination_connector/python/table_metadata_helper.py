@@ -87,5 +87,5 @@ class TableMetadataHelper:
 
 def log_message(level, message):
     import json
-    log_entry = {"level": level, "message": json.dumps(message), "message-origin": "sdk_destination"}
-    print(json.dumps(log_entry))
+    escaped_message = json.dumps(message)
+    print(f'{{"level": "{level}", "message": {escaped_message}, "message-origin": "sdk_destination"}}')

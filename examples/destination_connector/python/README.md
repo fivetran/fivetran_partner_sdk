@@ -39,7 +39,7 @@ The example destination connector simulates writing data to multiple destination
 
 ### Data Storage
 The connector uses **DuckDB** for data persistence:
-- **Database file**: `destination.db` (created automatically in the working directory)
+- **Database file**: `destination.db`
 - **Persistence**: Data survives connector restarts
 - **Multi-schema support**: Tables organized by schema (default: `fivetran_destination`)
 - **In-memory option**: Can be configured to use in-memory database for testing
@@ -126,14 +126,16 @@ python main.py
 deactivate
 ```
 
-### Custom Port
+### Running the Server
+
+The server runs on port 50052 by default:
 
 ```bash
-# Run on a custom port
-source destination_run/bin/activate
-python main.py --port 50053
-deactivate
+# Run the server (default port 50052)
+sh run.sh
 ```
+
+Note: The server checks if port 50052 is already in use and will throw an error if another instance is running.
 
 ## Build Process Explained
 
