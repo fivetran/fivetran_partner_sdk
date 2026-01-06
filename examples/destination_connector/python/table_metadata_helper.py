@@ -54,29 +54,28 @@ class TableMetadataHelper:
     @staticmethod
     def add_history_mode_columns_to_db(db_helper, schema, table):
         """Adds history mode columns to a table in the database."""
-        start_col = common_pb2.Column(name=FIVETRAN_START, type=common_pb2.DataType.UTC_DATETIME)
-        end_col = common_pb2.Column(name=FIVETRAN_END, type=common_pb2.DataType.UTC_DATETIME)
-        active_col = common_pb2.Column(name=FIVETRAN_ACTIVE, type=common_pb2.DataType.BOOLEAN)
+        columns_to_add = [
+            common_pb2.Column(name=FIVETRAN_START, type=common_pb2.DataType.UTC_DATETIME),
+            common_pb2.Column(name=FIVETRAN_END, type=common_pb2.DataType.UTC_DATETIME),
+            common_pb2.Column(name=FIVETRAN_ACTIVE, type=common_pb2.DataType.BOOLEAN)
+        ]
 
-        db_helper.add_column(schema, table, start_col)
-        db_helper.add_column(schema, table, end_col)
-        db_helper.add_column(schema, table, active_col)
+        for column in columns_to_add:
+            try:
+                db_helper.add_column(schema, table, column)
+            except Exception as e:
+                log_message(WARNING, f"Failed to add column {column.name} to {schema}.{table}: {str(e)}")
 
     @staticmethod
     def remove_history_mode_columns_from_db(db_helper, schema, table):
         """Removes history mode columns from a table in the database."""
-        try:
-            db_helper.drop_column(schema, table, FIVETRAN_START)
-        except Exception as e:
-            log_message(WARNING, f"Failed to drop column {FIVETRAN_START}: {str(e)}")
-        try:
-            db_helper.drop_column(schema, table, FIVETRAN_END)
-        except Exception as e:
-            log_message(WARNING, f"Failed to drop column {FIVETRAN_END}: {str(e)}")
-        try:
-            db_helper.drop_column(schema, table, FIVETRAN_ACTIVE)
-        except Exception as e:
-            log_message(WARNING, f"Failed to drop column {FIVETRAN_ACTIVE}: {str(e)}")
+        columns_to_drop = [FIVETRAN_START, FIVETRAN_END, FIVETRAN_ACTIVE]
+
+        for column in columns_to_drop:
+            try:
+                db_helper.drop_column(schema, table, column)
+            except Exception as e:
+                log_message(WARNING, f"Failed to drop column {column} from {schema}.{table}: {str(e)}")
 
     @staticmethod
     def add_soft_delete_column_to_db(db_helper, schema, table, column_name):
