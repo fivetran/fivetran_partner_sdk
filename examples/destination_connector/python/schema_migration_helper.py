@@ -67,8 +67,10 @@ class SchemaMigrationHelper:
                 column_found = False
                 for col in table_obj.columns:
                     if col.name == copy_column.from_column:
-                        # Add new column with same type
-                        new_col = common_pb2.Column(name=copy_column.to_column, type=col.type)
+                        # Add new column with same type and params (preserves DECIMAL precision/scale, VARCHAR length, etc.)
+                        new_col = common_pb2.Column()
+                        new_col.CopyFrom(col)
+                        new_col.name = copy_column.to_column
                         self.db_helper.add_column(schema, table, new_col)
                         # Copy data from old column to new column using escaped identifiers
                         escaped_schema = self.db_helper.escape_identifier(schema)
