@@ -124,7 +124,7 @@ Implementation:
 3. Update the newly added rows with the `default_value` and `operation_timestamp`:
     ```sql
     UPDATE <schema.table>
-    SET <column> = default_value,
+    SET <column_name> = default_value,
         _fivetran_start = <operation_timestamp>
     WHERE <condition_to_identify_new_row>;
     ```
