@@ -184,7 +184,7 @@ The main connector implementation containing:
 
 #### 2. `duckdb_helper.py`
 Database operations helper:
-- **Connection management**: Handles DuckDB connection lifecycle
+- **Connection management**: Handles the DuckDB connection lifecycle
 - **SQL operations**: Create, alter, drop tables and columns
 - **Type mapping**: Converts between Fivetran and DuckDB data types
 - **Persistence**: Stores data in `destination.db` file (or in-memory)
