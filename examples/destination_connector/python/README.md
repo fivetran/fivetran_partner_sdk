@@ -248,7 +248,7 @@ Creates a sophisticated dynamic configuration UI:
 
 #### 7. `WriteBatch()`
 - **Main data writing method** for standard batch operations
-updated a note that db write d- **Note**: This example implementation only decrypts and prints batch files for demonstration purposes
+- **Note**: This example implementation only decrypts and prints batch files for demonstration purposes
 - **Does NOT write data to DuckDB** - production implementations should implement actual data loading logic
 - Processes three types of encrypted and compressed files:
   - **Replace files**: Complete record replacements
