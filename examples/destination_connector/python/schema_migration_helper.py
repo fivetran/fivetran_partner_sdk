@@ -67,18 +67,20 @@ class SchemaMigrationHelper:
                 column_found = False
                 for col in table_obj.columns:
                     if col.name == copy_column.from_column:
-                        # Add new column with same type and params (preserves DECIMAL precision/scale, VARCHAR length, etc.)
-                        new_col = common_pb2.Column()
-                        new_col.CopyFrom(col)
-                        new_col.name = copy_column.to_column
-                        self.db_helper.add_column(schema, table, new_col)
-                        # Copy data from old column to new column using escaped identifiers
-                        escaped_schema = self.db_helper.escape_identifier(schema)
-                        escaped_table = self.db_helper.escape_identifier(table)
-                        escaped_to_col = self.db_helper.escape_identifier(copy_column.to_column)
-                        escaped_from_col = self.db_helper.escape_identifier(copy_column.from_column)
-                        sql = f'UPDATE "{escaped_schema}"."{escaped_table}" SET "{escaped_to_col}" = "{escaped_from_col}"'
-                        self.db_helper.get_connection().execute(sql)
+                        # Wrap column copy in transaction (add column + copy data)
+                        with self.db_helper.transaction():
+                            # Add new column with same type and params (preserves DECIMAL precision/scale, VARCHAR length, etc.)
+                            new_col = common_pb2.Column()
+                            new_col.CopyFrom(col)
+                            new_col.name = copy_column.to_column
+                            self.db_helper.add_column(schema, table, new_col)
+                            # Copy data from old column to new column using escaped identifiers
+                            escaped_schema = self.db_helper.escape_identifier(schema)
+                            escaped_table = self.db_helper.escape_identifier(table)
+                            escaped_to_col = self.db_helper.escape_identifier(copy_column.to_column)
+                            escaped_from_col = self.db_helper.escape_identifier(copy_column.from_column)
+                            sql = f'UPDATE "{escaped_schema}"."{escaped_table}" SET "{escaped_to_col}" = "{escaped_from_col}"'
+                            self.db_helper.get_connection().execute(sql)
                         column_found = True
                         break
 
@@ -102,18 +104,20 @@ class SchemaMigrationHelper:
                 TableMetadataHelper.remove_column_from_table(new_table, copy_table_history_mode.soft_deleted_column)
                 TableMetadataHelper.add_history_mode_columns(new_table)
 
-                # Create the new table in DuckDB
-                self.db_helper.create_table(schema, new_table)
+                # Wrap table creation and data copy in transaction
+                with self.db_helper.transaction():
+                    # Create the new table in DuckDB
+                    self.db_helper.create_table(schema, new_table)
 
-                # Copy data (excluding soft deleted column) with escaped identifiers
-                columns_to_copy = [col.name for col in new_table.columns
-                                  if col.name not in [FIVETRAN_START, FIVETRAN_END, FIVETRAN_ACTIVE]]
-                columns_str = ", ".join([f'"{self.db_helper.escape_identifier(col)}"' for col in columns_to_copy])
-                escaped_schema = self.db_helper.escape_identifier(schema)
-                escaped_to_table = self.db_helper.escape_identifier(copy_table_history_mode.to_table)
-                escaped_from_table = self.db_helper.escape_identifier(copy_table_history_mode.from_table)
-                sql = f'INSERT INTO "{escaped_schema}"."{escaped_to_table}" ({columns_str}) SELECT {columns_str} FROM "{escaped_schema}"."{escaped_from_table}"'
-                self.db_helper.get_connection().execute(sql)
+                    # Copy data (excluding soft deleted column) with escaped identifiers
+                    columns_to_copy = [col.name for col in new_table.columns
+                                      if col.name not in [FIVETRAN_START, FIVETRAN_END, FIVETRAN_ACTIVE]]
+                    columns_str = ", ".join([f'"{self.db_helper.escape_identifier(col)}"' for col in columns_to_copy])
+                    escaped_schema = self.db_helper.escape_identifier(schema)
+                    escaped_to_table = self.db_helper.escape_identifier(copy_table_history_mode.to_table)
+                    escaped_from_table = self.db_helper.escape_identifier(copy_table_history_mode.from_table)
+                    sql = f'INSERT INTO "{escaped_schema}"."{escaped_to_table}" ({columns_str}) SELECT {columns_str} FROM "{escaped_schema}"."{escaped_from_table}"'
+                    self.db_helper.get_connection().execute(sql)
 
                 log_message(INFO, f"[Migrate:CopyTableToHistoryMode] from={copy_table_history_mode.from_table} to={copy_table_history_mode.to_table} soft_deleted_column={copy_table_history_mode.soft_deleted_column}")
                 return destination_sdk_pb2.MigrateResponse(success=True)
@@ -160,11 +164,14 @@ class SchemaMigrationHelper:
                     name=add_col_history_mode.column,
                     type=add_col_history_mode.column_type
                 )
-                self.db_helper.add_column(schema, table, new_col)
 
-                # If default value is provided, update existing rows
-                if add_col_history_mode.default_value:
-                    self.db_helper.update_column_value(schema, table, add_col_history_mode.column, add_col_history_mode.default_value)
+                # Wrap add column + optional update in transaction
+                with self.db_helper.transaction():
+                    self.db_helper.add_column(schema, table, new_col)
+
+                    # If default value is provided, update existing rows
+                    if add_col_history_mode.default_value:
+                        self.db_helper.update_column_value(schema, table, add_col_history_mode.column, add_col_history_mode.default_value)
 
                 log_message(INFO, f"[Migrate:AddColumnHistory] table={schema}.{table} column={add_col_history_mode.column} type={add_col_history_mode.column_type} default={add_col_history_mode.default_value} op_ts={add_col_history_mode.operation_timestamp}")
                 return destination_sdk_pb2.MigrateResponse(success=True)
@@ -175,11 +182,14 @@ class SchemaMigrationHelper:
                     name=add_col_default_with_value.column,
                     type=add_col_default_with_value.column_type
                 )
-                self.db_helper.add_column(schema, table, new_col)
 
-                # Update existing rows with default value
-                if add_col_default_with_value.default_value:
-                    self.db_helper.update_column_value(schema, table, add_col_default_with_value.column, add_col_default_with_value.default_value)
+                # Wrap add column + optional update in transaction
+                with self.db_helper.transaction():
+                    self.db_helper.add_column(schema, table, new_col)
+
+                    # Update existing rows with default value
+                    if add_col_default_with_value.default_value:
+                        self.db_helper.update_column_value(schema, table, add_col_default_with_value.column, add_col_default_with_value.default_value)
 
                 log_message(INFO, f"[Migrate:AddColumnDefault] table={schema}.{table} column={add_col_default_with_value.column} type={add_col_default_with_value.column_type} default={add_col_default_with_value.default_value}")
                 return destination_sdk_pb2.MigrateResponse(success=True)
@@ -215,25 +225,31 @@ class SchemaMigrationHelper:
                 return destination_sdk_pb2.MigrateResponse(success=True)
 
             elif op.type == destination_sdk_pb2.TableSyncModeMigrationType.SOFT_DELETE_TO_HISTORY:
-                # Remove soft delete column and add history mode columns
-                if soft_deleted_column:
-                    self.db_helper.drop_column(schema, table, soft_deleted_column)
+                # Wrap drop column + add history columns in transaction
+                with self.db_helper.transaction():
+                    # Remove soft delete column and add history mode columns
+                    if soft_deleted_column:
+                        self.db_helper.drop_column(schema, table, soft_deleted_column)
 
-                TableMetadataHelper.add_history_mode_columns_to_db(self.db_helper, schema, table)
+                    TableMetadataHelper.add_history_mode_columns_to_db(self.db_helper, schema, table)
                 log_message(INFO, f"[Migrate:TableSyncModeMigration] Migrating table={schema}.{table} from SOFT_DELETE to HISTORY")
                 return destination_sdk_pb2.MigrateResponse(success=True)
 
             elif op.type == destination_sdk_pb2.TableSyncModeMigrationType.HISTORY_TO_SOFT_DELETE:
-                # Remove history mode columns and add soft delete column
-                TableMetadataHelper.remove_history_mode_columns_from_db(self.db_helper, schema, table)
-                if soft_deleted_column:
-                    TableMetadataHelper.add_soft_delete_column_to_db(self.db_helper, schema, table, soft_deleted_column)
+                # Wrap remove history columns + add soft delete column in transaction
+                with self.db_helper.transaction():
+                    # Remove history mode columns and add soft delete column
+                    TableMetadataHelper.remove_history_mode_columns_from_db(self.db_helper, schema, table)
+                    if soft_deleted_column:
+                        TableMetadataHelper.add_soft_delete_column_to_db(self.db_helper, schema, table, soft_deleted_column)
                 log_message(INFO, f"[Migrate:TableSyncModeMigration] Migrating table={schema}.{table} from HISTORY to SOFT_DELETE")
                 return destination_sdk_pb2.MigrateResponse(success=True)
 
             elif op.type == destination_sdk_pb2.TableSyncModeMigrationType.HISTORY_TO_LIVE:
-                # Remove history mode columns
-                TableMetadataHelper.remove_history_mode_columns_from_db(self.db_helper, schema, table)
+                # Wrap remove history columns in transaction (removes 3 columns)
+                with self.db_helper.transaction():
+                    # Remove history mode columns
+                    TableMetadataHelper.remove_history_mode_columns_from_db(self.db_helper, schema, table)
                 log_message(INFO, f"[Migrate:TableSyncModeMigration] Migrating table={schema}.{table} from HISTORY to LIVE")
                 return destination_sdk_pb2.MigrateResponse(success=True)
 
@@ -245,8 +261,10 @@ class SchemaMigrationHelper:
                 return destination_sdk_pb2.MigrateResponse(success=True)
 
             elif op.type == destination_sdk_pb2.TableSyncModeMigrationType.LIVE_TO_HISTORY:
-                # Add history mode columns
-                TableMetadataHelper.add_history_mode_columns_to_db(self.db_helper, schema, table)
+                # Wrap add history columns in transaction (adds 3 columns)
+                with self.db_helper.transaction():
+                    # Add history mode columns
+                    TableMetadataHelper.add_history_mode_columns_to_db(self.db_helper, schema, table)
                 log_message(INFO, f"[Migrate:TableSyncModeMigration] Migrating table={schema}.{table} from LIVE to HISTORY")
                 return destination_sdk_pb2.MigrateResponse(success=True)
 

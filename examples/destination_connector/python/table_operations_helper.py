@@ -158,36 +158,38 @@ class TableOperationsHelper:
                 if self.columns_have_different_types(current_col, requested_col):
                     columns_with_type_changes.append((col_name, requested_col))
 
-            # Add new columns
-            for column in new_columns:
-                self.db_helper.add_column(schema_name, request.table.name, column)
-                log_message(INFO, f"Added column: {column.name} to {schema_name}.{request.table.name}")
+            # Wrap all ALTER TABLE operations in a transaction for atomicity
+            with self.db_helper.transaction():
+                # Add new columns
+                for column in new_columns:
+                    self.db_helper.add_column(schema_name, request.table.name, column)
+                    log_message(INFO, f"Added column: {column.name} to {schema_name}.{request.table.name}")
 
-            # Handle type changes using DuckDB's native ALTER COLUMN
-            for col_name, new_col_def in columns_with_type_changes:
-                log_message(INFO, f"Changing type for column: {col_name} to {new_col_def.type}")
+                # Handle type changes using DuckDB's native ALTER COLUMN
+                for col_name, new_col_def in columns_with_type_changes:
+                    log_message(INFO, f"Changing type for column: {col_name} to {new_col_def.type}")
 
-                escaped_schema = self.db_helper.escape_identifier(schema_name)
-                escaped_table = self.db_helper.escape_identifier(request.table.name)
-                escaped_col = self.db_helper.escape_identifier(col_name)
-                sql_type = self.db_helper.map_datatype_to_sql(new_col_def.type, new_col_def)
+                    escaped_schema = self.db_helper.escape_identifier(schema_name)
+                    escaped_table = self.db_helper.escape_identifier(request.table.name)
+                    escaped_col = self.db_helper.escape_identifier(col_name)
+                    sql_type = self.db_helper.map_datatype_to_sql(new_col_def.type, new_col_def)
 
-                # Use DuckDB's native ALTER COLUMN SET DATA TYPE
-                sql = f'ALTER TABLE "{escaped_schema}"."{escaped_table}" ALTER COLUMN "{escaped_col}" SET DATA TYPE {sql_type}'
-                self.db_helper.get_connection().execute(sql)
+                    # Use DuckDB's native ALTER COLUMN SET DATA TYPE
+                    sql = f'ALTER TABLE "{escaped_schema}"."{escaped_table}" ALTER COLUMN "{escaped_col}" SET DATA TYPE {sql_type}'
+                    self.db_helper.get_connection().execute(sql)
 
-                log_message(INFO, f"Type change completed for column: {col_name}")
+                    log_message(INFO, f"Type change completed for column: {col_name}")
 
-            # Handle primary key changes
-            self._handle_primary_key_changes(schema_name, request.table.name, current_table, request.table)
+                # Handle primary key changes
+                self._handle_primary_key_changes(schema_name, request.table.name, current_table, request.table)
 
-            # Drop columns if drop_columns flag is true
-            if drop_columns and columns_to_drop:
-                for column_name in columns_to_drop:
-                    self.db_helper.drop_column(schema_name, request.table.name, column_name)
-                    log_message(INFO, f"Dropped column: {column_name} from {schema_name}.{request.table.name}")
-            elif columns_to_drop:
-                log_message(INFO, f"Skipping drop of {len(columns_to_drop)} columns (drop_columns=false): {columns_to_drop}")
+                # Drop columns if drop_columns flag is true
+                if drop_columns and columns_to_drop:
+                    for column_name in columns_to_drop:
+                        self.db_helper.drop_column(schema_name, request.table.name, column_name)
+                        log_message(INFO, f"Dropped column: {column_name} from {schema_name}.{request.table.name}")
+                elif columns_to_drop:
+                    log_message(INFO, f"Skipping drop of {len(columns_to_drop)} columns (drop_columns=false): {columns_to_drop}")
 
             return destination_sdk_pb2.AlterTableResponse(success=True)
         except Exception as e:

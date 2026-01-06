@@ -1,5 +1,6 @@
 import duckdb
 import sys
+from contextlib import contextmanager
 sys.path.append('sdk_pb2')
 
 from sdk_pb2 import common_pb2
@@ -25,6 +26,30 @@ class DuckDBHelper:
     def get_connection(self):
         """Get the DuckDB connection."""
         return self._connection
+
+    @contextmanager
+    def transaction(self):
+        """
+        Context manager for database transactions.
+
+        Automatically commits on success or rolls back on error.
+        Use this for operations that need atomicity (e.g., AlterTable with multiple changes).
+
+        Example:
+            with self.db_helper.transaction():
+                self.db_helper.add_column(schema, table, col1)
+                self.db_helper.drop_column(schema, table, col2)
+                # Both operations succeed or both roll back
+        """
+        try:
+            self._connection.begin()
+            yield self._connection
+            self._connection.commit()
+            log_message(INFO, "Transaction committed successfully")
+        except Exception as e:
+            self._connection.rollback()
+            log_message(WARNING, f"Transaction rolled back due to error: {str(e)}")
+            raise
 
     def escape_identifier(self, identifier):
         """
