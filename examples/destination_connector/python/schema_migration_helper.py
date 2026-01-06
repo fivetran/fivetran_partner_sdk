@@ -258,5 +258,5 @@ class SchemaMigrationHelper:
 
 def log_message(level, message):
     import json
-    log_entry = {"level": level, "message": message, "message-origin": "sdk_destination"}
+    log_entry = {"level": level, "message": json.dumps(message), "message-origin": "sdk_destination"}
     print(json.dumps(log_entry))
