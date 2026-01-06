@@ -62,6 +62,7 @@ class TableOperationsHelper:
         """
         Compare two columns to determine if they have different types.
         For DECIMAL types, also compares precision and scale.
+        For STRING types, also compares string_byte_length.
 
         Args:
             col1: First column to compare
@@ -96,6 +97,17 @@ class TableOperationsHelper:
                 if col1_has_decimal and col2_has_decimal:
                     return (col1.params.decimal.precision != col2.params.decimal.precision or
                             col1.params.decimal.scale != col2.params.decimal.scale)
+
+        # Special handling for STRING - check string_byte_length
+        # Important for destinations with VARCHAR size limits (e.g., VARCHAR(255))
+        if col1.type == common_pb2.DataType.STRING:
+            # Get byte lengths (0 if not set, meaning unlimited VARCHAR)
+            col1_byte_length = col1.params.string_byte_length if col1.HasField("params") else 0
+            col2_byte_length = col2.params.string_byte_length if col2.HasField("params") else 0
+
+            # Compare byte lengths
+            if col1_byte_length != col2_byte_length:
+                return True
 
         return False
 

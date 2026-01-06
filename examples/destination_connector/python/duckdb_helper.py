@@ -112,7 +112,7 @@ class DuckDBHelper:
             return None
 
         query = """
-            SELECT column_name, data_type, numeric_precision, numeric_scale
+            SELECT column_name, data_type, numeric_precision, numeric_scale, character_maximum_length
             FROM information_schema.columns
             WHERE table_schema = ? AND table_name = ?
             ORDER BY ordinal_position
@@ -128,6 +128,7 @@ class DuckDBHelper:
             data_type = row[1]
             numeric_precision = row[2]
             numeric_scale = row[3]
+            character_max_length = row[4]
 
             column_type = self._map_sql_type_to_datatype(data_type)
             column = common_pb2.Column(
@@ -139,6 +140,10 @@ class DuckDBHelper:
             if column_type == common_pb2.DataType.DECIMAL and numeric_precision is not None:
                 column.params.decimal.precision = int(numeric_precision)
                 column.params.decimal.scale = int(numeric_scale) if numeric_scale is not None else 0
+
+            # For STRING types, populate string_byte_length if available
+            if column_type == common_pb2.DataType.STRING and character_max_length is not None:
+                column.params.string_byte_length = int(character_max_length)
 
             table_builder_columns.append(column)
 
@@ -215,7 +220,8 @@ class DuckDBHelper:
 
         Args:
             datatype: The Fivetran DataType enum value
-            column: Optional Column object containing additional type parameters (e.g., decimal precision/scale)
+            column: Optional Column object containing additional type parameters
+                   (e.g., decimal precision/scale, string byte length)
 
         Returns:
             SQL type string
@@ -230,6 +236,13 @@ class DuckDBHelper:
                 # Default fallback when precision/scale not specified
                 return "DECIMAL(38, 10)"
 
+        # Handle STRING specially - may have string_byte_length for VARCHAR sizing
+        if datatype == common_pb2.DataType.STRING:
+            if column and column.HasField("params") and column.params.string_byte_length > 0:
+                return f"VARCHAR({column.params.string_byte_length})"
+            # Default fallback to unlimited VARCHAR
+            return "VARCHAR"
+
         type_mapping = {
             common_pb2.DataType.BOOLEAN: "BOOLEAN",
             common_pb2.DataType.SHORT: "SMALLINT",
@@ -242,7 +255,6 @@ class DuckDBHelper:
             common_pb2.DataType.UTC_DATETIME: "TIMESTAMPTZ",
             common_pb2.DataType.NAIVE_TIME: "TIME",
             common_pb2.DataType.BINARY: "BLOB",
-            common_pb2.DataType.STRING: "VARCHAR",
             common_pb2.DataType.JSON: "JSON",
             common_pb2.DataType.XML: "VARCHAR",
             common_pb2.DataType.UNSPECIFIED: "VARCHAR",
