@@ -117,7 +117,7 @@ Implementation:
         {operation_timestamp} as _fivetran_start 
       FROM {schema.table} 
       WHERE 
-          _fivetran_active = true
+          _fivetran_active = TRUE
           AND _fivetran_start < {operation_timestamp}
     );
     ```
@@ -359,7 +359,7 @@ Validation before starting the migration:
           {operation_timestamp} as _fivetran_start 
         FROM {schema.table} 
         WHERE 
-            _fivetran_active
+            _fivetran_active = TRUE
             AND {column_name} IS NOT NULL
             AND _fivetran_start < {operation_timestamp}
     );
@@ -380,8 +380,8 @@ Validation before starting the migration:
          _fivetran_end = {operation_timestamp} - 1, 
          _fivetran_active = FALSE 
        WHERE 
-         _fivetran_active = true AND
-         {column} IS NOT NULL AND
+         _fivetran_active = TRUE AND
+         {column_name} IS NOT NULL AND
          _fivetran_start < {operation_timestamp};
     ```
 
