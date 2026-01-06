@@ -246,19 +246,25 @@ Creates a sophisticated dynamic configuration UI:
 
 #### 7. `WriteBatch()`
 - **Main data writing method** for standard batch operations
+updated a note that db write d- **Note**: This example implementation only decrypts and prints batch files for demonstration purposes
+- **Does NOT write data to DuckDB** - production implementations should implement actual data loading logic
 - Processes three types of encrypted and compressed files:
   - **Replace files**: Complete record replacements
   - **Update files**: Partial record updates
   - **Delete files**: Record deletions
 - **File processing pipeline**: Decryption → Decompression → CSV parsing → Display
+- See: [WriteBatch documentation](https://github.com/fivetran/fivetran_partner_sdk/blob/main/development-guide/destination-connector-development-guide.md#writebatchrequest)
 
 #### 8. `WriteHistoryBatch()`  **Advanced Feature**
 - **Specialized method** for history mode operations
+- **Note**: This example implementation only decrypts and prints batch files for demonstration purposes
+- **Does NOT write data to DuckDB** - production implementations should implement actual data loading logic with history tracking
 - Processes files in **exact order** for data consistency:
   1. **`earliest_start_files`**: Records with earliest `_fivetran_start` timestamps
   2. **`replace_files`**: Complete record replacements
   3. **`update_files`**: Partial updates with history tracking
   4. **`delete_files`**: Record deactivation (sets `_fivetran_active` to FALSE)
+- See: [How to handle history mode batch files](https://github.com/fivetran/fivetran_partner_sdk/blob/main/how-to-handle-history-mode-batch-files.md)
 
 ### History Mode Deep Dive
 
