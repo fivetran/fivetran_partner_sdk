@@ -24,7 +24,7 @@ The example destination connector simulates writing data to multiple destination
 - **Cloud**: Cloud storage services (host, port, user, password, region)
 
 ### Data Operations
-- **Table Management**: Create, alter, describe, and truncate tables with in-memory registry
+- **Table Management**: Create, alter, describe, and truncate tables using DuckDB
 - **Batch Writing**: Process encrypted and compressed data files for optimal security and performance
 - **History Mode**: Advanced historical data tracking with specialized batch processing order
 - **File Processing**: Decrypt AES-encrypted files and decompress Zstandard-compressed data
@@ -32,10 +32,17 @@ The example destination connector simulates writing data to multiple destination
 
 ### Key Features
 - **Dynamic Configuration Forms**: Conditional field visibility based on destination type selection
-- **In-Memory Table Registry**: Tracks table schemas and metadata across operations
+- **DuckDB Storage**: Real database operations with data persistence (file-based or in-memory)
 - **Advanced File Processing**: Handles AES decryption and Zstandard decompression
 - **History Mode Batch Processing**: Implements precise ordering for historical data consistency
 - **Structured Logging**: JSON-formatted logs with severity levels and message origins
+
+### Data Storage
+The connector uses **DuckDB** for data persistence:
+- **Database File**: `destination.db`
+- **Persistence**: Data survives connector restarts
+- **Multi-Schema Support**: Tables organized by schema (default: `fivetran_destination`)
+- **In-Memory Option**: Can be configured to use in-memory database for testing
 
 ## Prerequisites
 
@@ -119,14 +126,16 @@ python main.py
 deactivate
 ```
 
-### Custom Port
+### Running the Server
+
+The server runs on port 50052 by default:
 
 ```bash
-# Run on a custom port
-source destination_run/bin/activate
-python main.py --port 50053
-deactivate
+# Run the server (default port 50052)
+sh run.sh
 ```
+
+Note: The server checks if port 50052 is already in use and will throw an error if another instance is running.
 
 ## Build Process Explained
 
@@ -149,8 +158,9 @@ Copies the Fivetran SDK protocol buffer definitions from the repository root.
 pip install -r requirements.txt
 ```
 Installs all required packages including:
-- **gRPC libraries**: `grpcio==1.65.5` and `grpcio-tools==1.65.5` (Python 3.12 compatible)
-- **Protocol Buffers**: `protobuf==5.27.2`
+- **gRPC libraries**: `grpcio==1.76.0` and `grpcio-tools==1.76.0` (Python 3.12 compatible)
+- **Protocol Buffers**: `protobuf>=6.31.1`
+- **Database**: `duckdb>=1.1.0` for data storage and persistence
 - **Encryption**: `pycryptodome==3.20.0` for AES decryption
 - **Compression**: `zstandard~=0.23.0` for Zstandard decompression
 
@@ -169,9 +179,17 @@ Generates Python classes and gRPC service stubs from protocol buffer definitions
 The main connector implementation containing:
 - **DestinationImpl class**: Implements the gRPC destination service interface
 - **Server setup**: Configures and starts the gRPC server on port 50052 (default)
+- **DuckDB integration**: Uses `DuckDBHelper` for data storage and persistence
 - **JSON logging**: Structured logging with severity levels
 
-#### 2. `read_csv.py`
+#### 2. `duckdb_helper.py`
+Database operations helper:
+- **Connection management**: Handles the DuckDB connection lifecycle
+- **SQL operations**: Create, alter, drop tables and columns
+- **Type mapping**: Converts between Fivetran and DuckDB data types
+- **Persistence**: Stores data in `destination.db` file (or in-memory)
+
+#### 3. `read_csv.py`
 Advanced file processing utilities:
 - **AES decryption**: `aes_decrypt()` function for encrypted file processing
 - **Zstandard decompression**: `zstd_decompress()` for compressed data
@@ -208,40 +226,47 @@ Creates a sophisticated dynamic configuration UI:
 - Returns success/failure status for configuration validation
 
 #### 3. `DescribeTable()`
-- Returns table schema information from in-memory registry
-- Uses `table_map` dictionary to track table metadata
+- Queries table schema information from DuckDB
+- Returns column names and data types for the specified table
 - Returns `not_found=True` if table doesn't exist
 
 #### 4. `CreateTable()`
-- Creates new tables in the destination system
-- Stores table schema in `table_map` for future reference
+- Creates new tables in DuckDB with the specified schema
+- Executes `CREATE TABLE` SQL statement with column definitions
 - Logs table creation details with schema information
 
 #### 5. `AlterTable()`
-- Modifies existing table schemas
-- Updates the in-memory table registry with new schema
-- Supports adding/modifying columns and constraints
+- Modifies existing table schemas in DuckDB
+- Adds new columns to existing tables (incremental updates) and can drop columns when the `drop_columns` flag is set
+- Executes `ALTER TABLE` SQL statements (e.g., `ADD COLUMN`, `DROP COLUMN`) to apply schema changes
 
 #### 6. `Truncate()`
-- Removes data from specified tables
-- Supports both hard and soft truncation modes
+- Removes all data from specified tables using DuckDB `TRUNCATE TABLE`
+- Hard truncate: Deletes all rows from the table
+- Soft truncate: Fully implemented, supporting both full soft truncate and time-based soft truncate based on request parameters
 - Logs truncation operations with table and schema details
 
 #### 7. `WriteBatch()`
 - **Main data writing method** for standard batch operations
+- **Note**: This example implementation only decrypts and prints batch files for demonstration purposes
+- **Does NOT write data to DuckDB** - production implementations should implement actual data loading logic
 - Processes three types of encrypted and compressed files:
   - **Replace files**: Complete record replacements
   - **Update files**: Partial record updates
   - **Delete files**: Record deletions
 - **File processing pipeline**: Decryption → Decompression → CSV parsing → Display
+- See: [WriteBatch documentation](https://github.com/fivetran/fivetran_partner_sdk/blob/main/development-guide/destination-connector-development-guide.md#writebatchrequest)
 
 #### 8. `WriteHistoryBatch()`  **Advanced Feature**
 - **Specialized method** for history mode operations
+- **Note**: This example implementation only decrypts and prints batch files for demonstration purposes
+- **Does NOT write data to DuckDB** - production implementations should implement actual data loading logic with history tracking
 - Processes files in **exact order** for data consistency:
   1. **`earliest_start_files`**: Records with earliest `_fivetran_start` timestamps
   2. **`replace_files`**: Complete record replacements
   3. **`update_files`**: Partial updates with history tracking
   4. **`delete_files`**: Record deactivation (sets `_fivetran_active` to FALSE)
+- See: [How to handle history mode batch files](https://github.com/fivetran/fivetran_partner_sdk/blob/main/how-to-handle-history-mode-batch-files.md)
 
 ### History Mode Deep Dive
 

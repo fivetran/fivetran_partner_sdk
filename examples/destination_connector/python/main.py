@@ -3,12 +3,15 @@ import grpc
 import read_csv
 import sys
 import argparse
+import socket
 sys.path.append('sdk_pb2')
 
 from sdk_pb2 import destination_sdk_pb2
 from sdk_pb2 import common_pb2
 from sdk_pb2 import destination_sdk_pb2_grpc
 from schema_migration_helper import SchemaMigrationHelper
+from duckdb_helper import DuckDBHelper
+from table_operations_helper import TableOperationsHelper
 
 
 INFO = "INFO"
@@ -16,11 +19,21 @@ WARNING = "WARNING"
 SEVERE = "SEVERE"
 
 class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
-    table_map = {}
+    # DuckDB helper for data persistence
+    # To use in-memory storage instead, pass ":memory:" to DuckDBHelper
+    db_helper = None
+    default_schema = "fivetran_destination"
 
     def __init__(self):
         super().__init__()
-        self.migration_helper = SchemaMigrationHelper(DestinationImpl.table_map)
+        # Initialize DuckDB helper
+        # To use in-memory storage instead, pass ":memory:" to DuckDBHelper
+        if DestinationImpl.db_helper is None:
+            DestinationImpl.db_helper = DuckDBHelper("destination.db")
+
+        self.migration_helper = SchemaMigrationHelper(DestinationImpl.db_helper)
+        self.table_operations_helper = TableOperationsHelper(DestinationImpl.db_helper)
+
 
     def ConfigurationForm(self, request, context):
         log_message(INFO, "Fetching Configuration form")
@@ -238,26 +251,40 @@ class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
         return common_pb2.TestResponse(success=True)
 
     def CreateTable(self, request, context):
-        print("[CreateTable] :" + str(request.schema_name) + " | " + str(request.table.name) + " | " + str(request.table.columns))
-        DestinationImpl.table_map[request.table.name] = request.table
-        return destination_sdk_pb2.CreateTableResponse(success=True)
+        """
+        Handle table creation.
+        Implementation details are in table_operations_helper.py.
+        """
+        return self.table_operations_helper.create_table(request, self.default_schema)
 
     def AlterTable(self, request, context):
-        res: destination_sdk_pb2.AlterTableResponse
-
-        print("[AlterTable]: " + str(request.schema_name) + " | " + str(request.table.name) + " | " + str(request.table.columns))
-        DestinationImpl.table_map[request.table.name] = request.table
-        return destination_sdk_pb2.AlterTableResponse(success=True)
+        """
+        Handle table alterations (add columns, change types, modify primary keys, drop columns).
+        Implementation details are in table_operations_helper.py.
+        """
+        return self.table_operations_helper.alter_table(request, request.schema_name, self.default_schema)
 
     def Truncate(self, request, context):
-        print("[TruncateTable]: " + str(request.schema_name) + " | " + str(request.schema_name) + " | soft" + str(request.soft))
-        return destination_sdk_pb2.TruncateResponse(success=True)
+        """
+        Handle table truncation (both hard and soft truncate).
+        Implementation details are in table_operations_helper.py.
+        """
+        return self.table_operations_helper.truncate_table(request, self.default_schema)
 
     def WriteBatch(self, request, context):
+        """
+        Write batch data to the destination.
+
+        This example implementation decrypts and prints batch files for demonstration purposes.
+        For production use, implement your data loading logic here to process REPLACE, UPDATE,
+        and DELETE files and write them to your destination.
+
+        See: https://github.com/fivetran/fivetran_partner_sdk/blob/main/development-guide/destination-connector-development-guide.md#writebatchrequest
+        """
         for replace_file in request.replace_files:
             print("replace files: " + str(replace_file))
         for update_file in request.update_files:
-            print("replace files: " + str(update_file))
+            print("update files: " + str(update_file))
         for delete_file in request.delete_files:
             print("delete files: " + str(delete_file))
 
@@ -308,13 +335,19 @@ class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
              - Update `_fivetran_end` to match the corresponding record’s end timestamp from the batch file.
 
         This structured processing ensures data consistency and historical tracking in the destination table.
+        This example implementation decrypts and prints history mode batch files for demonstration purposes.
+        For production use, implement your data loading logic here to process history mode-specific batch files
+        (earliest_start_files, replace_files, update_files, delete_files) and write them to your destination
+        while maintaining history tracking with _fivetran_start, _fivetran_end, and _fivetran_active columns.
+
+        See: https://github.com/fivetran/fivetran_partner_sdk/blob/main/development-guide/destination-connector-development-guide.md#writehistorybatchrequest
         '''
         for earliest_start_file in request.earliest_start_files:
             print("earliest_start files: " + str(earliest_start_file))
         for replace_file in request.replace_files:
             print("replace files: " + str(replace_file))
         for update_file in request.update_files:
-            print("replace files: " + str(update_file))
+            print("update files: " + str(update_file))
         for delete_file in request.delete_files:
             print("delete files: " + str(delete_file))
 
@@ -330,11 +363,11 @@ class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
         return res
 
     def DescribeTable(self, request, context):
-        log_message(SEVERE, "Sample severe message: Completed fetching table info")
-        if request.table_name not in DestinationImpl.table_map:
-            return destination_sdk_pb2.DescribeTableResponse(not_found=True)
-        else:
-            return destination_sdk_pb2.DescribeTableResponse(not_found=False, table=DestinationImpl.table_map[request.table_name])
+        """
+        Handle table description/metadata retrieval.
+        Implementation details are in table_operations_helper.py.
+        """
+        return self.table_operations_helper.describe_table(request, self.default_schema)
 
     def Migrate(self, request, context):
         """
@@ -396,17 +429,43 @@ class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
         return response
 
 def log_message(level, message):
-    print(f'{{"level":"{level}", "message": "{message}", "message-origin": "sdk_destination"}}')
+    import json
+    escaped_message = json.dumps(message)
+    print(f'{{"level": "{level}", "message": {escaped_message}, "message-origin": "sdk_destination"}}')
+
+def is_port_in_use(port):
+    """Check if a port is already in use."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        try:
+            s.bind(('', port))
+            return False
+        except OSError:
+            return True
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--port", type=int, default=50052,
                         help="The server port")
     args = parser.parse_args()
+
+    # Check if port is already in use BEFORE initializing database connection
+    if is_port_in_use(args.port):
+        raise RuntimeError(f"Port {args.port} is already in use. Another server may be running.")
+
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=1))
-    server.add_insecure_port(f'[::]:{args.port}')
     destination_sdk_pb2_grpc.add_DestinationConnectorServicer_to_server(DestinationImpl(), server)
-    server.start()
-    print(f"Destination gRPC server started on port {args.port}...")
-    server.wait_for_termination()
-    print("Destination gRPC server terminated...")
+    server.add_insecure_port(f'[::]:{args.port}')
+    try:
+        server.start()
+        print(f"Destination gRPC server started on port {args.port}...")
+        server.wait_for_termination()
+    except KeyboardInterrupt:
+        print("\nReceived shutdown signal...")
+    finally:
+        print("Shutting down server...")
+        # Stop server first with grace period to allow in-flight requests to complete
+        server.stop(grace=5)
+        # Close database connection after all requests have finished
+        if DestinationImpl.db_helper:
+            DestinationImpl.db_helper.close()
+        print("Destination gRPC server terminated...")
