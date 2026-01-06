@@ -39,10 +39,10 @@ The example destination connector simulates writing data to multiple destination
 
 ### Data Storage
 The connector uses **DuckDB** for data persistence:
-- **Database file**: `destination.db`
+- **Database File**: `destination.db`
 - **Persistence**: Data survives connector restarts
-- **Multi-schema support**: Tables organized by schema (default: `fivetran_destination`)
-- **In-memory option**: Can be configured to use in-memory database for testing
+- **Multi-Schema Support**: Tables organized by schema (default: `fivetran_destination`)
+- **In-Memory Option**: Can be configured to use in-memory database for testing
 
 ## Prerequisites
 
