@@ -3,6 +3,7 @@ import grpc
 import read_csv
 import sys
 import argparse
+import socket
 sys.path.append('sdk_pb2')
 
 from sdk_pb2 import destination_sdk_pb2
@@ -19,17 +20,17 @@ SEVERE = "SEVERE"
 
 class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
     # DuckDB helper for data persistence
-    # Currently configured to use file-based storage ("destination.db")
-    # To use in-memory storage instead, use DuckDBHelper(":memory:")
+    # To use in-memory storage instead, pass ":memory:" to DuckDBHelper
     db_helper = None
     default_schema = "fivetran_destination"
 
     def __init__(self):
         super().__init__()
-        # Initialize DuckDB helper with file-based storage for data persistence
-        # Change "destination.db" to ":memory:" for in-memory storage (data lost on restart)
+        # Initialize DuckDB helper
+        # To use in-memory storage instead, pass ":memory:" to DuckDBHelper
         if DestinationImpl.db_helper is None:
             DestinationImpl.db_helper = DuckDBHelper("destination.db")
+
         self.migration_helper = SchemaMigrationHelper(DestinationImpl.db_helper)
         self.table_operations_helper = TableOperationsHelper(DestinationImpl.db_helper)
 
@@ -432,14 +433,28 @@ def log_message(level, message):
     log_entry = {"level": level, "message": json.dumps(message), "message-origin": "sdk_destination"}
     print(json.dumps(log_entry))
 
+def is_port_in_use(port):
+    """Check if a port is already in use."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        try:
+            s.bind(('', port))
+            return False
+        except OSError:
+            return True
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--port", type=int, default=50052,
                         help="The server port")
     args = parser.parse_args()
+
+    # Check if port is already in use BEFORE initializing database connection
+    if is_port_in_use(args.port):
+        raise RuntimeError(f"Port {args.port} is already in use. Another server may be running.")
+
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=1))
-    server.add_insecure_port(f'[::]:{args.port}')
     destination_sdk_pb2_grpc.add_DestinationConnectorServicer_to_server(DestinationImpl(), server)
+    server.add_insecure_port(f'[::]:{args.port}')
     server.start()
     print(f"Destination gRPC server started on port {args.port}...")
     try:
