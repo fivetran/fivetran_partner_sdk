@@ -455,9 +455,9 @@ if __name__ == '__main__':
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=1))
     destination_sdk_pb2_grpc.add_DestinationConnectorServicer_to_server(DestinationImpl(), server)
     server.add_insecure_port(f'[::]:{args.port}')
-    server.start()
-    print(f"Destination gRPC server started on port {args.port}...")
     try:
+        server.start()
+        print(f"Destination gRPC server started on port {args.port}...")
         server.wait_for_termination()
     except KeyboardInterrupt:
         print("\nReceived shutdown signal...")
