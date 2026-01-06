@@ -231,7 +231,7 @@ Creates a sophisticated dynamic configuration UI:
 - Returns `not_found=True` if table doesn't exist
 
 #### 4. `CreateTable()`
-- Creates new tables in DuckDB with specified schema
+- Creates new tables in DuckDB with the specified schema
 - Executes `CREATE TABLE` SQL statement with column definitions
 - Logs table creation details with schema information
 
