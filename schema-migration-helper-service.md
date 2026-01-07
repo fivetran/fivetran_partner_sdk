@@ -503,25 +503,25 @@ Implementation:
     ```
 3. Delete history for all records (delete all versions of each unique PK except the latest version). 
     ```sql
-    DELETE FROM <schema>.<table> AS <table>
+    DELETE FROM <schema>.<table> AS main_table
     USING (
         SELECT <<pk1>, <pk2>, ...>,
-                MAX("FIVETRAN_START") AS "FIVETRAN_START"
+                MAX("_fivetran_start") AS "FIVETRAN_START"
         FROM <schema>.<table> as temp_alias
         GROUP BY <pk1>, <pk2>, ...
         )
     WHERE
-        (<table>.<pk1> = temp_alias.<pk1>
-        AND <table>.<pk2> = temp_alias.<pk2>)
+        (main_table.<pk1> = temp_alias.<pk1>
+        AND main_table.<pk2> = temp_alias.<pk2>)
         -- ... for all PKs
     AND (
-        <table>."FIVETRAN_START" <> temp_alias."FIVETRAN_START"
-        OR <table>."FIVETRAN_START" IS NULL
+        main_table."FIVETRAN_START" <> temp_alias."FIVETRAN_START"
+        OR main_table."FIVETRAN_START" IS NULL
     );
 
     ```
-    > NOTE: we are using max(`_fivetran_start`) because there can be PKs having _fivetran_active = false for all versions if its deleted from source. So except the latest version, delete all records irrespective of _fivetran_active value. 
-    
+    > NOTE: We use the max(_fivetran_start) across all versions for each unique primary key because some primary keys may have _fivetran_active = false in every version if the record was deleted from the source. Therefore, we delete all records except the latest version, regardless of the _fivetran_active value.
+
 4. Update the `soft_deleted_column` column based on `_fivetran_active`:
     ```sql
     UPDATE <schema.table>
