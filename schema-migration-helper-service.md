@@ -520,7 +520,7 @@ Implementation:
     );
 
     ```
-    > NOTE: We use the max(_fivetran_start) across all versions for each unique primary key because some primary keys may have `_fivetran_active = false` in every version if the record was deleted from the source. Therefore, we delete all records except the latest version, regardless of the _fivetran_active value.
+    > NOTE: We use `max(_fivetran_start)` across all versions for each unique primary key because some primary keys may have `_fivetran_active = false` in every version if the record was deleted from the source. Therefore, we delete all records except the latest version, regardless of the `_fivetran_active` value.
 
 4. Update the `soft_deleted_column` column based on `_fivetran_active`:
     ```sql
