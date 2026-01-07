@@ -36,7 +36,11 @@ public class DuckDBHelper implements AutoCloseable {
             this.connection = DriverManager.getConnection("jdbc:duckdb:" + this.dbPath);
             logMessage(INFO, "Connected to DuckDB at: " + this.dbPath);
         } catch (ClassNotFoundException | SQLException e) {
-            throw new RuntimeException("Failed to connect to DuckDB: " + e.getMessage(), e);
+            String errorMessage = "Failed to initialize DuckDB connection for path '" + this.dbPath
+                    + "'. Ensure that the DuckDB JDBC driver is on the classpath and that the database path is correct. "
+                    + "Original error: " + e.getMessage();
+            logMessage(WARNING, errorMessage);
+            throw new IllegalStateException(errorMessage, e);
         }
     }
 
