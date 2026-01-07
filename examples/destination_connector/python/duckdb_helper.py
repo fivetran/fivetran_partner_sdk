@@ -20,8 +20,15 @@ class DuckDBHelper:
             db_path: Path to database file. If empty, creates in-memory database.
         """
         self.db_path = db_path if db_path else ":memory:"
-        self._connection = duckdb.connect(self.db_path)
-        log_message(INFO, f"Connected to DuckDB at: {self.db_path}")
+        try:
+            self._connection = duckdb.connect(self.db_path)
+            log_message(INFO, f"Connected to DuckDB at: {self.db_path}")
+        except Exception as e:
+            error_message = (f"Failed to initialize DuckDB connection for path '{self.db_path}'. "
+                           f"Ensure that the DuckDB module is installed and that the database path is correct. "
+                           f"Original error: {str(e)}")
+            log_message(WARNING, error_message)
+            raise RuntimeError(error_message) from e
 
     def get_connection(self):
         """Get the DuckDB connection."""

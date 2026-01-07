@@ -251,6 +251,10 @@ public class TableOperationsHelper {
 
             // Drop existing primary key constraint if it exists
             if (!currentPkColumns.isEmpty()) {
+                // Try to drop the primary key constraint
+                // Note: This assumes DuckDB's default naming convention (table_name + "_pkey").
+                // For production, consider querying information_schema.table_constraints to get
+                // the actual constraint name, especially if table names contain special characters.
                 String constraintName = tableName + "_pkey";
                 String escapedConstraint = dbHelper.escapeIdentifier(constraintName);
                 try {

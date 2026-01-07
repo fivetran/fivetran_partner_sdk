@@ -253,7 +253,7 @@ public class SchemaMigrationHelper {
                         dbHelper.addColumn(schema, table, newCol);
 
                         // If default value is provided, update existing rows
-                        if (!addColHistoryMode.getDefaultValue().isEmpty()) {
+                        if (addColHistoryMode.getDefaultValue() != null && !addColHistoryMode.getDefaultValue().isEmpty()) {
                             dbHelper.updateColumnValue(schema, table, addColHistoryMode.getColumn(),
                                     addColHistoryMode.getDefaultValue());
                         }
@@ -284,7 +284,7 @@ public class SchemaMigrationHelper {
                         dbHelper.addColumn(schema, table, newCol);
 
                         // Update existing rows with default value
-                        if (!addColDefaultWithValue.getDefaultValue().isEmpty()) {
+                        if (addColDefaultWithValue.getDefaultValue() != null && !addColDefaultWithValue.getDefaultValue().isEmpty()) {
                             dbHelper.updateColumnValue(schema, table, addColDefaultWithValue.getColumn(),
                                     addColDefaultWithValue.getDefaultValue());
                         }
