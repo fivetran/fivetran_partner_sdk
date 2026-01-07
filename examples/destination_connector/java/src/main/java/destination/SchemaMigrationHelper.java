@@ -333,7 +333,8 @@ public class SchemaMigrationHelper {
 
     public MigrateResponse.Builder handleTableSyncModeMigration(TableSyncModeMigrationOperation op, String schema, String table) {
         MigrateResponse.Builder respBuilder = MigrateResponse.newBuilder();
-        String softDeletedColumn = (!op.getSoftDeletedColumn().isEmpty()) ? op.getSoftDeletedColumn() : null;
+        String opSoftDeletedColumn = op.getSoftDeletedColumn();
+        String softDeletedColumn = (opSoftDeletedColumn != null && !opSoftDeletedColumn.isEmpty()) ? opSoftDeletedColumn : null;
 
         try {
             switch (op.getType()) {
