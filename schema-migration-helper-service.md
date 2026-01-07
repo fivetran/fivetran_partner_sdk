@@ -506,21 +506,21 @@ Implementation:
     DELETE FROM <schema>.<table> AS main_table
     USING (
         SELECT <<pk1>, <pk2>, ...>,
-                MAX("_fivetran_start") AS "FIVETRAN_START"
-        FROM <schema>.<table> as temp_alias
+                MAX("_fivetran_start") AS "MAX_FIVETRAN_START"
+        FROM <schema>.<table> 
         GROUP BY <pk1>, <pk2>, ...
-        )
+        ) as temp_alias
     WHERE
         (main_table.<pk1> = temp_alias.<pk1>
         AND main_table.<pk2> = temp_alias.<pk2>)
         -- ... for all PKs
     AND (
-        main_table."FIVETRAN_START" <> temp_alias."FIVETRAN_START"
-        OR main_table."FIVETRAN_START" IS NULL
+        main_table."_fivetran_start" <> temp_alias."MAX_FIVETRAN_START"
+        OR main_table."_fivetran_start" IS NULL
     );
 
     ```
-    > NOTE: We use the max(_fivetran_start) across all versions for each unique primary key because some primary keys may have _fivetran_active = false in every version if the record was deleted from the source. Therefore, we delete all records except the latest version, regardless of the _fivetran_active value.
+    > NOTE: We use the max(_fivetran_start) across all versions for each unique primary key because some primary keys may have `_fivetran_active = false` in every version if the record was deleted from the source. Therefore, we delete all records except the latest version, regardless of the _fivetran_active value.
 
 4. Update the `soft_deleted_column` column based on `_fivetran_active`:
     ```sql
