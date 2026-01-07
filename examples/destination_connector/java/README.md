@@ -294,7 +294,7 @@ Key dependencies in `build.gradle`:
 - **Jackson**: `com.fasterxml.jackson.core:jackson-databind:2.15.2` for JSON/CSV processing
 - **ZStandard**: `com.github.luben:zstd-jni:1.5.5-11` for compression
 - **CSV Processing**: `jackson-dataformat-csv:2.2.3` for file handling
-- **Database**: `org.duckdb:duckdb_jdbc:1.1.0` for data storage and persistence
+- **Database**: `org.duckdb:duckdb_jdbc:1.4.3.0` for data storage and persistence
 - **JSON Logging**: `com.google.code.gson:gson:2.10.1` for structured logging
 
 ## Docker Support
