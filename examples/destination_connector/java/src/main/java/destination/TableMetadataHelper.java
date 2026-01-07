@@ -112,42 +112,6 @@ public class TableMetadataHelper {
     }
 
     /**
-     * Removes history mode columns from a table.
-     */
-    public static Table removeHistoryModeColumns(Table tableObj) {
-        Table.Builder builder = Table.newBuilder(tableObj);
-        builder.clearColumns();
-
-        Set<String> historyColumns = new HashSet<>(Arrays.asList(FIVETRAN_START, FIVETRAN_END, FIVETRAN_ACTIVE));
-
-        for (Column col : tableObj.getColumnsList()) {
-            if (!historyColumns.contains(col.getName())) {
-                builder.addColumns(col);
-            }
-        }
-
-        return builder.build();
-    }
-
-    /**
-     * Adds a soft delete column to a table.
-     */
-    public static Table addSoftDeleteColumn(Table tableObj, String columnName) {
-        if (columnName == null || columnName.isEmpty()) {
-            return tableObj;
-        }
-
-        Column softDelCol = Column.newBuilder()
-            .setName(columnName)
-            .setType(DataType.BOOLEAN)
-            .build();
-
-        return Table.newBuilder(tableObj)
-            .addColumns(softDelCol)
-            .build();
-    }
-
-    /**
      * Adds a soft delete column to a table in the database.
      */
     public static void addSoftDeleteColumnToDb(DuckDBHelper dbHelper, String schema, String table, String columnName) {

@@ -98,10 +98,7 @@ public class TableOperationsHelper {
         if (col1.getType() == DataType.STRING) {
             int col1ByteLength = col1.hasParams() ? col1.getParams().getStringByteLength() : 0;
             int col2ByteLength = col2.hasParams() ? col2.getParams().getStringByteLength() : 0;
-
-            if (col1ByteLength != col2ByteLength) {
-                return true;
-            }
+            return col1ByteLength != col2ByteLength;
         }
 
         return false;
