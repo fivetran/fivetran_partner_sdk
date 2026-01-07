@@ -124,9 +124,8 @@ Implementation:
 3. Update the newly added rows with the `default_value` and `operation_timestamp`:
     ```sql
     UPDATE <schema.table>
-    SET <column> = default_value,
-        _fivetran_start = <operation_timestamp>
-    WHERE <condition_to_identify_new_row>;
+    SET <column> = default_value
+    WHERE _fivetran_start = <operation_timestamp>;
     ```
    This step is important in case of source connector sends multiple ADD_COLUMN_IN_HISTORY_MODE operations with the same operation_timestamp. It will ensure, we only record history once for that timestamp.
 
@@ -452,7 +451,6 @@ Implementation:
                             WHEN <soft_deleted_column> = TRUE THEN TIMESTAMP '<minTimestamp>' 
                             ELSE TIMESTAMP '<maxTimestamp>' 
                         END
-    WHERE <condition>;
     ```
    
 3. If `soft_deleted_column = _fivetran_deleted`, then drop it:
@@ -503,7 +501,27 @@ Implementation:
     ```sql
     ALTER TABLE <schema.table> ADD COLUMN _fivetran_deleted BOOLEAN DEFAULT FALSE;
     ```
-3. Delete history records for the whole table.
+3. Delete history for all records (delete all versions of each unique PK except the latest version). 
+    ```sql
+    DELETE FROM <schema>.<table> AS main_table
+    USING (
+        SELECT <<pk1>, <pk2>, ...>,
+                MAX("_fivetran_start") AS "MAX_FIVETRAN_START"
+        FROM <schema>.<table> 
+        GROUP BY <pk1>, <pk2>, ...
+        ) as temp_alias
+    WHERE
+        (main_table.<pk1> = temp_alias.<pk1>
+        AND main_table.<pk2> = temp_alias.<pk2>)
+        -- ... for all PKs
+    AND (
+        main_table."_fivetran_start" <> temp_alias."MAX_FIVETRAN_START"
+        OR main_table."_fivetran_start" IS NULL
+    );
+
+    ```
+    > NOTE: We use `max(_fivetran_start)` across all versions for each unique primary key because some primary keys may have `_fivetran_active = false` in every version if the record was deleted from the source. Therefore, we delete all records except the latest version, regardless of the `_fivetran_active` value.
+
 4. Update the `soft_deleted_column` column based on `_fivetran_active`:
     ```sql
     UPDATE <schema.table>
