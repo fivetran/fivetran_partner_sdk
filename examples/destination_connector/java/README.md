@@ -156,16 +156,16 @@ Creates a fat JAR with all dependencies, including:
 
 #### 2. `DestinationServiceImpl.java`
 Implements the main gRPC destination service methods:
-- **DuckDB integration**: Uses `DuckDBHelper` for data storage and persistence
-- **Table operations**: Delegates operations to `TableOperationsHelper`
-- **Schema migrations**: Uses `SchemaMigrationHelper` for table modifications
+- **DuckDB Ontegration**: Uses `DuckDBHelper` for data storage and persistence
+- **Table Operations**: Delegates operations to `TableOperationsHelper`
+- **Schema Migrations**: Uses `SchemaMigrationHelper` for table modifications
 
 #### 3. `DuckDBHelper.java`
 Database operations helper:
-- **Connection management**: Handles the DuckDB JDBC connection lifecycle
-- **Transaction support**: Provides BEGIN/COMMIT/ROLLBACK for multi-step operations
-- **SQL operations**: Create, alter, drop tables and columns
-- **Type mapping**: Converts between Fivetran DataType and SQL types
+- **Connection Management**: Handles the DuckDB JDBC connection lifecycle
+- **Transaction Support**: Provides BEGIN/COMMIT/ROLLBACK for multi-step operations
+- **SQL Operations**: Create, alter, drop tables and columns
+- **Type Mapping**: Converts between Fivetran DataType and SQL types
 - **Persistence**: Stores data in `destination.db` file (or in-memory)
 
 #### 4. `TableOperationsHelper.java`
@@ -177,15 +177,15 @@ Table operations handler:
 
 #### 5. `TableMetadataHelper.java`
 Table metadata utilities:
-- **History mode columns**: Manages `_fivetran_start`, `_fivetran_end`, `_fivetran_active`
-- **Soft delete columns**: Handles soft delete column operations
-- **Table copying**: Utilities for table structure manipulation
+- **History Mode Columns**: Manages `_fivetran_start`, `_fivetran_end`, `_fivetran_active`
+- **Soft Delete Columns**: Handles soft delete column operations
+- **Table Copying**: Utilities for table structure manipulation
 
 #### 6. `SchemaMigrationHelper.java`
 Schema migration operations:
-- **Table migrations**: Drop, copy, rename tables
-- **Column operations**: Add, copy, remove columns
-- **Sync mode changes**: Handle transitions between update and history modes
+- **Table Migrations**: Drop, copy, rename tables
+- **Column Operations**: Add, copy, remove columns
+- **Sync Mode Changes**: Handle transitions between update and history modes
 
 ### Destination Connector Methods
 
@@ -409,28 +409,28 @@ rootLogger.setLevel(Level.FINE);
 ## Performance Considerations
 
 ### Batch Processing
-- **File-based operations**: Optimized for large data volumes
-- **Memory management**: Processes files in streams to avoid memory issues
-- **Compression support**: Built-in ZStandard compression for large files
-- **Connection pooling**: Implement database connection pooling for production
+- **File-Based Operations**: Optimized for large data volumes
+- **Memory Management**: Processes files in streams to avoid memory issues
+- **Compression Support**: Built-in ZStandard compression for large files
+- **Connection Pooling**: Implement database connection pooling for production
 
 ### History Mode Optimization
-- **Sequential processing**: Ensures data consistency
-- **Efficient timestamp handling**: Optimized for time-based queries
-- **Indexing strategy**: Design appropriate indexes for `_fivetran_start` and `_fivetran_end`
+- **Sequential Processing**: Ensures data consistency
+- **Efficient Timestamp Handling**: Optimized for time-based queries
+- **Indexing Strategy**: Design appropriate indexes for `_fivetran_start` and `_fivetran_end`
 
 ### Scaling Recommendations
-- **Parallel file processing**: Process multiple files concurrently where possible
-- **Batch size tuning**: Adjust batch sizes based on destination capabilities
-- **Memory allocation**: Increase JVM heap size for large datasets
-- **Connection optimization**: Use appropriate connection pool sizes
+- **Parallel File Processing**: Process multiple files concurrently where possible
+- **Batch Size Tuning**: Adjust batch sizes based on destination capabilities
+- **Memory Allocation**: Increase JVM heap size for large datasets
+- **Connection Optimization**: Use appropriate connection pool sizes
 
 ## Security Considerations
 
-- **Password masking**: Configuration passwords are properly masked in forms
-- **Connection encryption**: Support for encrypted data transfer
-- **Input validation**: Validate all configuration parameters
-- **File access control**: Implement proper file system permissions
-- **Database security**: Use parameterized queries to prevent SQL injection
+- **Password Masking**: Configuration passwords are properly masked in forms
+- **Connection Encryption**: Support for encrypted data transfer
+- **Input Validation**: Validate all configuration parameters
+- **File Access Control**: Implement proper file system permissions
+- **Database Security**: Use parameterized queries to prevent SQL injection
 
 This comprehensive destination connector example provides a solid foundation for building production-ready destination connectors that can handle various destination types, complex data operations, and advanced features like history mode tracking.
