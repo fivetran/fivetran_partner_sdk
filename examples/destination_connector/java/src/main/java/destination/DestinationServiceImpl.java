@@ -28,11 +28,29 @@ public class DestinationServiceImpl extends DestinationConnectorGrpc.Destination
     private static final String ADVANCED_POOLING_LABEL = "Advanced connection pooling";
     private static final String ADVANCED_POOLING_DESCRIPTION = "Maintain a large pool with auto-scaling (50-200). For high-traffic applications with variable load patterns.";
     private static final Logger logger = getLogger();
-    private static final Map<String, Table> tableMap = new HashMap<>();
+    // DuckDB helper for data persistence
+    // To use in-memory storage instead, pass ":memory:" to DuckDBHelper
+    private static DuckDBHelper dbHelper = null;
+    private static final String defaultSchema = "fivetran_destination";
     private final SchemaMigrationHelper migrationHelper;
+    private final TableOperationsHelper tableOperationsHelper;
 
     public DestinationServiceImpl() {
-        this.migrationHelper = new SchemaMigrationHelper(tableMap);
+        // Initialize DuckDB helper
+        // To use in-memory storage instead, pass ":memory:" to DuckDBHelper
+        if (dbHelper == null) {
+            dbHelper = new DuckDBHelper("destination.db");
+        }
+
+        this.migrationHelper = new SchemaMigrationHelper(dbHelper);
+        this.tableOperationsHelper = new TableOperationsHelper(dbHelper);
+    }
+
+    /**
+     * Get the DuckDB helper for resource cleanup during shutdown.
+     */
+    public DuckDBHelper getDbHelper() {
+        return dbHelper;
     }
 
     // Get the configured logger
@@ -63,12 +81,14 @@ public class DestinationServiceImpl extends DestinationConnectorGrpc.Destination
                 String message = record.getMessage();
                 String jsonMessage = message;
                 ObjectMapper objectMapper = new ObjectMapper();
+                // Disable Unicode escaping for better readability
+                objectMapper.configure(com.fasterxml.jackson.core.JsonGenerator.Feature.ESCAPE_NON_ASCII, false);
                 try {
                     jsonMessage = objectMapper.writeValueAsString(message);
                 } catch (JsonProcessingException e) {
                     System.out.println("Error while converting message to JSON");
                 }
-                return String.format("{\"level\":\"%s\", \"message\": \"%s\", \"message-origin\": \"sdk_destination\"}%n",
+                return String.format("{\"level\": \"%s\", \"message\": %s, \"message-origin\": \"sdk_destination\"}%n",
                         level, jsonMessage);
             }
         });
@@ -321,69 +341,79 @@ public class DestinationServiceImpl extends DestinationConnectorGrpc.Destination
 
     @Override
     public void describeTable(DescribeTableRequest request, StreamObserver<DescribeTableResponse> responseObserver) {
-        Map<String, String> configuration = request.getConfigurationMap();
-        DescribeTableResponse response;
-        if (!tableMap.containsKey(request.getTableName())) {
-            response = DescribeTableResponse.newBuilder().setNotFound(true).build();
-        } else {
-            response = DescribeTableResponse.newBuilder().setTable(tableMap.get(request.getTableName())).build();
-        }
-
+        /**
+         * Handle table description/metadata retrieval.
+         * Implementation details are in TableOperationsHelper.java.
+         */
+        DescribeTableResponse response = tableOperationsHelper.describeTable(request, defaultSchema);
         responseObserver.onNext(response);
-        logger.severe("Sample Severe log: Completed describe Table method");
         responseObserver.onCompleted();
     }
 
     @Override
     public void createTable(CreateTableRequest request, StreamObserver<CreateTableResponse> responseObserver) {
-        Map<String, String> configuration = request.getConfigurationMap();
-
-        String message = "[CreateTable]: "
-                + request.getSchemaName() + " | " + request.getTable().getName() + " | " + request.getTable().getColumnsList();
-        logger.info(message);
-        tableMap.put(request.getTable().getName(), request.getTable());
-        responseObserver.onNext(CreateTableResponse.newBuilder().setSuccess(true).build());
+        /**
+         * Handle table creation.
+         * Implementation details are in TableOperationsHelper.java.
+         */
+        CreateTableResponse response = tableOperationsHelper.createTable(request, defaultSchema);
+        responseObserver.onNext(response);
         responseObserver.onCompleted();
     }
 
     @Override
     public void alterTable(AlterTableRequest request, StreamObserver<AlterTableResponse> responseObserver) {
-        Map<String, String> configuration = request.getConfigurationMap();
-
-        String message = "[AlterTable]: " +
-                request.getSchemaName() + " | " + request.getTable().getName() + " | " + request.getTable().getColumnsList();
-        logger.info(message);
-        tableMap.put(request.getTable().getName(), request.getTable());
-        responseObserver.onNext(AlterTableResponse.newBuilder().setSuccess(true).build());
+        /**
+         * Handle table alterations (add columns, change types, modify primary keys, drop columns).
+         * Implementation details are in TableOperationsHelper.java.
+         */
+        AlterTableResponse response = tableOperationsHelper.alterTable(request, request.getSchemaName(), defaultSchema);
+        responseObserver.onNext(response);
         responseObserver.onCompleted();
     }
 
     @Override
     public void truncate(TruncateRequest request, StreamObserver<TruncateResponse> responseObserver) {
-        System.out.printf("[TruncateTable]: %s | %s | soft=%s%n",
-                request.getSchemaName(), request.getTableName(), request.hasSoft());
-        responseObserver.onNext(TruncateResponse.newBuilder().setSuccess(true).build());
+        /**
+         * Handle table truncation (both hard and soft truncate).
+         * Implementation details are in TableOperationsHelper.java.
+         */
+        TruncateResponse response = tableOperationsHelper.truncateTable(request, defaultSchema);
+        responseObserver.onNext(response);
         responseObserver.onCompleted();
     }
 
+    /**
+     * Write batch data to the destination.
+     *
+     * This example implementation only prints batch files for demonstration purposes.
+     * For production use, implement your data loading logic here to process REPLACE, UPDATE,
+     * and DELETE files and write them to your destination.
+     *
+     * See: https://github.com/fivetran/fivetran_partner_sdk/blob/main/development-guide/destination-connector-development-guide.md#writebatchrequest
+     *
+     * NOTE: This example implementation does NOT write data to DuckDB - production implementations
+     * should implement actual data loading logic.
+     */
     @Override
     public void writeBatch(WriteBatchRequest request, StreamObserver<WriteBatchResponse> responseObserver) {
         String message = "[WriteBatch]: " + request.getSchemaName() + " | " + request.getTable().getName();
         logger.warning(String.format("Sample severe message: %s", message));
         for (String file : request.getReplaceFilesList()) {
-            System.out.println("Replace files: " + file);
+            System.out.println("replace files: " + file);
         }
         for (String file : request.getUpdateFilesList()) {
-            System.out.println("Update files: " + file);
+            System.out.println("update files: " + file);
         }
         for (String file : request.getDeleteFilesList()) {
-            System.out.println("Delete files: " + file);
+            System.out.println("delete files: " + file);
         }
         responseObserver.onNext(WriteBatchResponse.newBuilder().setSuccess(true).build());
         responseObserver.onCompleted();
     }
 
-    /*
+    /**
+     * Write history mode batch data to the destination.
      *
      * Reference: https://github.com/fivetran/fivetran_sdk/blob/main/how-to-handle-history-mode-batch-files.md
      *
@@ -416,25 +446,35 @@ public class DestinationServiceImpl extends DestinationConnectorGrpc.Destination
      *    - Deactivates records in the destination table.
      *    - Process:
      *      - Set `_fivetran_active` to `FALSE`.
-     *      - Update `_fivetran_end` to match the corresponding record’s end timestamp from the batch file.
+     *      - Update `_fivetran_end` to match the corresponding record's end timestamp from the batch file.
      *
      * This structured processing ensures data consistency and historical tracking in the destination table.
+     *
+     * NOTE: This example implementation only prints batch files for demonstration purposes.
+     * For production use, implement your data loading logic here to process history mode-specific batch files
+     * (earliest_start_files, replace_files, update_files, delete_files) and write them to your destination
+     * while maintaining history tracking with _fivetran_start, _fivetran_end, and _fivetran_active columns.
+     *
+     * See: https://github.com/fivetran/fivetran_partner_sdk/blob/main/development-guide/destination-connector-development-guide.md#writehistorybatchrequest
+     *
+     * NOTE: This example implementation does NOT write data to DuckDB - production implementations
+     * should implement actual data loading logic with history tracking.
      */
     @Override
     public void writeHistoryBatch(WriteHistoryBatchRequest request, StreamObserver<WriteBatchResponse> responseObserver) {
         String message = "[WriteHistoryBatch]: " + request.getSchemaName() + " | " + request.getTable().getName();
         logger.warning(String.format("Sample severe message: %s", message));
         for (String file : request.getEarliestStartFilesList()) {
-            System.out.println("EarliestStart files: " + file);
+            System.out.println("earliest_start files: " + file);
         }
         for (String file : request.getReplaceFilesList()) {
-            System.out.println("Replace files: " + file);
+            System.out.println("replace files: " + file);
         }
         for (String file : request.getUpdateFilesList()) {
-            System.out.println("Update files: " + file);
+            System.out.println("update files: " + file);
         }
         for (String file : request.getDeleteFilesList()) {
-            System.out.println("Delete files: " + file);
+            System.out.println("delete files: " + file);
         }
         responseObserver.onNext(WriteBatchResponse.newBuilder().setSuccess(true).build());
         responseObserver.onCompleted();

@@ -24,16 +24,23 @@ The example destination connector simulates writing data to multiple destination
 - **Cloud**: Cloud storage services (host, port, user, password, region)
 
 ### Data Operations
-- **Table Management**: Create, alter, describe, and truncate tables
+- **Table Management**: Create, alter, describe, and truncate tables using DuckDB
 - **Batch Writing**: Process data files in batches for optimal performance
 - **History Mode**: Advanced historical data tracking with specialized batch processing
 - **Configuration Testing**: Validate connectivity and configuration settings
 
 ### Key Features
 - **Conditional Configuration**: Dynamic form fields based on destination type selection
-- **In-Memory Table Registry**: Tracks table schemas and structure
+- **DuckDB Storage**: Real database operations with data persistence (file-based or in-memory)
 - **File-Based Batch Processing**: Handles replace, update, and delete operations via files
 - **History Mode Batching**: Specialized handling for time-based data versioning
+
+### Data Storage
+The connector uses **DuckDB** for data persistence:
+- **Database File**: `destination.db`
+- **Persistence**: Data survives connector restarts
+- **Multi-Schema Support**: Tables organized by schema (default: `fivetran_destination`)
+- **In-Memory Option**: Can be configured to use in-memory database for testing
 
 ## Prerequisites
 
@@ -149,6 +156,36 @@ Creates a fat JAR with all dependencies, including:
 
 #### 2. `DestinationServiceImpl.java`
 Implements the main gRPC destination service methods:
+- **DuckDB Ontegration**: Uses `DuckDBHelper` for data storage and persistence
+- **Table Operations**: Delegates operations to `TableOperationsHelper`
+- **Schema Migrations**: Uses `SchemaMigrationHelper` for table modifications
+
+#### 3. `DuckDBHelper.java`
+Database operations helper:
+- **Connection Management**: Handles the DuckDB JDBC connection lifecycle
+- **Transaction Support**: Provides BEGIN/COMMIT/ROLLBACK for multi-step operations
+- **SQL Operations**: Create, alter, drop tables and columns
+- **Type Mapping**: Converts between Fivetran DataType and SQL types
+- **Persistence**: Stores data in `destination.db` file (or in-memory)
+
+#### 4. `TableOperationsHelper.java`
+Table operations handler:
+- **CreateTable**: Creates new tables with specified schema
+- **DescribeTable**: Queries table metadata from DuckDB
+- **AlterTable**: Handles column additions, type changes, and primary key changes
+- **Truncate**: Implements both hard and soft truncate operations
+
+#### 5. `TableMetadataHelper.java`
+Table metadata utilities:
+- **History Mode Columns**: Manages `_fivetran_start`, `_fivetran_end`, `_fivetran_active`
+- **Soft Delete Columns**: Handles soft delete column operations
+- **Table Copying**: Utilities for table structure manipulation
+
+#### 6. `SchemaMigrationHelper.java`
+Schema migration operations:
+- **Table Migrations**: Drop, copy, rename tables
+- **Column Operations**: Add, copy, remove columns
+- **Sync Mode Changes**: Handle transitions between update and history modes
 
 ### Destination Connector Methods
 
@@ -172,39 +209,48 @@ Creates a sophisticated configuration UI with conditional fields:
 - Supports multiple test types (connect, select)
 
 #### 3. `describeTable()`
-- Returns table schema information
-- Uses in-memory table registry (`tableMap`)
-- Returns `not_found` if table doesn't exist
+- Queries table schema information from DuckDB
+- Returns column names, data types, and type parameters (precision/scale for DECIMAL)
+- Returns `not_found=true` if table doesn't exist
 
 #### 4. `createTable()`
-- Creates new tables in the destination
-- Stores table schema in memory for future reference
-- Logs table creation details
+- Creates new tables in DuckDB with the specified schema
+- Executes `CREATE TABLE` SQL statement with column definitions
+- Logs table creation details with schema information
 
 #### 5. `alterTable()`
-- Modifies existing table schemas
-- Updates the in-memory table registry
-- Supports adding/modifying columns
+- Modifies existing table schemas in DuckDB
+- Adds new columns to existing tables (incremental updates) and can drop columns when the `drop_columns` flag is set
+- Handles column type changes using `ALTER COLUMN SET DATA TYPE`
+- Manages primary key constraint changes
+- All operations wrapped in transactions for atomicity
 
 #### 6. `truncate()`
-- Removes all data from specified tables
-- Supports both hard and soft truncation
-- Logs truncation operations
+- Removes all data from specified tables using DuckDB `TRUNCATE TABLE`
+- Hard truncate: Deletes all rows from the table
+- Soft truncate: Updates deleted column flag, supports time-based truncation
+- Logs truncation operations with table and schema details
 
 #### 7. `writeBatch()`
 - **Main data writing method** for standard operations
+- **Note**: This example implementation only prints batch files for demonstration purposes
+- **Does NOT write data to DuckDB** - production implementations should implement actual data loading logic
 - Processes three types of files:
   - **Replace files**: Complete record replacements
   - **Update files**: Partial record updates
   - **Delete files**: Record deletions
+- See: [WriteBatch documentation](https://github.com/fivetran/fivetran_partner_sdk/blob/main/development-guide/destination-connector-development-guide.md#writebatchrequest)
 
 #### 8. `writeHistoryBatch()` **Advanced Feature**
 - **Specialized method** for history mode operations
+- **Note**: This example implementation only prints batch files for demonstration purposes
+- **Does NOT write data to DuckDB** - production implementations should implement actual data loading logic with history tracking
 - Processes files in specific order for data consistency:
   1. **`earliest_start_files`**: Records with earliest timestamps
   2. **`replace_files`**: Complete record replacements
   3. **`update_files`**: Partial updates with history tracking
   4. **`delete_files`**: Record deactivation (sets `_fivetran_active` to FALSE)
+- See: [How to handle history mode batch files](https://github.com/fivetran/fivetran_partner_sdk/blob/main/how-to-handle-history-mode-batch-files.md)
 
 ### History Mode Explained
 
@@ -248,6 +294,8 @@ Key dependencies in `build.gradle`:
 - **Jackson**: `com.fasterxml.jackson.core:jackson-databind:2.15.2` for JSON/CSV processing
 - **ZStandard**: `com.github.luben:zstd-jni:1.5.5-11` for compression
 - **CSV Processing**: `jackson-dataformat-csv:2.2.3` for file handling
+- **Database**: `org.duckdb:duckdb_jdbc:1.4.3.0` for data storage and persistence
+- **JSON Logging**: `com.google.code.gson:gson:2.10.1` for structured logging
 
 ## Docker Support
 
@@ -361,28 +409,28 @@ rootLogger.setLevel(Level.FINE);
 ## Performance Considerations
 
 ### Batch Processing
-- **File-based operations**: Optimized for large data volumes
-- **Memory management**: Processes files in streams to avoid memory issues
-- **Compression support**: Built-in ZStandard compression for large files
-- **Connection pooling**: Implement database connection pooling for production
+- **File-Based Operations**: Optimized for large data volumes
+- **Memory Management**: Processes files in streams to avoid memory issues
+- **Compression Support**: Built-in ZStandard compression for large files
+- **Connection Pooling**: Implement database connection pooling for production
 
 ### History Mode Optimization
-- **Sequential processing**: Ensures data consistency
-- **Efficient timestamp handling**: Optimized for time-based queries
-- **Indexing strategy**: Design appropriate indexes for `_fivetran_start` and `_fivetran_end`
+- **Sequential Processing**: Ensures data consistency
+- **Efficient Timestamp Handling**: Optimized for time-based queries
+- **Indexing Strategy**: Design appropriate indexes for `_fivetran_start` and `_fivetran_end`
 
 ### Scaling Recommendations
-- **Parallel file processing**: Process multiple files concurrently where possible
-- **Batch size tuning**: Adjust batch sizes based on destination capabilities
-- **Memory allocation**: Increase JVM heap size for large datasets
-- **Connection optimization**: Use appropriate connection pool sizes
+- **Parallel File Processing**: Process multiple files concurrently where possible
+- **Batch Size Tuning**: Adjust batch sizes based on destination capabilities
+- **Memory Allocation**: Increase JVM heap size for large datasets
+- **Connection Optimization**: Use appropriate connection pool sizes
 
 ## Security Considerations
 
-- **Password masking**: Configuration passwords are properly masked in forms
-- **Connection encryption**: Support for encrypted data transfer
-- **Input validation**: Validate all configuration parameters
-- **File access control**: Implement proper file system permissions
-- **Database security**: Use parameterized queries to prevent SQL injection
+- **Password Masking**: Configuration passwords are properly masked in forms
+- **Connection Encryption**: Support for encrypted data transfer
+- **Input Validation**: Validate all configuration parameters
+- **File Access Control**: Implement proper file system permissions
+- **Database Security**: Use parameterized queries to prevent SQL injection
 
 This comprehensive destination connector example provides a solid foundation for building production-ready destination connectors that can handle various destination types, complex data operations, and advanced features like history mode tracking.
