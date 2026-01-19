@@ -16,7 +16,7 @@ There can be multiple reasons for these migrations:
 
 This document guides on how to implement the `Migrate` RPC method for different types of schema migrations.
 
-> Note for partners: LIVE mode, a new sync mode, will be rolled out in Dec 2025. Please ensure your implementation is ready to support the new centrally enabled live mode functionality. Further communication from Fivetran regarding the rollout plan and timeline for live mode will be shared soon.
+> Note for partners: LIVE mode, the newly introduced sync mode, is not yet available for the Partner SDK. Partners should skip implementing LIVE mode sync operations at this time. Fivetran will share additional details on the rollout plan and timeline soon.
 ---
 
 ### How to implement the migrate method
