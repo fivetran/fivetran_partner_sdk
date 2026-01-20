@@ -44,7 +44,7 @@ Your `Migrate` RPC method should handle all defined migrations based on the `Mig
 Each operation type has its own set of fields required to perform the migration. Based on the operation field in the request, your `migrate` method should implement the corresponding SQL queries.
 > Important: If a sync mode is not supported by your destination, please return an `Unsupported` error code with `MigrationResponse` with an appropriate message.
 
-Note for partners: LIVE mode, the newly introduced sync mode, is currently not supported in the Partner SDK. As a result, the following [TableSyncModeMigrationOperation](https://github.com/fivetran/fivetran_partner_sdk/blob/76b142243f5dd80d7a104b53ed537c148f38a34a/destination_sdk.proto#L263) values are not yet available: LIVE_TO_HISTORY, HISTORY_TO_LIVE, SOFT_DELETE_TO_LIVE, and LIVE_TO_SOFT_DELETE. Partners should not implement LIVE mode–related sync operations at this time. Fivetran will provide further updates on the rollout plan and timeline in a future announcement.
+> Note for partners: LIVE mode, the newly introduced sync mode, is currently not supported in the Partner SDK. As a result, the following [TableSyncModeMigrationOperation](https://github.com/fivetran/fivetran_partner_sdk/blob/76b142243f5dd80d7a104b53ed537c148f38a34a/destination_sdk.proto#L263) values are not yet available: LIVE_TO_HISTORY, HISTORY_TO_LIVE, SOFT_DELETE_TO_LIVE, and LIVE_TO_SOFT_DELETE. Partners should not implement LIVE mode–related sync operations at this time. Fivetran will provide further updates on the rollout plan and timeline in a future announcement.
 ---
 
 ## Operation details and example SQL
