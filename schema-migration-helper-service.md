@@ -10,12 +10,13 @@ Some frequently used schema migrations have been grouped into different schema m
 
 There can be multiple reasons for these migrations:
 - Table/Column level migrations: Sometimes, source connectors introduce schema changes that require data transformation or restructuring and may trigger bulk fixes or handle special cases. It's crucial to apply these schema changes to the destination before processing new data for the affected table. These changes are less common than basic schema updates—such as adding, dropping, or modifying columns—which are handled by `AlterTable` RPC method.
-- Table sync mode migrations: Customers can trigger migrations to convert their existing tables from one sync mode to another ([soft-delete mode](https://fivetran.com/docs/core-concepts/sync-modes/soft-delete#softdeletemode) / [history mode](https://fivetran.com/docs/core-concepts/sync-modes/history-mode#switchingmodes)). These migrations involve a series of data transformations that are easier to execute as a single grouped schema migration helper abstraction to maintain history and deleted row information.
+- Table sync mode migrations: Customers can trigger migrations to convert their existing tables from one sync mode to another ([soft-delete mode](https://fivetran.com/docs/core-concepts/sync-modes/soft-delete#softdeletemode) / [history mode](https://fivetran.com/docs/core-concepts/sync-modes/history-mode#switchingmodes) / live mode). These migrations involve a series of data transformations that are easier to execute as a single grouped schema migration helper abstraction to maintain history and deleted row information.
 
 > Note: Basic schema migrations such as adding/dropping columns, changing data types, and modifying primary keys are automatically handled by Fivetran through the `AlterTable` RPC call. The Schema Migration Helper Service described in this document handles more complex migration scenarios that cannot be achieved through standard `AlterTable` operations alone.
 
 This document guides on how to implement the `Migrate` RPC method for different types of schema migrations.
 
+ Note for partners: LIVE mode, the newly introduced sync mode, is not yet available for the Partner SDK. Partners should skip implementing LIVE mode sync operations at this time. Fivetran will share additional details on the rollout plan and timeline soon.
 ---
 
 ### How to implement the migrate method
