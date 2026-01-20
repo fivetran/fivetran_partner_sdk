@@ -401,28 +401,6 @@ Common request fields:
 
 ---
 
-#### LIVE_TO_HISTORY
-
-This migration converts a table from live mode to history mode.
-
-Implementation:
-
-1. Add the history mode columns to the table:
-    ```sql
-    ALTER TABLE <schema.table> ADD COLUMN _fivetran_start TIMESTAMP AS PRIMARY KEY,
-                                ADD COLUMN _fivetran_end TIMESTAMP,
-                                ADD COLUMN _fivetran_active BOOLEAN DEFAULT TRUE;
-    ```
-2. Set all the records as active and set the `_fivetran_start`, `_fivetran_end`, and `_fivetran_active` columns appropriately.
-    ```sql
-    UPDATE <schema.table>
-    SET _fivetran_start = NOW(),
-        _fivetran_end = '9999-12-31 23:59:59',
-        _fivetran_active = TRUE;
-    ```
-
----
-
 #### SOFT_DELETE_TO_HISTORY
 
 This migration converts a table from SOFT DELETE to HISTORY mode.
@@ -456,34 +434,6 @@ Implementation:
 3. If `soft_deleted_column = _fivetran_deleted`, then drop it:
     ```sql
     ALTER TABLE <schema.table> DROP COLUMN _fivetran_deleted;
-
----
-
-#### HISTORY_TO_LIVE
-
-This migration converts a table from HISTORY to LIVE mode.
-
-Implementation:
-
-1. Drop the primary key constraint if it exists:
-    ```sql
-    ALTER TABLE <schema.table> DROP CONSTRAINT IF EXISTS <primary_key_constraint>;
-    ```
-2. If `keep_deleted_rows` is `FALSE`, then drop rows which are not active (skip if `keep_deleted_rows` is `TRUE`):
-    ```sql
-    DELETE FROM <schema.table>
-    WHERE _fivetran_active = FALSE;
-    ```
-3. Drop the history mode columns:
-    ```sql
-    ALTER TABLE <schema.table> DROP COLUMN _fivetran_start,
-                                DROP COLUMN _fivetran_end,
-                                DROP COLUMN _fivetran_active;
-    ```
-4. Recreate the primary key constraint if it was dropped in step 1:
-    ```sql
-    ALTER TABLE <schema.table> ADD CONSTRAINT <primary_key_constraint> PRIMARY KEY (<columns>);
-    ```
 
 ---
 
@@ -541,43 +491,6 @@ Implementation:
 6. Recreate the primary key constraint if it was dropped in step 1:
     ```sql
     ALTER TABLE <schema.table> ADD CONSTRAINT <primary_key_constraint> PRIMARY KEY (<columns>);
-    ```
-
----
-
-#### SOFT_DELETE_TO_LIVE
-
-This migration converts a table from soft-delete mode to live mode.
-
-Implementation:
-
-1. Drop records where `<soft_deleted_column>`, from the migration request, is true:
-    ```sql
-    DELETE FROM <schema.table>
-    WHERE <soft_deleted_column> = TRUE;
-    ```
-2. If `soft_deleted_column = _fivetran_deleted` column, then drop it:
-    ```sql
-    ALTER TABLE <schema.table> DROP COLUMN _fivetran_deleted;
-    ```
-
----
-
-#### LIVE_TO_SOFT_DELETE
-
-This migration converts a table from live mode to soft-delete mode.
-
-Implementation:
-
-1. Add the `<soft_deleted_column>` column if it does not exist:
-    ```sql
-    ALTER TABLE <schema.table> ADD COLUMN <soft_deleted_column> BOOLEAN;
-    ```
-2. Update `<soft_deleted_column>`:
-    ```sql
-    UPDATE <schema.table>
-    SET <soft_deleted_column> = FALSE
-      WHERE <soft_deleted_column> IS NULL;
     ```
 
 ---
