@@ -453,7 +453,7 @@ Implementation:
                         END
     ```
    
-3. If `soft_deleted_column = _fivetran_deleted`, then drop it:
+3. If `_fivetran_deleted` is present, then drop it:
     ```sql
     ALTER TABLE <schema.table> DROP COLUMN _fivetran_deleted;
 
