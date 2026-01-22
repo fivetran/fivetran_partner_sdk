@@ -339,13 +339,8 @@ public class SchemaMigrationHelper {
         try {
             switch (op.getType()) {
                 case SOFT_DELETE_TO_LIVE:
-                    // Remove soft delete column
-                    if (softDeletedColumn != null) {
-                        dbHelper.dropColumn(schema, table, softDeletedColumn);
-                    }
-                    logMessage(INFO, String.format("[Migrate:TableSyncModeMigration] Migrating table=%s.%s from SOFT_DELETE to LIVE",
-                            schema, table));
-                    respBuilder.setSuccess(true);
+                    logMessage(WARNING, "[Migrate:TableSyncModeMigration] Migration from SOFT_DELETE to LIVE is not supported");
+                    respBuilder.setSuccess(false);
                     break;
 
                 case SOFT_DELETE_TO_HISTORY:
@@ -387,45 +382,18 @@ public class SchemaMigrationHelper {
                     break;
 
                 case HISTORY_TO_LIVE:
-                    // Wrap remove history columns in transaction (removes 3 columns)
-                    dbHelper.beginTransaction();
-                    try {
-                        // Remove history mode columns
-                        TableMetadataHelper.removeHistoryModeColumnsFromDb(dbHelper, schema, table);
-                        dbHelper.commitTransaction();
-                    } catch (Exception e) {
-                        dbHelper.rollbackTransaction();
-                        throw e;
-                    }
-                    logMessage(INFO, String.format("[Migrate:TableSyncModeMigration] Migrating table=%s.%s from HISTORY to LIVE",
-                            schema, table));
-                    respBuilder.setSuccess(true);
+                    logMessage(WARNING, "[Migrate:TableSyncModeMigration] Migration from HISTORY to LIVE is not supported");
+                    respBuilder.setSuccess(false);
                     break;
 
                 case LIVE_TO_SOFT_DELETE:
-                    // Add soft delete column
-                    if (softDeletedColumn != null) {
-                        TableMetadataHelper.addSoftDeleteColumnToDb(dbHelper, schema, table, softDeletedColumn);
-                    }
-                    logMessage(INFO, String.format("[Migrate:TableSyncModeMigration] Migrating table=%s.%s from LIVE to SOFT_DELETE",
-                            schema, table));
-                    respBuilder.setSuccess(true);
+                    logMessage(WARNING, "[Migrate:TableSyncModeMigration] Migration from LIVE to SOFT_DELETE is not supported");
+                    respBuilder.setSuccess(false);
                     break;
 
                 case LIVE_TO_HISTORY:
-                    // Wrap add history columns in transaction (adds 3 columns)
-                    dbHelper.beginTransaction();
-                    try {
-                        // Add history mode columns
-                        TableMetadataHelper.addHistoryModeColumnsToDb(dbHelper, schema, table);
-                        dbHelper.commitTransaction();
-                    } catch (Exception e) {
-                        dbHelper.rollbackTransaction();
-                        throw e;
-                    }
-                    logMessage(INFO, String.format("[Migrate:TableSyncModeMigration] Migrating table=%s.%s from LIVE to HISTORY",
-                            schema, table));
-                    respBuilder.setSuccess(true);
+                    logMessage(WARNING, "[Migrate:TableSyncModeMigration] Migration from LIVE to HISTORY is not supported");
+                    respBuilder.setSuccess(false);
                     break;
 
                 default:
