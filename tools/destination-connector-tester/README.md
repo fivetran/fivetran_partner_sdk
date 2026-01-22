@@ -80,11 +80,7 @@ For testing schema migration operations, the following input files are available
    - add_column_in_history_mode
    - drop_column_in_history_mode
    - copy_table_to_history_mode
-   - migrate_history_to_live
-   - migrate_soft_delete_to_live
-   - migrate_live_to_soft_delete
    - migrate_soft_delete_to_history
-   - migrate_live_to_history
    - migrate_history_to_soft_delete
 
 #### Operations on Non-Existent Records
