@@ -217,14 +217,7 @@ class SchemaMigrationHelper:
 
         try:
             # Determine the migration type and handle accordingly
-            if op.type == destination_sdk_pb2.TableSyncModeMigrationType.SOFT_DELETE_TO_LIVE:
-                # Remove soft delete column
-                if soft_deleted_column:
-                    self.db_helper.drop_column(schema, table, soft_deleted_column)
-                log_message(INFO, f"[Migrate:TableSyncModeMigration] Migrating table={schema}.{table} from SOFT_DELETE to LIVE")
-                return destination_sdk_pb2.MigrateResponse(success=True)
-
-            elif op.type == destination_sdk_pb2.TableSyncModeMigrationType.SOFT_DELETE_TO_HISTORY:
+            if op.type == destination_sdk_pb2.TableSyncModeMigrationType.SOFT_DELETE_TO_HISTORY:
                 # Wrap drop column + add history columns in transaction
                 with self.db_helper.transaction():
                     # Remove soft delete column and add history mode columns
@@ -243,29 +236,6 @@ class SchemaMigrationHelper:
                     if soft_deleted_column:
                         TableMetadataHelper.add_soft_delete_column_to_db(self.db_helper, schema, table, soft_deleted_column)
                 log_message(INFO, f"[Migrate:TableSyncModeMigration] Migrating table={schema}.{table} from HISTORY to SOFT_DELETE")
-                return destination_sdk_pb2.MigrateResponse(success=True)
-
-            elif op.type == destination_sdk_pb2.TableSyncModeMigrationType.HISTORY_TO_LIVE:
-                # Wrap remove history columns in transaction (removes 3 columns)
-                with self.db_helper.transaction():
-                    # Remove history mode columns
-                    TableMetadataHelper.remove_history_mode_columns_from_db(self.db_helper, schema, table)
-                log_message(INFO, f"[Migrate:TableSyncModeMigration] Migrating table={schema}.{table} from HISTORY to LIVE")
-                return destination_sdk_pb2.MigrateResponse(success=True)
-
-            elif op.type == destination_sdk_pb2.TableSyncModeMigrationType.LIVE_TO_SOFT_DELETE:
-                # Add soft delete column
-                if soft_deleted_column:
-                    TableMetadataHelper.add_soft_delete_column_to_db(self.db_helper, schema, table, soft_deleted_column)
-                log_message(INFO, f"[Migrate:TableSyncModeMigration] Migrating table={schema}.{table} from LIVE to SOFT_DELETE")
-                return destination_sdk_pb2.MigrateResponse(success=True)
-
-            elif op.type == destination_sdk_pb2.TableSyncModeMigrationType.LIVE_TO_HISTORY:
-                # Wrap add history columns in transaction (adds 3 columns)
-                with self.db_helper.transaction():
-                    # Add history mode columns
-                    TableMetadataHelper.add_history_mode_columns_to_db(self.db_helper, schema, table)
-                log_message(INFO, f"[Migrate:TableSyncModeMigration] Migrating table={schema}.{table} from LIVE to HISTORY")
                 return destination_sdk_pb2.MigrateResponse(success=True)
 
             else:
