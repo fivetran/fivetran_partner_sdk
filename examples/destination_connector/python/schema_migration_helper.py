@@ -217,11 +217,7 @@ class SchemaMigrationHelper:
 
         try:
             # Determine the migration type and handle accordingly
-            if op.type == destination_sdk_pb2.TableSyncModeMigrationType.SOFT_DELETE_TO_LIVE:
-                log_message(WARNING, "[Migrate:TableSyncModeMigration] Migration from SOFT_DELETE to LIVE is not supported")
-                return destination_sdk_pb2.MigrateResponse(success=False)
-
-            elif op.type == destination_sdk_pb2.TableSyncModeMigrationType.SOFT_DELETE_TO_HISTORY:
+            if op.type == destination_sdk_pb2.TableSyncModeMigrationType.SOFT_DELETE_TO_HISTORY:
                 # Wrap drop column + add history columns in transaction
                 with self.db_helper.transaction():
                     # Remove soft delete column and add history mode columns
@@ -241,18 +237,6 @@ class SchemaMigrationHelper:
                         TableMetadataHelper.add_soft_delete_column_to_db(self.db_helper, schema, table, soft_deleted_column)
                 log_message(INFO, f"[Migrate:TableSyncModeMigration] Migrating table={schema}.{table} from HISTORY to SOFT_DELETE")
                 return destination_sdk_pb2.MigrateResponse(success=True)
-
-            elif op.type == destination_sdk_pb2.TableSyncModeMigrationType.HISTORY_TO_LIVE:
-                log_message(WARNING, "[Migrate:TableSyncModeMigration] Migration from HISTORY to LIVE is not supported")
-                return destination_sdk_pb2.MigrateResponse(success=False)
-
-            elif op.type == destination_sdk_pb2.TableSyncModeMigrationType.LIVE_TO_SOFT_DELETE:
-                log_message(WARNING, "[Migrate:TableSyncModeMigration] Migration from LIVE to SOFT_DELETE is not supported")
-                return destination_sdk_pb2.MigrateResponse(success=False)
-
-            elif op.type == destination_sdk_pb2.TableSyncModeMigrationType.LIVE_TO_HISTORY:
-                log_message(WARNING, "[Migrate:TableSyncModeMigration] Migration from LIVE to HISTORY is not supported")
-                return destination_sdk_pb2.MigrateResponse(success=False)
 
             else:
                 log_message(WARNING, f"[Migrate:TableSyncModeMigration] Unknown migration type for table={schema}.{table}")
