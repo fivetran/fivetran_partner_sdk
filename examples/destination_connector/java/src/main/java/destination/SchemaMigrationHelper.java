@@ -338,11 +338,6 @@ public class SchemaMigrationHelper {
 
         try {
             switch (op.getType()) {
-                case SOFT_DELETE_TO_LIVE:
-                    logMessage(WARNING, "[Migrate:TableSyncModeMigration] Migration from SOFT_DELETE to LIVE is not supported");
-                    respBuilder.setSuccess(false);
-                    break;
-
                 case SOFT_DELETE_TO_HISTORY:
                     // Wrap drop column + add history columns in transaction
                     dbHelper.beginTransaction();
@@ -379,21 +374,6 @@ public class SchemaMigrationHelper {
                     logMessage(INFO, String.format("[Migrate:TableSyncModeMigration] Migrating table=%s.%s from HISTORY to SOFT_DELETE",
                             schema, table));
                     respBuilder.setSuccess(true);
-                    break;
-
-                case HISTORY_TO_LIVE:
-                    logMessage(WARNING, "[Migrate:TableSyncModeMigration] Migration from HISTORY to LIVE is not supported");
-                    respBuilder.setSuccess(false);
-                    break;
-
-                case LIVE_TO_SOFT_DELETE:
-                    logMessage(WARNING, "[Migrate:TableSyncModeMigration] Migration from LIVE to SOFT_DELETE is not supported");
-                    respBuilder.setSuccess(false);
-                    break;
-
-                case LIVE_TO_HISTORY:
-                    logMessage(WARNING, "[Migrate:TableSyncModeMigration] Migration from LIVE to HISTORY is not supported");
-                    respBuilder.setSuccess(false);
                     break;
 
                 default:
