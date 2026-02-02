@@ -88,6 +88,8 @@ The request contains a `Table` object with a list of `Column` objects. Each `Col
 - For DECIMAL columns: `DataTypeParams` contains `DecimalParams` with max `precision` and `scale` values observed for that specific decimal column
 - For STRING columns: `DataTypeParams` contains `string_byte_length` to specify the maximum byte length observed for that specific column
 
+> Note: Using `DataTypeParams` is optional. Even if provided by Fivetran, destinations are not required to use these parameters when creating tables if they have their own logic for determining column metadata.
+
 ### Capabilities
 The `Capabilities` RPC call should return the destination's capabilities, such as reading batch files in CSV or PARQUET.
 
