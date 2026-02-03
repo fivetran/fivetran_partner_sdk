@@ -208,6 +208,8 @@ Fivetran's behavior depends on whether the destination provides `DataTypeParams`
 
 - If `DataTypeParams` is provided by the destination: Fivetran will evaluate the incoming data against the destination's reported parameters. If the incoming data requires a larger capacity (e.g., a larger `string_byte_length` or a different `precision`/`scale`), Fivetran will send an `AlterTable` request to adjust the column accordingly.
 
+This approach ensures that Fivetran respects the destination's schema capabilities and only performs column alterations when the destination explicitly reports its current type parameters.
+
 Example for STRING columns with existing data:
 
 Suppose a table has a `user_name` column (STRING type):
@@ -216,5 +218,3 @@ Suppose a table has a `user_name` column (STRING type):
 3. Fivetran evaluates the incoming data and detects that 150 bytes exceeds the current capacity of 128 bytes
 4. Fivetran sends an `AlterTable` request with `DataTypeParams` specifying `string_byte_length = 256` (rounded up to the nearest power of two: 2^8)
 5. The destination should alter the column to accommodate the new byte length capacity
-
-This approach ensures that Fivetran respects the destination's schema capabilities and only performs column alterations when the destination explicitly reports its current type parameters.
