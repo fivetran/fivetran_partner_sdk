@@ -100,7 +100,7 @@ The optional `DataTypeParams` field could be used to provide additional type-spe
 - For DECIMAL columns: Use `DecimalParams` to specify max `precision` and `scale` value based on decimal values present in that column
 - For STRING columns: Use `string_byte_length` to specify the current byte length capacity for this specific column based on its schema definition or existing data (not the destination-wide limit)
 
-> Note: For details on how Fivetran handles `DataTypeParams` for existing tables, see the [FAQ section](#what-are-datatypeparams-and-how-does-fivetran-handle-them).
+> Note: For details on how Fivetran handles `DataTypeParams` for existing tables, see the [FAQ section](#what-is-datatypeparams-and-how-does-fivetran-handle-them).
 
 ### Truncate
 - The `Truncate` RPC call might be requested for a table that does not exist in the destination. In that case, it should NOT fail, simply ignore the request and return `success = true`.
