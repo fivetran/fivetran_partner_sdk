@@ -194,7 +194,8 @@ If an `UPDATE`, `DELETE`, or `SOFT_DELETE` operation references a record that do
 ### What is DataTypeParams and how does Fivetran handle them?
 `DataTypeParams` is an optional field that provides type-specific parameters for columns:
 - For **DECIMAL columns**: Specifies `precision` and `scale` values via `DecimalParams`, evaluated based on decimal values seen in the column
-- For **STRING columns**: Specifies `string_byte_length` evaluated from column values, representing the maximum byte length of any value in that column
+- For DECIMAL columns: Specifies `precision` and `scale` values via `DecimalParams`, evaluated based on decimal values seen in the column
+- For STRING columns: Specifies `string_byte_length` evaluated from column values, representing the maximum byte length of any value in that column
 
 > **Note:** Fivetran sends `string_byte_length` values rounded up to the nearest power of two. For example, if the maximum byte length observed is 100 bytes, Fivetran will send `string_byte_length = 128` (2^7).
 
