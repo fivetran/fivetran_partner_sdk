@@ -38,6 +38,12 @@ Below are some best practices:
 ### Schema
 The `Schema` RPC call retrieves the user's schemas, tables, and columns. It also includes an optional `selection_not_supported` field, which indicates whether a user can select or deselect tables and columns within the Fivetran dashboard.
 
+Each `Column` in the schema may include an optional `DataTypeParams` field:
+- For DECIMAL columns: Use `DecimalParams` to specify max `precision` and `scale` evaluated based on decimal values present in the source
+- For STRING columns: Use `string_byte_length` evaluated from column values, representing the maximum byte length of any value in that column
+
+> Note: `DataTypeParams` is not a mandatory field. If not provided, Fivetran will infer the above fields to pass it to the destination.
+
 If `selection_not_supported` is set to `false`, the connector supports exclusions and the customer can choose which tables or columns to sync. If set to `true`, the connector syncs all tables and columns and exclusions are not supported. We recommend setting `selection_not_supported` to `false` so that customers have the option to exclude specific tables or columns from their connection's sync. That is Fivetran's default approach.
 
 ### Update

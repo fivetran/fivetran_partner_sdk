@@ -84,11 +84,23 @@ Data mappings from Fivetran to Parquet batch files are as below:
 The `CreateTable` RPC call should create the table. If you attempt to create a table that already exists, the call should fail.
 If the target schema is missing, the `CreateTable` RPC call should not fail. The destination should create the missing schema.
 
+The request contains a `Table` object with a list of `Column` objects. Each `Column` may include an optional `DataTypeParams` field:
+- For DECIMAL columns: `DataTypeParams` contains `DecimalParams` with `precision` and `scale` values evaluated based on decimal values seen in that column
+- For STRING columns: `DataTypeParams` contains `string_byte_length` evaluated based on column values, representing the maximum byte length of any value in that column
+
+> Note: Using `DataTypeParams` is optional. Even if provided by Fivetran, destinations are not required to use these parameters when creating tables if they have their own logic for determining column metadata.
+
 ### Capabilities
 The `Capabilities` RPC call should return the destination's capabilities, such as reading batch files in CSV or PARQUET.
 
 ### DescribeTable
-The `DescribeTable` RPC call should report all columns in the destination table, including Fivetran system columns such as `_fivetran_synced` and `_fivetran_deleted`. It should also provide other additional information as applicable such as data type, `primary_key`, and `DecimalParams`.
+The `DescribeTable` RPC call should report all columns in the destination table, including Fivetran system columns such as `_fivetran_synced` and `_fivetran_deleted`. It should also provide additional information as applicable, such as data type, `primary_key`, and `DataTypeParams`.
+
+The optional `DataTypeParams` field could be used to provide additional type-specific parameters:
+- For DECIMAL columns: Use `DecimalParams` to specify max `precision` and `scale` value based on decimal values present in that column
+- For STRING columns: Use `string_byte_length` to specify the current byte length capacity for this specific column based on its schema definition or existing data (not the destination-wide limit)
+
+> Note: For details on how Fivetran handles `DataTypeParams` for existing tables, see the [FAQ section](#what-is-datatypeparams-and-how-does-fivetran-handle-them).
 
 ### Truncate
 - The `Truncate` RPC call might be requested for a table that does not exist in the destination. In that case, it should NOT fail, simply ignore the request and return `success = true`.
@@ -99,6 +111,10 @@ The `DescribeTable` RPC call should report all columns in the destination table,
 The `AlterTable` RPC call should be used for changing primary key columns, adding columns, dropping columns, and changing data types.
 
 - `dropColumns`: A boolean indicating whether to drop columns not in the `AlterTable` request. When `false`, no columns should be dropped even if the columns in the request differ from those present in the destination table, preventing unintended data loss. When `true`, operation should drop columns present in the destination but absent from the request. `dropColumns` is set to `true` only when a schema migration operation calls `AlterTable`.
+- When altering columns, the `Column` objects may include optional `DataTypeParams`:
+    - For DECIMAL columns: `DataTypeParams` specifies `precision` and `scale` via `DecimalParams`, evaluated based on decimal values in that column
+    - For STRING columns: `DataTypeParams` specifies `string_byte_length` evaluated from column values, representing the maximum byte length of any value in that column
+
 ### WriteBatchRequest
 The `WriteBatchRequest` RPC call provides details about the batch files containing the records to be pushed to the destination. We provide the `WriteBatchRequest` parameter that contains all the information required for you to read the batch files. Here are some of the fields included in the request message:
 
@@ -135,7 +151,7 @@ Examples of each [DataType](https://github.com/fivetran/fivetran_sdk/blob/main/c
 - SHORT: -32768 .. 32767
 - INT: -2147483648 .. 2147483647
 - LONG: -9223372036854776000 .. 9223372036854775999
-- DECIMAL: Floating point values with max precision of 38 and max scale of 37
+- DECIMAL: Floating point values with max precision of 38 and max scale of 37. The `DataTypeParams` field can specify `precision` and `scale` values using `DecimalParams`, evaluated based on decimal values in the column.
 - FLOAT: Single-precision 32-bit IEEE 754 values, e.g. 3.4028237E+38
 - DOUBLE: Double-precision 64-bit IEEE 754 values, e.g. -2.2250738585072014E-308
 - NAIVE_TIME: Time without a timezone in the ISO-8601 calendar system, e.g. 10:15:30
@@ -144,7 +160,7 @@ Examples of each [DataType](https://github.com/fivetran/fivetran_sdk/blob/main/c
 - UTC_DATETIME: An instantaneous point on the timeline, always in UTC timezone, e.g. 2007-12-03T10:15:30.123Z
 - BINARY: Binary data is represented as protobuf `bytes` (such as [ByteString](https://github.com/protocolbuffers/protobuf/blob/main/java/core/src/main/java/com/google/protobuf/ByteString.java) in Java), e.g. `[B@7d4991ad` (showing ByteString as bytes)
 - XML: "`<tag>`This is xml`</tag>`"
-- STRING: "This is text"
+- STRING: "This is text". The optional `DataTypeParams` field can specify `string_byte_length` evaluated from column values, representing the maximum byte length of any value in that column.
 - JSON: "{\"a\": 123}"
 
 ## Testing
@@ -173,4 +189,33 @@ The following is a list of test scenarios we recommend you consider:
 Yes, definitely. This happens during the [initial sync](https://fivetran.com/docs/getting-started/glossary#initialsync) or a [re-sync](https://fivetran.com/docs/using-fivetran/features#resync) where the source connector first calls the `truncate` operation and then `upserts`. The `truncate` in this case is meant to (soft) delete any rows that may have existed prior to the initial sync starting. This is done to make sure all rows that may have existed prior to the initial sync are marked as deleted (since we cannot be sure the initial sync will necessarily overwrite them all). It should pick out the rows that existed prior to the sync starting, in other words, where `_fivetran_synced` < "timestamp when `truncate` is called in the source connector".
 
 ### What happens if an operation refers to a record or table that does not exist in the destination?
-If an `UPDATE`, `DELETE`, or `SOFT_DELETE` operation references a record that does not exist — or if a `TRUNCATE` is requested for a table that does not exist — the destination must safely ignore the operation. No action should be taken, and the operation should not return an error.
+If an `UPDATE`, `DELETE`, or `SOFT_DELETE` operation references a record that does not exist, or if `TRUNCATE` is requested for a table that does not exist, the destination must safely ignore the operation. No action should be taken, and the operation should not return an error.
+
+### What is DataTypeParams and how does Fivetran handle them?
+`DataTypeParams` is an optional field that provides type-specific parameters for columns:
+- For **DECIMAL columns**: Specifies `precision` and `scale` values via `DecimalParams`, evaluated based on decimal values seen in the column
+- For DECIMAL columns: Specifies `precision` and `scale` values via `DecimalParams`, evaluated based on decimal values seen in the column
+- For STRING columns: Specifies `string_byte_length` evaluated from column values, representing the maximum byte length of any value in that column
+
+> Note: Fivetran sends `string_byte_length` values rounded up to the nearest power of two. For example, if the maximum byte length observed is 100 bytes, Fivetran will send `string_byte_length = 128` (2^7).
+
+When creating new tables:
+Fivetran may include `DataTypeParams` in the `CreateTable` request, where values are evaluated based on the actual data seen from the source. Destinations can optionally use these parameters to create columns with appropriate capacity, but it is not mandatory to use them.
+
+When working with existing tables:
+Fivetran's behavior depends on whether the destination provides `DataTypeParams` in the `DescribeTable` response:
+
+- If `DataTypeParams` is not provided by the destination: Fivetran will not calculate or infer these values from incoming data. Column details will be passed without `DataTypeParams`. For example, if a string column exists and `DescribeTable` doesn't return `string_byte_length`, Fivetran won't calculate it from the incoming data.
+
+- If `DataTypeParams` is provided by the destination: Fivetran will evaluate the incoming data against the destination's reported parameters. If the incoming data requires a larger capacity (e.g., a larger `string_byte_length` or a different `precision`/`scale`), Fivetran will send an `AlterTable` request to adjust the column accordingly.
+
+This approach ensures that Fivetran respects the destination's schema capabilities and only performs column alterations when the destination explicitly reports its current type parameters.
+
+Example for STRING columns with existing data:
+
+Suppose a table has a `user_name` column (STRING type):
+1. The destination's `DescribeTable` response includes `DataTypeParams` with `string_byte_length = 128` for the `user_name` column
+2. New data arrives from the source where a `user_name` value is 150 bytes long
+3. Fivetran evaluates the incoming data and detects that 150 bytes exceeds the current capacity of 128 bytes
+4. Fivetran sends an `AlterTable` request with `DataTypeParams` specifying `string_byte_length = 256` (rounded up to the nearest power of two: 2^8)
+5. The destination should alter the column to accommodate the new byte length capacity
