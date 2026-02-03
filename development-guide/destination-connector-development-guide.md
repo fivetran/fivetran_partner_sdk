@@ -197,7 +197,7 @@ If an `UPDATE`, `DELETE`, or `SOFT_DELETE` operation references a record that do
 - For DECIMAL columns: Specifies `precision` and `scale` values via `DecimalParams`, evaluated based on decimal values seen in the column
 - For STRING columns: Specifies `string_byte_length` evaluated from column values, representing the maximum byte length of any value in that column
 
-> **Note:** Fivetran sends `string_byte_length` values rounded up to the nearest power of two. For example, if the maximum byte length observed is 100 bytes, Fivetran will send `string_byte_length = 128` (2^7).
+> Note: Fivetran sends `string_byte_length` values rounded up to the nearest power of two. For example, if the maximum byte length observed is 100 bytes, Fivetran will send `string_byte_length = 128` (2^7).
 
 When creating new tables:
 Fivetran may include `DataTypeParams` in the `CreateTable` request, where values are evaluated based on the actual data seen from the source. Destinations can optionally use these parameters to create columns with appropriate capacity, but it is not mandatory to use them.
