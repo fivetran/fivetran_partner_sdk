@@ -189,7 +189,7 @@ The following is a list of test scenarios we recommend you consider:
 Yes, definitely. This happens during the [initial sync](https://fivetran.com/docs/getting-started/glossary#initialsync) or a [re-sync](https://fivetran.com/docs/using-fivetran/features#resync) where the source connector first calls the `truncate` operation and then `upserts`. The `truncate` in this case is meant to (soft) delete any rows that may have existed prior to the initial sync starting. This is done to make sure all rows that may have existed prior to the initial sync are marked as deleted (since we cannot be sure the initial sync will necessarily overwrite them all). It should pick out the rows that existed prior to the sync starting, in other words, where `_fivetran_synced` < "timestamp when `truncate` is called in the source connector".
 
 ### What happens if an operation refers to a record or table that does not exist in the destination?
-If an `UPDATE`, `DELETE`, or `SOFT_DELETE` operation references a record that does not exist, or if a `TRUNCATE` is requested for a table that does not exist, the destination must safely ignore the operation. No action should be taken, and the operation should not return an error.
+If an `UPDATE`, `DELETE`, or `SOFT_DELETE` operation references a record that does not exist, or if `TRUNCATE` is requested for a table that does not exist, the destination must safely ignore the operation. No action should be taken, and the operation should not return an error.
 
 ### What is DataTypeParams and how does Fivetran handle them?
 `DataTypeParams` is an optional field that provides type-specific parameters for columns:
