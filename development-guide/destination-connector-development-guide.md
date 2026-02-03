@@ -110,11 +110,11 @@ The optional `DataTypeParams` field could be used to provide additional type-spe
 ### AlterTable
 The `AlterTable` RPC call should be used for changing primary key columns, adding columns, dropping columns, and changing data types.
 
-When altering columns, the `Column` objects may include optional `DataTypeParams`:
-- For DECIMAL columns: `DataTypeParams` specifies `precision` and `scale` via `DecimalParams`, evaluated based on decimal values in that column
-- For STRING columns: `DataTypeParams` specifies `string_byte_length` evaluated from column values, representing the maximum byte length of any value in that column
-
 - `dropColumns`: A boolean indicating whether to drop columns not in the `AlterTable` request. When `false`, no columns should be dropped even if the columns in the request differ from those present in the destination table, preventing unintended data loss. When `true`, operation should drop columns present in the destination but absent from the request. `dropColumns` is set to `true` only when a schema migration operation calls `AlterTable`.
+- When altering columns, the `Column` objects may include optional `DataTypeParams`:
+    - For DECIMAL columns: `DataTypeParams` specifies `precision` and `scale` via `DecimalParams`, evaluated based on decimal values in that column
+    - For STRING columns: `DataTypeParams` specifies `string_byte_length` evaluated from column values, representing the maximum byte length of any value in that column
+
 ### WriteBatchRequest
 The `WriteBatchRequest` RPC call provides details about the batch files containing the records to be pushed to the destination. We provide the `WriteBatchRequest` parameter that contains all the information required for you to read the batch files. Here are some of the fields included in the request message:
 
