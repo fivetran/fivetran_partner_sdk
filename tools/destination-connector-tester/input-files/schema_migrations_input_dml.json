@@ -93,8 +93,6 @@
    ],
    "describe_table" : [
       "transaction",
-      "transaction_drop",
-      "transaction_new",
       "transaction_renamed"
    ]
 }
