@@ -30,6 +30,16 @@ The executable needs to do the following:
 - Accept a `--port` argument that takes an integer as a port number to listen to.
 - Listen on both IPV4 (i.e. 0.0.0.0) and IPV6 (i.e ::0), but if only one is possible, it should listen on IPV4.
 
+### Environment variables
+When Fivetran runs your connector binary, additional contextual information is provided through environment variables.
+
+| Variable | Description |
+|---|---|
+| `FIVETRAN_ACCOUNT_NAME` | The name of the Fivetran account. |
+| `FIVETRAN_GROUP_NAME` | The name of the Fivetran group associated with the connector. |
+
+These variables are available in your connector's runtime environment and can be accessed using the standard environment variable APIs in your programming language via the variable names `FIVETRAN_ACCOUNT_NAME` and `FIVETRAN_GROUP_NAME`.
+
 ### Proto files
 
 - Partners should not add the proto files to their repos. Proto files should be pulled in from this repo at build time and added to `.gitignore` so they are excluded.
