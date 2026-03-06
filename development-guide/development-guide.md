@@ -31,7 +31,6 @@ The executable needs to do the following:
 - Listen on both IPV4 (i.e. 0.0.0.0) and IPV6 (i.e ::0), but if only one is possible, it should listen on IPV4.
 
 ### Environment variables
-When Fivetran runs your connector binary, additional contextual information is provided through environment variables.
 
 | Variable | Description |
 |---|---|
