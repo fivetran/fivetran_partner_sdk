@@ -1,6 +1,6 @@
 # SDK Development Guide
 
-Fivetran SDK uses [gRPC](https://grpc.io/) to talk to partner code. The partner side of the interface is always the server side. Fivetran implements the client side and initiates the requests.
+Fivetran SDK uses [gRPC](https://grpc.io/) to talk to your code. Your side of the interface is always the server side. Fivetran implements the client side and initiates the requests.
 
 ## General guidelines
 
@@ -10,18 +10,18 @@ Fivetran SDK uses [gRPC](https://grpc.io/) to talk to partner code. The partner 
 
 ### Language
 
-Partner code should be developed in a language that can generate a statically linked binary executable.
+You should develop your code in a language that can generate a statically linked binary executable.
 
 #### Supported languages
 Fivetran currently supports connectors built in the following languages:
 
-- Python (recommended for new partners)
+- Python (recommended for new users)
 - Go
 - Rust
 - Java
 - C++
 
-We encourage new source partners to build their source connectors in Python for quicker onboarding experience and to start by submitting a community connector to our [Connector SDK repository](https://github.com/fivetran/fivetran_connector_sdk).
+We encourage you to build your source connectors in Python for quicker onboarding experience and to start by submitting a community connector to our [Connector SDK repository](https://github.com/fivetran/fivetran_connector_sdk).
 
 For detailed language-specific requirements, see the [source connector development guide](source-connector-development-guide.md) and [destination connector development guide](destination-connector-development-guide.md).
 
@@ -71,17 +71,17 @@ We expose the following metadata variables at runtime so you can log relevant co
 - Consider logging of timing data - Logging the time taken for time-sensitive operations like network calls can make it easier to debug performance issues in production. Consider if logging of timing data can be useful in your connector.
 
 ### Error handling
-- Partner code should handle any source and destination-related errors.
-- Partner code should retry any transient errors internally without deferring them to Fivetran.
-- Partner code should use [gRPC built-in error mechanism](https://grpc.io/docs/guides/error/#language-support) to relay errors instead of throwing exceptions and abruptly closing the connection.
-- Partner code should capture and relay a clear message when the account permissions are not sufficient.
+- Your code should handle any source and destination-related errors.
+- Your code should retry any transient errors internally without deferring them to Fivetran.
+- Your code should use [gRPC built-in error mechanism](https://grpc.io/docs/guides/error/#language-support) to relay errors instead of throwing exceptions and abruptly closing the connection.
+- Your code should capture and relay a clear message when the account permissions are not sufficient.
 
 ### User alerts
 
 - You can throw alerts on the Fivetran dashboard to notify users about potential issues with your connector.
 - These issues may include bad source data or connection problems with the source itself. Where applicable, the alerts should also provide guidance to users on how to resolve the problem.
 - We allow throwing [errors](https://fivetran.com/docs/using-fivetran/fivetran-dashboard/alerts#errors) and [warnings](https://fivetran.com/docs/using-fivetran/fivetran-dashboard/alerts#warnings).
-- Partner code should use [Warning](https://github.com/fivetran/fivetran_sdk/blob/main/common.proto#L160) and [Task](https://github.com/fivetran/fivetran_sdk/blob/main/common.proto#L164) messages defined in the proto files to relay information or errors to Fivetran.
+- Your code should use [Warning](https://github.com/fivetran/fivetran_sdk/blob/main/common.proto#L160) and [Task](https://github.com/fivetran/fivetran_sdk/blob/main/common.proto#L164) messages defined in the proto files to relay information or errors to Fivetran.
 
 #### Guidelines for warnings and tasks
 
@@ -176,8 +176,8 @@ responseObserver.onCompleted();
 > NOTE: We continue with the sync in case of Warnings, and break execution when Tasks are thrown.
 
 ### Retries
-- Partner code should retry transient problems internally
-- Fivetran will not be able to handle any problems that the partner code runs into
+- Your code should retry transient problems internally
+- Fivetran will not be able to handle any problems that your code runs into
 - If an error is raised to Fivetran's side, the sync will be terminated and retried from the last good known spot according to saved [cursors](https://fivetran.com/docs/getting-started/glossary#cursor) from the last successful batch.
 
 ### Security
@@ -213,7 +213,7 @@ Refer to our [source connector development guide](source-connector-development-g
 Refer to our [destination connector development guide](destination-connector-development-guide.md).
 
 ## How we use your service
-This section outlines how we integrate partner services into our infrastructure. We build and run your service as a `standalone binary` that implements a gRPC server.
+This section outlines how we integrate your services into our infrastructure. We build and run your service as a `standalone binary` that implements a gRPC server.
 To ensure a smooth and repeatable integration, we require your service code to follow a defined structure and include clear instructions for how to build the binary.
 
 ### What we do
