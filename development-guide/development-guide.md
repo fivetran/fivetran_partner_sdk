@@ -32,12 +32,12 @@ The executable needs to do the following:
 
 ### Environment variables
 
-| Variable | Description |
-|---|---|
-| `FIVETRAN_ACCOUNT_NAME` | The name of the Fivetran account. |
-| `FIVETRAN_GROUP_NAME` | The name of the Fivetran group associated with the connector. |
+| Variable | Description                        |
+|---|------------------------------------|
+| `FIVETRAN_ACCOUNT_NAME` | The customer Fivetran account name |
+| `FIVETRAN_GROUP_NAME` | The customer Fivetran group name   |
 
-These variables are available in your connector's runtime environment and can be accessed using the standard environment variable APIs in your programming language via the variable names `FIVETRAN_ACCOUNT_NAME` and `FIVETRAN_GROUP_NAME`.
+These metadata variables are exposed at runtime so partners can log relevant contextual information when needed.They can be accessed using the standard environment variable APIs in your programming language via the variable names `FIVETRAN_ACCOUNT_NAME` and `FIVETRAN_GROUP_NAME`.
 
 ### Proto files
 
