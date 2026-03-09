@@ -1,6 +1,6 @@
 # SDK Development Guide
 
-Fivetran SDK uses [gRPC](https://grpc.io/) to talk to your code. Your side of the interface is always the server side. Fivetran implements the client side and initiates the requests.
+The Fivetran SDK uses [gRPC](https://grpc.io/) to communicate with partner code. Your side of the interface is always the server side. Fivetran implements the client side and initiates the requests.
 
 ## General guidelines
 
