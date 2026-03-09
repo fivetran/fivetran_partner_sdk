@@ -43,7 +43,7 @@ We expose the following metadata variables at runtime so you can log relevant co
 
 ### Proto files
 
-- Partners should not add the proto files to their repos. Proto files should be pulled in from this repo at build time and added to `.gitignore` so they are excluded.
+- You should not add the proto files to your repos. Proto files should be pulled in from this repo at build time and added to `.gitignore` so they are excluded.
 - Always use proto files from latest release and update your code if necessary. Older releases proto files can be considered deprecated and will be expired at later date.
 
 ### Logging
@@ -78,8 +78,8 @@ We expose the following metadata variables at runtime so you can log relevant co
 
 ### User alerts
 
-- Partners can throw alerts on the Fivetran dashboard to notify customers about potential issues with their connector.
-- These issues may include bad source data or connection problems with the source itself. Where applicable, the alerts should also provide guidance to customers on how to resolve the problem.
+- You can throw alerts on the Fivetran dashboard to notify users about potential issues with your connector.
+- These issues may include bad source data or connection problems with the source itself. Where applicable, the alerts should also provide guidance to users on how to resolve the problem.
 - We allow throwing [errors](https://fivetran.com/docs/using-fivetran/fivetran-dashboard/alerts#errors) and [warnings](https://fivetran.com/docs/using-fivetran/fivetran-dashboard/alerts#warnings).
 - Partner code should use [Warning](https://github.com/fivetran/fivetran_sdk/blob/main/common.proto#L160) and [Task](https://github.com/fivetran/fivetran_sdk/blob/main/common.proto#L164) messages defined in the proto files to relay information or errors to Fivetran.
 
@@ -181,10 +181,10 @@ responseObserver.onCompleted();
 - If an error is raised to Fivetran's side, the sync will be terminated and retried from the last good known spot according to saved [cursors](https://fivetran.com/docs/getting-started/glossary#cursor) from the last successful batch.
 
 ### Security
-The following are hard requirements to be able to deploy partner code to Fivetran production:
+The following are hard requirements to be able to deploy your code to Fivetran production:
 - Do not decrypt batch files to disk. Fivetran does not allow unencrypted files at rest. If you need to upload batch files in plaintext, do the decryption in "streaming" mode. 
-- Do not log sensitive data. Ensure only necessary information is kept in logs, and never log any sensitive data. Such data may include credentials (passwords, tokens, keys, etc.), customer data, payment information, or PII.
-- Encrypt HTTP requests. Entities like URLs, URL parameters, and query parameters are always encrypted for logging, and customer approval is needed to decrypt and examine them.
+- Do not log sensitive data. Ensure only necessary information is kept in logs, and never log any sensitive data. Such data may include credentials (passwords, tokens, keys, etc.), user data, payment information, or PII.
+- Encrypt HTTP requests. Entities like URLs, URL parameters, and query parameters are always encrypted for logging, and user approval is needed to decrypt and examine them.
 
 ## Setup form guidelines
 - Keep the form clear and concise, only requesting essential information for successful connector setup.
@@ -196,7 +196,7 @@ The following are hard requirements to be able to deploy partner code to Fivetra
 The `ConfigurationForm` RPC call retrieves all the setup form fields and tests information. You can provide various parameters for the fields to enhance the user experience, such as descriptions, optional fields, and more.
 
 #### Test
-The [`ConfigurationForm` RPC call](#configurationform) retrieves the tests that need to be executed during connection setup. The `Test` call then invokes the test with the customer's credentials as parameters. As a result, it should return a success or failure indication for the test execution.
+The [`ConfigurationForm` RPC call](#configurationform) retrieves the tests that need to be executed during connection setup. The `Test` call then invokes the test with the user's credentials as parameters. As a result, it should return a success or failure indication for the test execution.
 
 ### Supported setup form fields 
 - Text field: A standard text input field for user text entry. You can provide a `title` displayed above the field. You can indicate whether the field is `required`, and you may also include an optional `description` displayed below the field to help explain what the user should complete.
