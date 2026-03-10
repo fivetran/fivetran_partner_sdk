@@ -1,6 +1,6 @@
 # SDK Development Guide
 
-Fivetran SDK uses [gRPC](https://grpc.io/) to talk to partner code. The partner side of the interface is always the server side. Fivetran implements the client side and initiates the requests.
+The Fivetran SDK uses [gRPC](https://grpc.io/) to communicate with partner code. Your side of the interface is always the server side. Fivetran implements the client side and initiates the requests.
 
 ## General guidelines
 
@@ -10,7 +10,7 @@ Fivetran SDK uses [gRPC](https://grpc.io/) to talk to partner code. The partner 
 
 ### Language
 
-Partner code should be developed in a language that can generate a statically linked binary executable.
+You should develop your code in a language that can generate a statically linked binary executable.
 
 #### Supported languages
 Fivetran currently supports connectors built in the following languages:
@@ -21,7 +21,7 @@ Fivetran currently supports connectors built in the following languages:
 - Java
 - C++
 
-We encourage new source partners to build their source connectors in Python for quicker onboarding experience and to start by submitting a community connector to our [Connector SDK repository](https://github.com/fivetran/fivetran_connector_sdk).
+If you are new to the Fivetran SDK, we encourage you to build your source connectors in Python for a quicker onboarding experience and to start by submitting a community connector to our [Connector SDK repository](https://github.com/fivetran/fivetran_connector_sdk).
 
 For detailed language-specific requirements, see the [source connector development guide](source-connector-development-guide.md) and [destination connector development guide](destination-connector-development-guide.md).
 
@@ -30,9 +30,20 @@ The executable needs to do the following:
 - Accept a `--port` argument that takes an integer as a port number to listen to.
 - Listen on both IPV4 (i.e. 0.0.0.0) and IPV6 (i.e ::0), but if only one is possible, it should listen on IPV4.
 
+### Environment variables
+
+We expose the following metadata variables at runtime so you can log relevant contextual information when needed. Access them through the standard environment variable APIs in your programming language.
+
+| Variable | Description |
+|---|-------------------|
+| `FIVETRAN_ACCOUNT_NAME` | The name of the Fivetran user account running the sync. Use this to add account-level context to your logs. |
+| `FIVETRAN_GROUP_NAME` | The name of the Fivetran group (destination) associated with the connector. Use this to add destination-level context to your logs. |
+
+
+
 ### Proto files
 
-- Partners should not add the proto files to their repos. Proto files should be pulled in from this repo at build time and added to `.gitignore` so they are excluded.
+- You should not add the proto files to your repos. Proto files should be pulled in from this repo at build time and added to `.gitignore` so they are excluded.
 - Always use proto files from latest release and update your code if necessary. Older releases proto files can be considered deprecated and will be expired at later date.
 
 ### Logging
@@ -60,17 +71,17 @@ The executable needs to do the following:
 - Consider logging of timing data - Logging the time taken for time-sensitive operations like network calls can make it easier to debug performance issues in production. Consider if logging of timing data can be useful in your connector.
 
 ### Error handling
-- Partner code should handle any source and destination-related errors.
-- Partner code should retry any transient errors internally without deferring them to Fivetran.
-- Partner code should use [gRPC built-in error mechanism](https://grpc.io/docs/guides/error/#language-support) to relay errors instead of throwing exceptions and abruptly closing the connection.
-- Partner code should capture and relay a clear message when the account permissions are not sufficient.
+- Your code should handle any source and destination-related errors.
+- Your code should retry any transient errors internally without deferring them to Fivetran.
+- Your code should use [gRPC built-in error mechanism](https://grpc.io/docs/guides/error/#language-support) to relay errors instead of throwing exceptions and abruptly closing the connection.
+- Your code should capture and relay a clear message when the account permissions are not sufficient.
 
 ### User alerts
 
-- Partners can throw alerts on the Fivetran dashboard to notify customers about potential issues with their connector.
-- These issues may include bad source data or connection problems with the source itself. Where applicable, the alerts should also provide guidance to customers on how to resolve the problem.
+- You can throw alerts on the Fivetran dashboard to notify customers about potential issues with your connector.
+- These issues may include bad source data or connection problems with the source itself. Where applicable, the alerts should also provide customers with guidance on how to resolve the problem.
 - We allow throwing [errors](https://fivetran.com/docs/using-fivetran/fivetran-dashboard/alerts#errors) and [warnings](https://fivetran.com/docs/using-fivetran/fivetran-dashboard/alerts#warnings).
-- Partner code should use [Warning](https://github.com/fivetran/fivetran_sdk/blob/main/common.proto#L160) and [Task](https://github.com/fivetran/fivetran_sdk/blob/main/common.proto#L164) messages defined in the proto files to relay information or errors to Fivetran.
+- Your code should use [Warning](https://github.com/fivetran/fivetran_sdk/blob/main/common.proto#L160) and [Task](https://github.com/fivetran/fivetran_sdk/blob/main/common.proto#L164) messages defined in the proto files to relay information or errors to Fivetran.
 
 #### Guidelines for warnings and tasks
 
@@ -165,12 +176,12 @@ responseObserver.onCompleted();
 > NOTE: We continue with the sync in case of Warnings, and break execution when Tasks are thrown.
 
 ### Retries
-- Partner code should retry transient problems internally
-- Fivetran will not be able to handle any problems that the partner code runs into
+- Your code should retry transient problems internally
+- Fivetran will not be able to handle any problems that your code runs into
 - If an error is raised to Fivetran's side, the sync will be terminated and retried from the last good known spot according to saved [cursors](https://fivetran.com/docs/getting-started/glossary#cursor) from the last successful batch.
 
 ### Security
-The following are hard requirements to be able to deploy partner code to Fivetran production:
+The following are hard requirements to be able to deploy your code to Fivetran production:
 - Do not decrypt batch files to disk. Fivetran does not allow unencrypted files at rest. If you need to upload batch files in plaintext, do the decryption in "streaming" mode. 
 - Do not log sensitive data. Ensure only necessary information is kept in logs, and never log any sensitive data. Such data may include credentials (passwords, tokens, keys, etc.), customer data, payment information, or PII.
 - Encrypt HTTP requests. Entities like URLs, URL parameters, and query parameters are always encrypted for logging, and customer approval is needed to decrypt and examine them.
@@ -185,7 +196,7 @@ The following are hard requirements to be able to deploy partner code to Fivetra
 The `ConfigurationForm` RPC call retrieves all the setup form fields and tests information. You can provide various parameters for the fields to enhance the user experience, such as descriptions, optional fields, and more.
 
 #### Test
-The [`ConfigurationForm` RPC call](#configurationform) retrieves the tests that need to be executed during connection setup. The `Test` call then invokes the test with the customer's credentials as parameters. As a result, it should return a success or failure indication for the test execution.
+The [`ConfigurationForm` RPC call](#configurationform) retrieves the tests to be executed during connection setup. The `Test` call then invokes the test with the customer's credentials as parameters. As a result, it should return a success or failure indication for the test execution.
 
 ### Supported setup form fields 
 - Text field: A standard text input field for user text entry. You can provide a `title` displayed above the field. You can indicate whether the field is `required`, and you may also include an optional `description` displayed below the field to help explain what the user should complete.
@@ -202,7 +213,7 @@ Refer to our [source connector development guide](source-connector-development-g
 Refer to our [destination connector development guide](destination-connector-development-guide.md).
 
 ## How we use your service
-This section outlines how we integrate partner services into our infrastructure. We build and run your service as a `standalone binary` that implements a gRPC server.
+This section outlines how we integrate your services into our infrastructure. We build and run your service as a `standalone binary` that implements a gRPC server.
 To ensure a smooth and repeatable integration, we require your service code to follow a defined structure and include clear instructions for how to build the binary.
 
 ### What we do
