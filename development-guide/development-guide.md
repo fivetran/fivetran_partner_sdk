@@ -15,7 +15,7 @@ You should develop your code in a language that can generate a statically linked
 #### Supported languages
 Fivetran currently supports connectors built in the following languages:
 
-- Python (recommended for new users)
+- Python (recommended for new partners)
 - Go
 - Rust
 - Java
