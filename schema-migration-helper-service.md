@@ -78,7 +78,9 @@ If the ALTER TABLE query doesn't support the DEFAULT clause, then:
     UPDATE <schema.table> SET <column_name> = <default_value>;
     ```
 
-> Note: If the ADD_COLUMN_WITH_DEFAULT_VALUE migration results in an unsupported error, Fivetran will fall back to using the already implemented `AlterTable` RPC implementation to create a new table. Please note that the new table will not contain any historical (back-dated) data.
+> Note: 
+> 1. If the ADD_COLUMN_WITH_DEFAULT_VALUE migration results in an unsupported error, Fivetran will fall back to using the already implemented `AlterTable` RPC implementation to create a new table. Please note that the new table will not contain any historical (back-dated) data.
+> 2. If the column already exists in the table, Fivetran will still send an `ADD_COLUMN_WITH_DEFAULT_VALUE` request. In this case, your implementation should skip the `ADD COLUMN` step (to avoid an error) but still execute the `UPDATE` to set the default value on all existing rows. This ensures rows that were present before the column was added receive the correct default value.
 
 ---
 
