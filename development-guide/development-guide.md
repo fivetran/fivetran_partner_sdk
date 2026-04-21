@@ -48,7 +48,8 @@ We expose the following metadata variables at runtime so you can log relevant co
 
 ### Logging
 
-- Write logs out to STDOUT in the following JSON format. Accepted levels are INFO, WARNING, and SEVERE. `message-origin` can be `sdk_connector` or `sdk_destination`.
+- Write logs out to STDOUT in the following JSON format. `message-origin` can be `sdk_connector` or `sdk_destination`.
+- Accepted levels are only INFO, WARNING, and SEVERE.
 
 ```
 {
