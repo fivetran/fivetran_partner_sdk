@@ -1,0 +1,23 @@
+how-to-handle-history-mode-batch-files.md
+  5100d801697cfbcd 22-23
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.1",
+  "base_commit_sha": "6b0f2c2ea4734787bae10b3044e3a5c46fd029d0",
+  "prompts": {
+    "5100d801697cfbcd": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "49b7d648-d48c-4163-a519-558160ce9224",
+        "model": "claude-sonnet-4-5-20250929"
+      },
+      "human_author": "fivetran-bhargavpatel <bhargav.patel@fivetran.com>",
+      "messages": [],
+      "total_additions": 4,
+      "total_deletions": 2,
+      "accepted_lines": 2,
+      "overriden_lines": 0
+    }
+  }
+}
