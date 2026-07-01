@@ -175,6 +175,6 @@ Replace files is for upsert operations. For replace files, the column values are
 #### `delete_files`
 For the active record (the one that has `_fivetran_active = TRUE`) with a given primary key in the destination, the `_fivetran_active` column value is set to FALSE, and the `_fivetran_end` column value is set to the `_fivetran_end` column value of the record with the same primary key in the batch file.
 
-> **Note:** If the `_fivetran_earliest` column appears in any of the files, the column should be ignored and excluded from processing. This column should not be written to the destination table.
+> Important: If the `_fivetran_earliest` column appears in any of the files, ignore it and do not write it to the destination table.
 
 ![History Mode Batch File](./history_mode.png) 
