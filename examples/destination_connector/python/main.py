@@ -245,6 +245,12 @@ class DestinationImpl(destination_sdk_pb2_grpc.DestinationConnectorServicer):
 
         return form_fields
 
+    def Capabilities(self, request, context):
+        log_message(INFO, "Fetching destination capabilities")
+        return destination_sdk_pb2.CapabilitiesResponse(
+            batch_file_format=destination_sdk_pb2.CSV
+        )
+
     def Test(self, request, context):
         test_name = request.name
         log_message(INFO, "test name: " + test_name)

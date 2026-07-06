@@ -118,6 +118,15 @@ public class DestinationServiceImpl extends DestinationConnectorGrpc.Destination
         responseObserver.onCompleted();
     }
 
+    @Override
+    public void capabilities(CapabilitiesRequest request, StreamObserver<CapabilitiesResponse> responseObserver) {
+        logger.info("Fetching destination capabilities");
+        responseObserver.onNext(CapabilitiesResponse.newBuilder()
+                .setBatchFileFormat(BatchFileFormat.CSV)
+                .build());
+        responseObserver.onCompleted();
+    }
+
     private ConfigurationFormResponse getConfigurationForm() {
 
         FormField writerType = FormField.newBuilder()

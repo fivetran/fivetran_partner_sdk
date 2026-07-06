@@ -220,33 +220,38 @@ Creates a sophisticated dynamic configuration UI:
 - **ConditionalFields**: Groups related fields for each destination type
 - **Field validation**: Built-in validation for required fields
 
-#### 2. `Test()`
+#### 2. `Capabilities()`
+- Advertises the batch file format supported by this destination example
+- Returns `CSV`, matching the example CSV batch file processing path
+- Lets the Fivetran Destination Tester discover the file format instead of relying on a CLI override
+
+#### 3. `Test()`
 - Validates destination configuration based on test type
 - Supports multiple test scenarios (connect, select)
 - Returns success/failure status for configuration validation
 
-#### 3. `DescribeTable()`
+#### 4. `DescribeTable()`
 - Queries table schema information from DuckDB
 - Returns column names and data types for the specified table
 - Returns `not_found=True` if table doesn't exist
 
-#### 4. `CreateTable()`
+#### 5. `CreateTable()`
 - Creates new tables in DuckDB with the specified schema
 - Executes `CREATE TABLE` SQL statement with column definitions
 - Logs table creation details with schema information
 
-#### 5. `AlterTable()`
+#### 6. `AlterTable()`
 - Modifies existing table schemas in DuckDB
 - Adds new columns to existing tables (incremental updates) and can drop columns when the `drop_columns` flag is set
 - Executes `ALTER TABLE` SQL statements (e.g., `ADD COLUMN`, `DROP COLUMN`) to apply schema changes
 
-#### 6. `Truncate()`
+#### 7. `Truncate()`
 - Removes all data from specified tables using DuckDB `TRUNCATE TABLE`
 - Hard truncate: Deletes all rows from the table
 - Soft truncate: Fully implemented, supporting both full soft truncate and time-based soft truncate based on request parameters
 - Logs truncation operations with table and schema details
 
-#### 7. `WriteBatch()`
+#### 8. `WriteBatch()`
 - **Main data writing method** for standard batch operations
 - **Note**: This example implementation only decrypts and prints batch files for demonstration purposes
 - **Does NOT write data to DuckDB** - production implementations should implement actual data loading logic
@@ -257,7 +262,7 @@ Creates a sophisticated dynamic configuration UI:
 - **File processing pipeline**: Decryption → Decompression → CSV parsing → Display
 - See: [WriteBatch documentation](https://github.com/fivetran/fivetran_partner_sdk/blob/main/development-guide/destination-connector-development-guide.md#writebatchrequest)
 
-#### 8. `WriteHistoryBatch()`  **Advanced Feature**
+#### 9. `WriteHistoryBatch()`  **Advanced Feature**
 - **Specialized method** for history mode operations
 - **Note**: This example implementation only decrypts and prints batch files for demonstration purposes
 - **Does NOT write data to DuckDB** - production implementations should implement actual data loading logic with history tracking
@@ -407,6 +412,9 @@ grpcurl -plaintext localhost:50052 list
 
 # Test configuration form
 grpcurl -plaintext localhost:50052 fivetran_sdk.v2.DestinationConnector/ConfigurationForm
+
+# Test destination capabilities
+grpcurl -plaintext localhost:50052 fivetran_sdk.v2.DestinationConnector/Capabilities
 
 # Test connectivity
 grpcurl -plaintext -d '{"name": "connect", "configuration": {}}' localhost:50052 fivetran_sdk.v2.DestinationConnector/Test
